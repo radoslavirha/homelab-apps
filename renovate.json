@@ -2,7 +2,7 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
   "timezone": "Europe/Prague",
-  "enabledManagers": ["npm", "github-actions"],
+  "enabledManagers": ["npm", "github-actions", "dockerfile", "custom.regex"],
   "platformAutomerge": false,
   "automergeStrategy": "squash",
   "prHourlyLimit": 2,
@@ -43,6 +43,22 @@
       "matchPackageNames": ["@radoslavirha/**"],
       "matchUpdateTypes": ["patch", "minor"],
       "automerge": true
+    },
+    {
+      "description": "Container base images, and the hand-pinned `jq` Alpine package inside a RUN line, were invisible to Renovate before this: enabledManagers omitted `dockerfile` entirely, and no manager at all reads a version pinned inside a RUN line. Two of the four tracked base images are security-relevant - gcr.io/distroless/nodejs24-debian12 trails node:24-trixie-slim's own Node patch level, so this is the only automated path a Node security patch has into the distroless runtime image. `custom.regex` covers the `jq=1.8.2-r0` pin via the `apk` datasource - not `alpine_3_xx`, which does not exist anywhere in Renovate's source or docs; `apk` is the real one, confirmed against lib/modules/datasource/apk/readme.md upstream. Its registryUrlTemplate branch (v3.23) was read off the actual pulled image (`docker run nginxinc/nginx-unprivileged:1.29-alpine cat /etc/os-release`) and cross-checked against the live Alpine v3.23 APKINDEX, which lists jq 1.8.2-r0 in `main` - matching the current pin exactly. That branch is a hand-maintained fact, not something Renovate infers: if nginx-unprivileged's own Alpine base ever moves to a newer release, this config keeps pointing at v3.23 and keeps proposing valid-but-increasingly-stale v3.23 updates rather than erroring - the same quiet-drift failure shape as an unset registryUrls above, not a loud one. gcr.io needed no registryUrls/hostRules of its own: distroless is a public repo and Renovate's docker datasource reaches it with the same anonymous bearer-token flow every public v2 registry supports, confirmed directly against gcr.io's token endpoint. Bypasses the dashboard tick like github-actions above: five pins total (four images plus jq) do not need a per-tick approval, and the two security-relevant images should surface as PRs on their own, not sit unticked. Deliberately no automerge and no groupName, unlike toolkit-hub: a Dockerfile-only change matches neither `.github/paths-filter-deps.yaml` nor any app's entry in `.github/paths-filter-apps.yaml` (both are keyed to package/app subtrees; the shared root Dockerfile is in neither), so today such a change runs only hadolint - never a docker build, never the app test suite that gates the toolkit-hub automerge above. A base-image bump ships straight to production through the release pipeline, and this Dockerfile leans hard on exact base-image internals (distroless's node-as-ENTRYPOINT argv convention, numeric USER 65532/101) that AGENTS.md documents as load-bearing and a new tag could change without notice - every one of these waits for a human. Each image is also a different vendor on its own release cadence, so grouping them would make a bad one harder to isolate and revert; the two `node:24-alpine` config-validator stages already collapse into one PR under Renovate's default per-dependency grouping, with no groupName needed for that.",
+      "matchManagers": ["dockerfile", "custom.regex"],
+      "dependencyDashboardApproval": false
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Targets the `jq=1.8.2-r0` pin in the two nginx-unprivileged UI stages - see the packageRules entry above for the datasource choice and the registryUrlTemplate branch's provenance.",
+      "managerFilePatterns": ["/^Dockerfile$/"],
+      "matchStrings": ["RUN apk add --no-cache jq=(?<currentValue>[\\d.]+-r\\d+)"],
+      "depNameTemplate": "jq",
+      "datasourceTemplate": "apk",
+      "registryUrlTemplate": "https://dl-cdn.alpinelinux.org/alpine?branch=v3.23&components=main&arch=x86_64"
     }
   ]
 }
