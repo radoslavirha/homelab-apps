@@ -106,9 +106,12 @@ USER 0
 
 # Pinned per hadolint DL3018. Alpine keeps only the current revision of a
 # package, so this pin rots the moment upstream bumps it: 1.8.1-r0 vanished and
-# every image build failed with "unable to select packages". renovate.json sets
-# enabledManagers to npm + github-actions, so nothing updates this automatically
-# — bump it by hand when a build starts failing here.
+# every image build failed with "unable to select packages". A renovate custom
+# regex manager now proposes bumps against the `apk` datasource, so this should
+# arrive as a PR rather than as a red build — but the Alpine branch it queries
+# (v3.23, this base image's) is hand-maintained in renovate.json. If
+# nginx-unprivileged moves to a newer Alpine, that manager keeps offering valid
+# v3.23 versions instead of erroring, and this pin silently stops tracking.
 RUN apk add --no-cache jq=1.8.2-r0
 
 # dist/ carries no config.json: vite.config.ts sets build.copyPublicDir false so
@@ -170,9 +173,12 @@ USER 0
 
 # Pinned per hadolint DL3018. Alpine keeps only the current revision of a
 # package, so this pin rots the moment upstream bumps it: 1.8.1-r0 vanished and
-# every image build failed with "unable to select packages". renovate.json sets
-# enabledManagers to npm + github-actions, so nothing updates this automatically
-# — bump it by hand when a build starts failing here.
+# every image build failed with "unable to select packages". A renovate custom
+# regex manager now proposes bumps against the `apk` datasource, so this should
+# arrive as a PR rather than as a red build — but the Alpine branch it queries
+# (v3.23, this base image's) is hand-maintained in renovate.json. If
+# nginx-unprivileged moves to a newer Alpine, that manager keeps offering valid
+# v3.23 versions instead of erroring, and this pin silently stops tracking.
 RUN apk add --no-cache jq=1.8.2-r0
 
 # dist/ carries no config.json: vite.config.ts sets build.copyPublicDir false so
