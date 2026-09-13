@@ -246,9 +246,11 @@ ui/<ui-name>/
 
    | Rule | Why it is not cosmetic |
    | --- | --- |
-   | Final stage is `FROM runtime-base`, never `FROM base` | `base` carries a global pnpm install. A package manager in a running pod is attacker tooling, and it is 40MB of it. |
-   | Never add `USER`, `WORKDIR` or `ENV NODE_ENV` to an app stage | `runtime-base` sets all three (`USER 1000`, `/home/app`, production). Re-declaring them is how they drift apart. |
-   | `COPY --from=build-<app> --chown=1000:1000` | Without the chown the files land as root and UID 1000 cannot read them. |
+   | Final stage is `FROM runtime-base`, never `FROM base` | `base` carries a global pnpm install. A package manager in a running pod is attacker tooling, and it is 40MB of it. `runtime-base` is distroless — no shell, no package manager, 10 OS packages. |
+| `CMD` carries node's **arguments**, not a command line | The distroless ENTRYPOINT is already the node binary. Repeating the `node` word fails instantly with `Cannot find module '/home/app/node'`. |
+| Debugging is `kubectl exec <pod> -- /nodejs/bin/node -e '…'` | There is no shell and `node` is not on `PATH`. `fs.readdirSync` / `fs.readFileSync` / `fetch` replace `ls` / `cat` / `curl`; `kubectl debug --image=busybox --target=<container>` gives a real shell without changing the image. |
+   | Never add `USER`, `WORKDIR` or `ENV NODE_ENV` to an app stage | `runtime-base` sets all three (`USER 65532`, `/home/app`, production). Re-declaring them is how they drift apart. |
+   | `COPY --from=build-<app> --chown=65532:65532` | Without the chown the files land as root. 65532 is distroless's `nonroot` user; the homelab values pin the same UID. |
    | `CMD` keeps `--import /home/app/dist/otel/instrument.js` | Dropping it silently removes every trace and every `trace_id` from logs. Nothing fails; the data just stops. |
    | Build-only packages (`typescript`, `@swc/cli`, `@swc-node/register`) go in `devDependencies` | `pnpm deploy --prod` copies `dependencies` into the image. A compiler there is shipped, not used. |
    | **`@swc/helpers` stays in `dependencies`** | `.swcrc` sets `externalHelpers: true`, so compiled output imports it at runtime. Moving it breaks the image at first import. |

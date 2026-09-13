@@ -11,20 +11,33 @@ RUN npm install -g pnpm@12
 # NOT built from `base`, which carries a global pnpm install that has no business in
 # a running pod — see docs/superpowers/specs/2026-09-12-js-on-k8s-alignment.md § G1.
 #
-# USER is numeric, NOT `node`. Kubernetes verifies runAsNonRoot against the image's
-# configured user and cannot map a username to a UID — that mapping lives in the
-# image's /etc/passwd, which the kubelet does not read. With `USER node` it fails
-# closed: CreateContainerConfigError "container has runAsNonRoot and image has
-# non-numeric user (node), cannot verify user is non-root". 1000 is the node user in
-# node:24-trixie-slim.
-# hadolint ignore=DL3006
-FROM $BUILD_FROM AS runtime-base
+# Google distroless, NOT node:24-trixie-slim: no shell, no package manager, no libc
+# tooling — 10 dpkg packages instead of 79 (measured, 2026-09-13). Everything the app
+# needs at runtime is the node binary, glibc and libssl, and that is all this carries.
+#
+# Three things about this base are load-bearing:
+#
+#  1. ENTRYPOINT is already ["/nodejs/bin/node"], so CMD carries *arguments to node*,
+#     not a command line. The `node` word is dropped from every CMD below; the
+#     `--import .../instrument.js` preload has to survive that move or traces and
+#     every trace_id in the logs silently stop.
+#  2. USER is 65532 (nonroot), not 1000. It is numeric, which is what Kubernetes
+#     needs to verify runAsNonRoot — the kubelet does not read the image's
+#     /etc/passwd, so a named user fails closed with CreateContainerConfigError.
+#     The three charts in the homelab repo pin runAsUser/runAsGroup/fsGroup 1000 and
+#     MUST move to 65532 in the same rollout.
+#  3. `node` is not on PATH (it lives at /nodejs/bin/node) and there is no shell, so
+#     `kubectl exec -- node -e ...` must be spelled `-- /nodejs/bin/node -e ...`.
+#
+# The image already ships /etc/ssl/certs/ca-certificates.crt and sets SSL_CERT_FILE,
+# so outbound HTTPS (miot-spec.org, CHMI) works without adding a ca-certificates layer.
+FROM gcr.io/distroless/nodejs24-debian12:nonroot AS runtime-base
 
 LABEL maintainer="radoslav.irha@gmail.com"
 ENV LANG=C.UTF-8 \
     NODE_ENV=production
 WORKDIR /home/app
-USER 1000
+USER 65532
 
 FROM base AS deps
 
@@ -43,8 +56,9 @@ RUN --mount=type=secret,id=npmrc,target=/root/.npmrc \
 
 FROM runtime-base AS interactive-map-feeder-api
 
-COPY --from=build-interactive-map-feeder-api --chown=1000:1000 /prod/interactive-map-feeder-api /home/app
-CMD ["node", "--import", "/home/app/dist/otel/instrument.js", "dist/index.js"]
+COPY --from=build-interactive-map-feeder-api --chown=65532:65532 /prod/interactive-map-feeder-api /home/app
+# No `node` here: the distroless ENTRYPOINT is the node binary, CMD is its argv.
+CMD ["--import", "/home/app/dist/otel/instrument.js", "dist/index.js"]
 
 # ─── miot-bridge-api ───────────────────────────────────────────────────────────────
 FROM deps AS build-miot-bridge-api
@@ -55,8 +69,9 @@ RUN --mount=type=secret,id=npmrc,target=/root/.npmrc \
 
 FROM runtime-base AS miot-bridge-api
 
-COPY --from=build-miot-bridge-api --chown=1000:1000 /prod/miot-bridge-api /home/app
-CMD ["node", "--import", "/home/app/dist/otel/instrument.js", "dist/index.js"]
+COPY --from=build-miot-bridge-api --chown=65532:65532 /prod/miot-bridge-api /home/app
+# No `node` here: the distroless ENTRYPOINT is the node binary, CMD is its argv.
+CMD ["--import", "/home/app/dist/otel/instrument.js", "dist/index.js"]
 
 # ─── qr-manager-api ────────────────────────────────────────────────────────────
 FROM deps AS build-qr-manager-api
@@ -67,8 +82,9 @@ RUN --mount=type=secret,id=npmrc,target=/root/.npmrc \
 
 FROM runtime-base AS qr-manager-api
 
-COPY --from=build-qr-manager-api --chown=1000:1000 /prod/qr-manager-api /home/app
-CMD ["node", "--import", "/home/app/dist/otel/instrument.js", "dist/index.js"]
+COPY --from=build-qr-manager-api --chown=65532:65532 /prod/qr-manager-api /home/app
+# No `node` here: the distroless ENTRYPOINT is the node binary, CMD is its argv.
+CMD ["--import", "/home/app/dist/otel/instrument.js", "dist/index.js"]
 
 # ─── homelab-dashboard-ui ──────────────────────────────────────────────────────
 FROM deps AS build-homelab-dashboard-ui
