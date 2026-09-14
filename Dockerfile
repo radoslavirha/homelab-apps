@@ -91,7 +91,7 @@ FROM deps AS build-homelab-dashboard-ui
 
 RUN pnpm --filter=homelab-dashboard-ui run build
 
-FROM nginxinc/nginx-unprivileged:1.29-alpine AS homelab-dashboard-ui
+FROM nginxinc/nginx-unprivileged:1.31-alpine AS homelab-dashboard-ui
 
 # Unprivileged variant: nginx runs as UID 101 and binds 8080, because a non-root
 # process cannot bind a port below 1024. Same upstream image otherwise — same
@@ -158,7 +158,7 @@ FROM deps AS build-qr-manager-ui
 
 RUN pnpm --filter=qr-manager-ui run build
 
-FROM nginxinc/nginx-unprivileged:1.29-alpine AS qr-manager-ui
+FROM nginxinc/nginx-unprivileged:1.31-alpine AS qr-manager-ui
 
 # Unprivileged variant: nginx runs as UID 101 and binds 8080, because a non-root
 # process cannot bind a port below 1024. Same upstream image otherwise — same
