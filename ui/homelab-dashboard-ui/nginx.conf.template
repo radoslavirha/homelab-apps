@@ -3,7 +3,14 @@ server {
     # UID 101, which cannot bind a port below 1024. The Service's targetPort in
     # homelab:gitops/helm-values must match — the two move together or the pod serves
     # nothing.
-    listen 8080;
+    listen 8080 default_server;
+    # Explicit IPv6 listener. The base image's 10-listen-on-ipv6-by-default.sh
+    # cannot do this for us: it patches the stock conf.d/default.conf at step 10,
+    # and 20-envsubst-on-templates.sh then renders this template over the same
+    # path, discarding the patch. `listen` is a server-block directive, so it
+    # cannot live in the shared healthz.conf snippet either — keep these four
+    # files identical by hand.
+    listen [::]:8080 default_server;
     server_name _;
 
     root /usr/share/nginx/html;

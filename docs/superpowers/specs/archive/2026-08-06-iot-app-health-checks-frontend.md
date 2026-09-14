@@ -63,6 +63,13 @@ Layer 2 is the one the parent plan skips, and it is where nearly all the value i
 
 After boot-time validation there is nothing a readiness check could know that a liveness check could not. `qr-manager-ui` serves files from disk; there is no connection pool to exhaust, no event loop to wedge, no dependency to lose. One endpoint, used by all three probes, is the honest answer. Inventing `/readyz` that returns the same constant is noise.
 
+The probe itself always answers on the pod IP — the kubelet never names an
+address family. But the container must still listen on IPv6 as well as IPv4:
+otherwise nothing in-container can reach `/healthz` by name (`localhost`
+resolves `::1` first), and a cluster that ever becomes dual-stack would probe
+an address nginx isn't listening on, killing healthy pods. See
+`docs/superpowers/specs/2026-08-08-nginx-ipv6-listener.md`.
+
 ### Rule F2 — never readiness-check the backend from the UI pod
 
 If `qr-manager-ui`'s readiness probe hit `qr-manager-api`, then an API outage would delete the UI from Endpoints and users would get a Traefik `502` instead of an application that loads and says "the API is unavailable". The UI can still serve its shell, its assets, and its error state — it must stay Ready. This is the parent plan's rule 2 shared-fate trap in its most tempting form.
@@ -657,6 +664,12 @@ Per `AGENTS.md`: a green sync status is not evidence.
 - [ ] **Probe answers, and is exact-match:**
       `kubectl exec -n sandbox deploy/<qr-manager-ui> -- wget -qO- localhost/healthz` → `ok`
       `kubectl exec -n sandbox deploy/<qr-manager-ui> -- wget -S -qO- localhost/healthzzz` → `404`, not `ok`
+      `localhost` here resolves `::1` first, which is a **different check** from
+      the one the kubelet actually runs (`httpGet` against the pod IP, which is
+      IPv4-only on these clusters). This command only works because nginx also
+      listens on `[::]:80`/`[::]:8080` — see
+      `docs/superpowers/specs/2026-08-08-nginx-ipv6-listener.md`. It is useful as
+      an in-container smoke test, not as a stand-in for the probe.
 - [ ] **Probe is independent of the base path:** the same `wget` succeeds while `NGINX_BASE_PATH=/qr-manager`, and the app itself still serves at `/qr-manager/`.
 - [ ] **Probe is not in the access log:**
       `kubectl logs -n sandbox deploy/<qr-manager-ui> --since=5m | grep -c healthz` → `0`.

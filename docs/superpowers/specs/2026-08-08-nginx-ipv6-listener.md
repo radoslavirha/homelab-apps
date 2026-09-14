@@ -128,7 +128,7 @@ Three agree by accident. Same class of drift as the `/healthz` block before it b
 
 ### 1. The nginx configs
 
-- [ ] In all four files, use exactly this pair, with the comment:
+- [x] In all four files, use exactly this pair, with the comment:
 
 ```nginx
     listen 80 default_server;
@@ -143,28 +143,29 @@ Three agree by accident. Same class of drift as the `/healthz` block before it b
 
   - Files: `ui/qr-manager-ui/nginx.conf.template`, `ui/qr-manager-ui/nginx.conf`, `ui/homelab-dashboard-ui/nginx.conf.template`, `ui/homelab-dashboard-ui/nginx.conf`.
   - `homelab-dashboard-ui/nginx.conf.template` currently lacks `default_server`; adding it is the point of unifying, and is safe — one `server` block per file, so there is nothing to conflict with.
+  - **Correction found during implementation:** both `.template` files already run on port `8080` (base image is `nginxinc/nginx-unprivileged:1.29-alpine`, per the Dockerfile) — the port-8080 migration this spec's own "Out of scope" section describes as *not yet done* had, in fact, already landed for the templates by the time this spec was implemented. Only the two static `nginx.conf` fallbacks are still on port `80`. Each file keeps its own existing port; the IPv6 line added matches it (`[::]:8080` for the templates, `[::]:80` for the fallbacks). The `default_server` unification across all four still applies as written.
 - [ ] Pre-flight, before trusting the change in-cluster:
       `kubectl exec -n sandbox <ui-pod> -- test -f /proc/net/if_inet6 && echo ipv6-ok`
 
 ### 2. Pin the property with a test
 
-- [ ] Extend `packages/nginx-runtime/test/run.sh` with the case that would have caught this: after the container starts, fetch the probe path over **`localhost`**, `127.0.0.1` **and** `[::1]`, asserting all three return `ok`.
+- [x] Extend `packages/nginx-runtime/test/run.sh` with the case that would have caught this: after the container starts, fetch the probe path over **`localhost`**, `127.0.0.1` **and** `[::1]`, asserting all three return `ok`.
 
   This is a stricter assertion than the probe itself needs, which is the point — it pins the property the documentation claims. Note the scratch image in that suite builds its own `default.conf`; give it the same two `listen` lines so the test exercises the real shape.
 
 ### 3. Documentation
 
-- [ ] `packages/nginx-runtime/README.md` — state that `healthz.conf` is a `location` and therefore cannot carry `listen` directives; the server block owns them, and both the IPv4 and IPv6 lines must be present in every consuming config. This is the detail that will otherwise be lost the first time a third UI copies the snippet and nothing else.
-- [ ] `specs/2026-08-06-iot-app-health-checks-frontend.md`, Verification section — the `localhost/healthz` commands work as written once this lands. Add which address is being tested and why, because "localhost" and "the pod IP the kubelet probes" are not the same check, and only the latter is what keeps the pod alive.
-- [ ] Same spec, rule F1 or the per-UI analysis — one line: the probe answers on the pod IP, and the container must also listen on IPv6 for anything in-container to reach it by name, or for a dual-stack cluster to probe it at all.
+- [x] `packages/nginx-runtime/README.md` — state that `healthz.conf` is a `location` and therefore cannot carry `listen` directives; the server block owns them, and both the IPv4 and IPv6 lines must be present in every consuming config. This is the detail that will otherwise be lost the first time a third UI copies the snippet and nothing else.
+- [x] `specs/2026-08-06-iot-app-health-checks-frontend.md`, Verification section — the `localhost/healthz` commands work as written once this lands. Add which address is being tested and why, because "localhost" and "the pod IP the kubelet probes" are not the same check, and only the latter is what keeps the pod alive.
+- [x] Same spec, rule F1 or the per-UI analysis — one line: the probe answers on the pod IP, and the container must also listen on IPv6 for anything in-container to reach it by name, or for a dual-stack cluster to probe it at all.
 
 ---
 
 ## Verification
 
-- [ ] Local, per image: `curl` the probe over `127.0.0.1`, `localhost` and `[::1]` — all three `ok`.
-- [ ] Local: `netstat -tln` inside the container shows **both** `0.0.0.0:80` and `:::80`.
-- [ ] Local: nginx still starts under `docker run --sysctl net.ipv6.conf.all.disable_ipv6=1`.
+- [x] Local, per image: `curl` the probe over `127.0.0.1`, `localhost` and `[::1]` — all three `ok`. (Verified via minimal scratch images built from the real `nginx.conf`/`nginx.conf.template` + `healthz.conf`, both port variants — full image build needs GitHub Packages credentials not available in this session.)
+- [x] Local: `netstat -tln` inside the container shows **both** `0.0.0.0:<port>` and `:::<port>`.
+- [x] Local: nginx still starts under `docker run --sysctl net.ipv6.conf.all.disable_ipv6=1`.
 - [ ] In-cluster after release, on the sandbox pod:
       `kubectl exec -n sandbox <pod> -- wget -qO- localhost/healthz` → `ok`. This is the command the frontend spec has been telling people to run; it should finally work.
 - [ ] Probes unaffected: pod stays `READY 1/1` with `RESTARTS` unchanged. The probe never used `localhost`, so nothing here should move it — if restarts climb, the IPv6 bind is failing and the change should be reverted, not debugged in place.
@@ -184,8 +185,8 @@ There *is* one unrelated homelab doc correction owed, from fix 1 of the supersed
 
 ## Release
 
-- [ ] Changesets: patch for `qr-manager-ui` and `homelab-dashboard-ui`. No browser-visible behaviour changes, but both images change.
-- [ ] `pnpm run verify`.
+- [x] Changesets: patch for `qr-manager-ui` and `homelab-dashboard-ui`. No browser-visible behaviour changes, but both images change.
+- [x] `pnpm run verify`.
 - [ ] Merge → the release workflow builds all four images from the same commit; the deploy action bumps `image.tag` in `homelab` per `deploy.json`, and the chart derives the validator tag from the app tag.
 - [ ] **`homelab-dashboard-ui` has no sandbox**, so its bump rolls the live dashboard. With `maxUnavailable: 0` plus init validation the blast radius of a bad bind is a stuck ReplicaSet rather than a downed dashboard — but watch the first rollout rather than assuming, because a bind failure is exactly the fault that would surface here.
 

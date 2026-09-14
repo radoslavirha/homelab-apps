@@ -34,6 +34,21 @@ Both files, so a bare `docker run` behaves like production. Put it above any
 `${NGINX_BASE_PATH}` locations for readability — `location =` wins regardless of
 position, but a reader should not have to know that.
 
+`healthz.conf` is a `location` block and cannot carry `listen` directives —
+those belong to the enclosing `server` block, which this package does not
+own. Every consuming `nginx.conf` and `nginx.conf.template` must declare both
+an IPv4 and an IPv6 listener itself:
+
+```nginx
+    listen 80 default_server;
+    listen [::]:80 default_server;
+```
+
+(substitute the app's actual port, e.g. `8080` for an unprivileged image).
+Without the IPv6 line, `localhost` and `[::1]` fail inside the container even
+though the app answers fine on the pod's IPv4 address — see
+`docs/superpowers/specs/2026-08-08-nginx-ipv6-listener.md`.
+
 ## What this package does *not* do
 
 **It does not validate the config against a schema.** That runs in a separate

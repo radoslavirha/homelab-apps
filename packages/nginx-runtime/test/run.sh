@@ -41,6 +41,7 @@ EOF
 cat > "$WORK/default.conf" <<'EOF'
 server {
     listen 80 default_server;
+    listen [::]:80 default_server;
     server_name _;
     root /usr/share/nginx/html;
     include /etc/nginx/snippets/healthz.conf;
@@ -102,6 +103,23 @@ docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
 [ "$BODY" = "ok" ] && ok "/healthz returns ok" || bad "/healthz returned '$BODY'"
 [ "$OTHER" != "ok" ] && ok "/healthzzz does NOT hit the probe (exact match)" || bad "/healthzzz returned 'ok' — prefix match"
 [ "$LOGLINES" = "0" ] && ok "/healthz is not access-logged" || bad "/healthz appeared in the access log $LOGLINES times"
+
+echo
+echo "case: probe answers on IPv4 and IPv6 alike"
+CFG=$(config_at dualstack.json '{"ok":true}')
+docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
+docker run -d --name "$CONTAINER" -v "$CFG:/usr/share/nginx/html/config.json:ro" "$IMAGE" >/dev/null
+sleep 3
+# Stricter than the probe itself needs — the probe only ever hits the pod IP —
+# but this is the property the documentation claims: localhost, 127.0.0.1 and
+# [::1] must all resolve to a working listener inside the container.
+LOCALHOST="$(docker exec "$CONTAINER" wget -qO- localhost/healthz || echo FAILED)"
+V4="$(docker exec "$CONTAINER" wget -qO- 127.0.0.1/healthz || echo FAILED)"
+V6="$(docker exec "$CONTAINER" wget -qO- '[::1]/healthz' || echo FAILED)"
+docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
+[ "$LOCALHOST" = "ok" ] && ok "localhost/healthz returns ok" || bad "localhost/healthz returned '$LOCALHOST'"
+[ "$V4" = "ok" ] && ok "127.0.0.1/healthz returns ok" || bad "127.0.0.1/healthz returned '$V4'"
+[ "$V6" = "ok" ] && ok "[::1]/healthz returns ok" || bad "[::1]/healthz returned '$V6'"
 
 echo
 echo "passed: $pass  failed: $fail"
