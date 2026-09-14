@@ -1,6 +1,6 @@
 ---
 name: onboard-to-homelab
-description: Scaffold full ArgoCD/homelab deployment for a new iot-miniservers app. Use when user says "onboard", "add to homelab", "create homelab deployment", "deploy new app", or starts describing a new app they want running on server2.
+description: Scaffold full ArgoCD/homelab deployment for a new homelab-apps app. Use when user says "onboard", "add to homelab", "create homelab deployment", "deploy new app", or starts describing a new app they want running on server2.
 ---
 
 # Onboard App to Homelab
@@ -185,7 +185,7 @@ Read the current technology stack table in `docs/architecture.md`. Append a row 
 ```markdown
 ## Onboard <ARGOCD_APP_NAME>
 
-Scaffolded by agent from `radoslavirha/iot-miniservers`.
+Scaffolded by agent from `radoslavirha/homelab-apps`.
 
 ### Files generated
 - `gitops/argocd-manifests/apps/apps/<APPSET_NAME>.yaml`

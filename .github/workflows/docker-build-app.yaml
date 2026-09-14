@@ -110,7 +110,7 @@ jobs:
             maintainer=Radoslav Irha <radoslav.irha@gmail.com>
             org.opencontainers.image.title=${{ needs.image-data.outputs.image }}
             org.opencontainers.image.description=${{ needs.image-data.outputs.description }}
-            org.opencontainers.image.vendor=Radoslav Irha IoT Miniservers
+            org.opencontainers.image.vendor=Radoslav Irha Homelab Apps
             org.opencontainers.image.authors=Radoslav Irha <radoslav.irha@gmail.com>
             org.opencontainers.image.licenses=MIT
             org.opencontainers.image.source=https://github.com/${{ github.repository }}/${{ inputs.APP_PATH }}
@@ -140,7 +140,7 @@ jobs:
             maintainer=Radoslav Irha <radoslav.irha@gmail.com>
             org.opencontainers.image.title=${{ needs.image-data.outputs.image }}-config-validator
             org.opencontainers.image.description=Runtime config validator for ${{ needs.image-data.outputs.image }}
-            org.opencontainers.image.vendor=Radoslav Irha IoT Miniservers
+            org.opencontainers.image.vendor=Radoslav Irha Homelab Apps
             org.opencontainers.image.authors=Radoslav Irha <radoslav.irha@gmail.com>
             org.opencontainers.image.licenses=MIT
             org.opencontainers.image.source=https://github.com/${{ github.repository }}/${{ inputs.APP_PATH }}

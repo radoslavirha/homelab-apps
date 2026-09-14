@@ -147,7 +147,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Checkout iot-miniservers
+      - name: Checkout homelab-apps
         uses: actions/checkout@v7
       - name: Deploy
         uses: ./.github/actions/deploy
@@ -167,7 +167,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Checkout iot-miniservers
+      - name: Checkout homelab-apps
         uses: actions/checkout@v7
       - name: Deploy
         uses: ./.github/actions/deploy
