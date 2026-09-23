@@ -28,7 +28,7 @@ jobs:
         uses: changesets/action@v2
         with:
           pr-title: Release APPs
-          commit-message: Version APIs
+          commit-message: Version APPs
           version-script: pnpm changeset:version
           publish-script: pnpm changeset:tag
           github-token: ${{ secrets.GITHUB_TOKEN }}
