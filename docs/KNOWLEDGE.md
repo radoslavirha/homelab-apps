@@ -1,4 +1,4 @@
-# IoT Miniservers — Knowledge Base
+# Homelab Apps — Knowledge Base
 
 > Maintained by `/update-docs` skill. Last updated: 2026-09-07.
 

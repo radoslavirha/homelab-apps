@@ -1,4 +1,4 @@
-# IoT miniservers
+# Homelab apps
 
 [Contributing guide](.github/CONTRIBUTING.md)
 
