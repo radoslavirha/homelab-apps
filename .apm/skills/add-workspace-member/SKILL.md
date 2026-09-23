@@ -40,22 +40,16 @@ Required files (copy from nearest existing UI as template, e.g. `ui/qr-manager-u
 | `src/types.ts` | Core TypeScript interfaces including `AppConfig` |
 | `src/App.tsx` | Root component |
 | `src/main.tsx` | Awaits `loadRuntimeConfig()` then renders `<App />` |
+| `deploy.json` | Helm values files + `yamlPath` of the image tag, per env — copy from `ui/qr-manager-ui/`. `release.yaml` fails a release of an app without one |
 | `README.md` | See format below |
 
 ### Step 2 — Update root Dockerfile
 
-Add **two stages** before the final `qr-manager-ui` stage (or at the end of the UI section):
-
-```dockerfile
-FROM deps AS build-<name>
-RUN pnpm --filter=<name> run build
-
-FROM nginx:1.29-alpine AS <name>
-COPY --from=build-<name> /usr/src/app/ui/<name>/dist /usr/share/nginx/html
-COPY ui/<name>/nginx.conf.template /etc/nginx/templates/default.conf.template
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
-```
+Copy the four `qr-manager-ui` stages (`build-<name>`, `<name>`, `build-<name>-validator`,
+`<name>-config-validator`) and change the name. Keep what they encode: the
+`nginx-unprivileged` base on port 8080, numeric `USER 101`, the `nginx-runtime` healthz snippet
+and config-validation entrypoint, and no `config.json` baked into `dist/`. The comments in those
+stages carry the reasons.
 
 ### Step 3 — Update `.github/paths-filter-apps.yaml`
 
@@ -108,40 +102,17 @@ Loaded from `/config.json` before React bundle runs. In production: k8s ConfigMa
 
 ## Adding a New API (`apis/<name>/`)
 
-See also: `AGENTS.md` § "Adding a New API" for the full required file list.
-
 ### Step 1 — Scaffold source files
 
-Required files (copy from nearest existing API as template, e.g. `apis/qr-manager-api/`):
-
-| File | Notes |
-|------|-------|
-| `package.json` | `name`, `description`; all `@radoslavirha/*` and `@tsed/*` at same versions as other APIs |
-| `tsconfig.json` | Extends `@radoslavirha/config-typescript/tsconfig.json`; `composite: false` |
-| `eslint.config.mjs` | Usually identical across all APIs |
-| `nodemon.json` | Usually identical across all APIs |
-| `.swcrc` | Usually identical across all APIs |
-| `vitest.config.ts` | Usually identical across all APIs |
-| `config/localhost.json` | Set `server.httpPort` (pick unused port) |
-| `config/test.json` | Set `server.httpPort` |
-| `src/models/config/ConfigModel.ts` | Extends `BaseConfig`; add API-specific config fields |
-| `src/services/ConfigService.ts` | Standard `ConfigProvider<ConfigModel>` |
-| `src/Server.ts` | Mount `SwaggerController` at `/` plus controllers from `controllers/index.ts` |
-| `src/index.ts` | Bootstrap entrypoint |
-| `src/otel/instrument.ts` | OTel SDK preload |
-| `README.md` | See format below |
+The required file list — including health checks, `AuthMethod` and `AuthProvider` — is in
+`AGENTS.md` § "Adding a New API". Copy from the nearest existing API (e.g. `apis/qr-manager-api/`)
+and pick an unused `server.httpPort`. Add a `deploy.json` (copy from `apis/qr-manager-api/`) — `release.yaml`
+fails a release of an app without one. `README.md`: see format below.
 
 ### Step 2 — Update root Dockerfile
 
-Add **two stages** in the API section:
-
-```dockerfile
-FROM deps AS build-<name>
-RUN pnpm --filter=<name> run build
-
-FROM node:24-alpine AS <name>
-# ... follow qr-manager-api pattern for pnpm deploy + node --import otel
-```
+Copy the two `qr-manager-api` stages and change the name. The final stage is
+`FROM runtime-base` — the rules and their reasons are in `AGENTS.md` § "Adding a New API", step 5.
 
 ### Step 3 — Update `.github/paths-filter-apps.yaml`
 
@@ -218,6 +189,7 @@ pnpm test
 | Step | UI | API | Package |
 |------|----|-----|---------|
 | Scaffold source files | ✓ | ✓ | ✓ |
+| Add `deploy.json` | ✓ | ✓ | — |
 | Write `README.md` | ✓ | ✓ (via `update-docs`) | optional |
 | Add Dockerfile stages | ✓ | ✓ | — |
 | Add `.github/paths-filter-apps.yaml` entry (full path key) | ✓ | ✓ | — |

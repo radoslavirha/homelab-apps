@@ -10,7 +10,7 @@
 src/
 ├── controllers/        # Ts.ED HTTP controllers — one file per resource
 │   ├── QrCodeController.ts        # /qr-codes admin CRUD + image
-│   └── RedirectController.ts      # GET /:slug → 302
+│   └── RedirectController.ts      # GET /r/:slug → 302
 ├── handlers/
 │   ├── RedirectHandler.ts
 │   └── qr-codes/                   # one file per QrCodeController action
@@ -47,9 +47,9 @@ All controllers mount at `/`. There is no API version prefix — versioning is a
 
 ## Routing
 
-- `GET /:slug` → 302 to `target_url`. Slug format is enforced inside `RedirectHandler`; non-matching paths return 404 instead of hitting Mongo.
+- `GET /r/:slug` → 302 to `target_url`. `@Pattern(SLUG_PATTERN)` rejects a malformed slug with 400 before the handler runs; an unknown or inactive slug returns 404. The `/r` segment keeps the catch-all off the root (see root AGENTS.md § Health checks); Traefik's `addPrefix` in `homelab` restores the short printed URL.
 - `GET /qr-codes`, `POST /qr-codes`, `GET/PUT/DELETE /qr-codes/:id`, `GET /qr-codes/:id/image` — admin REST surface, fully documented in Swagger.
-- Stable QR URLs come from the public domain (`qr.home`) and the 4-char slug. The path is constant for the lifetime of the printed QR; only DNS / proxy routing changes if the cluster moves.
+- Stable QR URLs come from the public domain (`qr.home`) and the 4-char slug, with no `/r` in the printed path. The path is constant for the lifetime of the printed QR; only DNS / proxy routing changes if the cluster moves.
 
 ## Coding rules
 

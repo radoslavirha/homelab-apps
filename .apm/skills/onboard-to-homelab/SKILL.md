@@ -1,6 +1,6 @@
 ---
 name: onboard-to-homelab
-description: Scaffold full ArgoCD/homelab deployment for a new iot-miniservers app. Use when user says "onboard", "add to homelab", "create homelab deployment", "deploy new app", or starts describing a new app they want running on server2.
+description: Scaffold full ArgoCD/homelab deployment for a new homelab-apps app. Use when user says "onboard", "add to homelab", "create homelab deployment", "deploy new app", or starts describing a new app they want running in the homelab.
 ---
 
 # Onboard App to Homelab
@@ -13,22 +13,22 @@ Opens a PR in `radoslavirha/homelab` with all required files.
 Determine which app to onboard:
 - If user named an app (e.g. "onboard new-sensor-api"), use that.
 - Otherwise, infer from current working directory or ask the user.
-- App directory: `apps/<app-name>/` in this repo.
+- App directory: `apis/<app-name>/` or `ui/<app-name>/` in this repo.
 
 ## Step 2 — Read app context from this repo
 
-Read the following files (all relative to `apps/<app-name>/`):
+Read the following (paths relative to the app directory unless noted):
 
 1. **AGENTS.md** — description, Docker Hub image name, secret group names, Traefik UDP entrypoint names, config structure notes
-2. **Dockerfile** — `EXPOSE` lines (HTTP + UDP ports)
-3. **config.schema.json** (or `config.example.json`) — full config structure for ConfigMap template generation
+2. **Root `Dockerfile`**, the app's stage — `EXPOSE` lines (HTTP + UDP ports)
+3. **`src/models/config/ConfigModel.ts`** and `config/localhost.json` (APIs) or `public/config.example.json` (UIs) — full config structure for ConfigMap template generation
 4. **src/** (scan for `process.env.SECRET_*` or env var references) — discover required secret keys
 
 From these, extract:
 - `APP_NAME`: kebab-case app name (e.g. `new-sensor-api`)
 - `APP_KEY`: key used in helm values `apps.<APP_KEY>` — check AGENTS.md or infer from app directory name
-- `ARGOCD_APP_NAME`: `<APP_NAME>-iot` (e.g. `new-sensor-api-iot`)
-- `APPSET_NAME`: PascalCase filename (e.g. `NewSensorApiIot`)
+- `CLUSTER`: the cluster existing apps run on — read it from the Step 3 ApplicationSet generator (currently `server1`)
+- `APPSET_NAME`: PascalCase of `APP_NAME` (e.g. `NewSensorApi`)
 - `DOCKER_IMAGE`: Docker Hub repo from AGENTS.md (e.g. `radoslavirha/new-sensor`)
 - `HTTP_PORT`: from Dockerfile EXPOSE (default: 4000)
 - `UDP_PORT`: from Dockerfile EXPOSE if present — omit all UDP config if absent
@@ -44,33 +44,28 @@ If anything is ambiguous or missing from the above sources, ask the user before 
 
 Read these files from `radoslavirha/homelab` (branch: `main`) to use as structural templates:
 
-1. `gitops/argocd-manifests/apps/apps/MiotBridgeApiIot.yaml` — ApplicationSet structure
+1. `gitops/argocd-manifests/apps/apps/MiotBridgeApi.yaml` — ApplicationSet structure (cluster list, per-env `VAR_*` parameters)
 2. `gitops/helm-values/apps/miot-bridge-api/base.yaml` — base values structure
 3. `gitops/helm-values/apps/miot-bridge-api/production.yaml` — production config template pattern
 4. `gitops/helm-values/apps/miot-bridge-api/sandbox.yaml` — sandbox config template pattern
-5. `gitops/k8s-manifests/server2/miot-bridge-api/production/ExternalSecret.mqtt.yaml` — ExternalSecret structure
+5. `gitops/k8s-manifests/server1/miot-bridge-api/production/ExternalSecret.mqtt.yaml` — ExternalSecret structure
 6. `docs/architecture.md` — technology stack table (to append a new row)
 
 ## Step 4 — Generate all files
 
-Use Step 3 templates as structural guides. Substitute the new app's values everywhere. Think through each file before generating — raise questions early.
+Use Step 3 templates as structural guides. Substitute the new app's values everywhere.
 
 ### A. ArgoCD ApplicationSet
 **File:** `gitops/argocd-manifests/apps/apps/<APPSET_NAME>.yaml`
 
-Copy MiotBridgeApiIot.yaml. Substitute:
-- `metadata.name` → `<ARGOCD_APP_NAME>`
-- `template.metadata.name` → `<ARGOCD_APP_NAME>-{{cluster}}-{{env}}`
-- `helm.releaseName` → `<ARGOCD_APP_NAME>`
-- All `miot-bridge-api` references in valueFiles → `<ARGOCD_APP_NAME>`
-- k8s-manifests path → `gitops/k8s-manifests/{{cluster}}/<ARGOCD_APP_NAME>/{{env}}`
+Copy MiotBridgeApi.yaml. Substitute every `miot-bridge-api` with `<APP_NAME>` — `metadata.name`, `template.metadata.name`, `helm.releaseName`, the `valueFiles` paths and the k8s-manifests path. Keep the generators, `parameters` and `common/values.yaml` as they are.
 - **If app has no secrets:** remove the third `sources` block (k8s-manifests)
 
 ### B. Helm base values
-**File:** `gitops/helm-values/apps/<ARGOCD_APP_NAME>/base.yaml`
+**File:** `gitops/helm-values/apps/<APP_NAME>/base.yaml`
 
 ```yaml
-# <ARGOCD_APP_NAME> — shared base values
+# <APP_NAME> — shared base values
 
 apps:
   <APP_KEY>:
@@ -124,7 +119,7 @@ apps:
 ```
 
 ### C. Helm production values
-**File:** `gitops/helm-values/apps/<ARGOCD_APP_NAME>/production.yaml`
+**File:** `gitops/helm-values/apps/<APP_NAME>/production.yaml`
 
 Generate `apps.<APP_KEY>.templates.config.content` as inline JSON using the config schema from Step 2.
 
@@ -140,7 +135,7 @@ Template variable conventions (follow miot-bridge pattern exactly):
 - If UDP: `udpIngress.entrypoint: <UDP_ENTRYPOINT_PRODUCTION>` from AGENTS.md
 
 ### D. Helm sandbox values
-**File:** `gitops/helm-values/apps/<ARGOCD_APP_NAME>/sandbox.yaml`
+**File:** `gitops/helm-values/apps/<APP_NAME>/sandbox.yaml`
 
 Same as production with these sandbox differences:
 - publicURL: `{{ VAR_PROTOCOL }}://{{ VAR_SUBDOMAIN }}.{{ COMPONENT }}.{{ VAR_PUBLIC_DOMAIN }}/...`
@@ -151,13 +146,13 @@ Same as production with these sandbox differences:
 
 ### E. ExternalSecrets
 **Files per secret group × 2 envs:**
-- `gitops/k8s-manifests/server2/<ARGOCD_APP_NAME>/production/ExternalSecret.<group>.yaml`
-- `gitops/k8s-manifests/server2/<ARGOCD_APP_NAME>/sandbox/ExternalSecret.<group>.yaml`
+- `gitops/k8s-manifests/<CLUSTER>/<APP_NAME>/production/ExternalSecret.<group>.yaml`
+- `gitops/k8s-manifests/<CLUSTER>/<APP_NAME>/sandbox/ExternalSecret.<group>.yaml`
 
 Copy ExternalSecret.mqtt.yaml structure. Per file substitute:
 - `metadata.name` + `target.name` → `<APP_NAME>-<group>-credentials`
 - `metadata.namespace` → `production` or `sandbox`
-- `data[].remoteRef.key` → `server2/<env>/<bao_path_suffix>`
+- `data[].remoteRef.key` → `<CLUSTER>/<env>/<bao_path_suffix>`
 - `data[].secretKey` / `data[].remoteRef.property` → from the group's key list
 
 **Skip this entire section if no SECRET_GROUPS.**
@@ -166,46 +161,46 @@ Copy ExternalSecret.mqtt.yaml structure. Per file substitute:
 Read the current technology stack table in `docs/architecture.md`. Append a row following the existing format:
 
 ```
-| <APP_DESCRIPTION> | server2 | ArgoCD (AppSet) | [`radoslavirha/<IMAGE_NAME>`](https://hub.docker.com/r/radoslavirha/<IMAGE_NAME>) | [base](gitops/helm-values/apps/<ARGOCD_APP_NAME>/base.yaml) · [prod](gitops/helm-values/apps/<ARGOCD_APP_NAME>/production.yaml) · [sbx](gitops/helm-values/apps/<ARGOCD_APP_NAME>/sandbox.yaml) | — |
+| <APP_DESCRIPTION> | <CLUSTER> | ArgoCD (AppSet) | [`radoslavirha/<IMAGE_NAME>`](https://hub.docker.com/r/radoslavirha/<IMAGE_NAME>) | [base](gitops/helm-values/apps/<APP_NAME>/base.yaml) · [prod](gitops/helm-values/apps/<APP_NAME>/production.yaml) · [sbx](gitops/helm-values/apps/<APP_NAME>/sandbox.yaml) | — |
 ```
 
 ## Step 5 — Create branch + push all files via GitHub MCP
 
-1. Create branch in `radoslavirha/homelab`: `feat/onboard-<ARGOCD_APP_NAME>` (base: `main`)
+1. Create branch in `radoslavirha/homelab`: `feat/onboard-<APP_NAME>` (base: `main`)
 2. Push each file via `create_or_update_file`:
-   - Commit message per file: `feat: scaffold <ARGOCD_APP_NAME> — <filename>`
+   - Commit message per file: `feat: scaffold <APP_NAME> — <filename>`
    - Or batch into fewer commits if the MCP tool supports multi-file commits
 3. Confirm all files are pushed before opening PR
 
 ## Step 6 — Open PR in radoslavirha/homelab
 
-- **Title:** `feat: onboard <ARGOCD_APP_NAME> to server2`
+- **Title:** `feat: onboard <APP_NAME> to <CLUSTER>`
 - **Body:**
 
 ```markdown
-## Onboard <ARGOCD_APP_NAME>
+## Onboard <APP_NAME>
 
-Scaffolded by agent from `radoslavirha/iot-miniservers`.
+Scaffolded by agent from `radoslavirha/homelab-apps`.
 
 ### Files generated
 - `gitops/argocd-manifests/apps/apps/<APPSET_NAME>.yaml`
-- `gitops/helm-values/apps/<ARGOCD_APP_NAME>/base.yaml`
-- `gitops/helm-values/apps/<ARGOCD_APP_NAME>/production.yaml`
-- `gitops/helm-values/apps/<ARGOCD_APP_NAME>/sandbox.yaml`
-- `gitops/k8s-manifests/server2/<ARGOCD_APP_NAME>/production/ExternalSecret.*.yaml`
-- `gitops/k8s-manifests/server2/<ARGOCD_APP_NAME>/sandbox/ExternalSecret.*.yaml`
+- `gitops/helm-values/apps/<APP_NAME>/base.yaml`
+- `gitops/helm-values/apps/<APP_NAME>/production.yaml`
+- `gitops/helm-values/apps/<APP_NAME>/sandbox.yaml`
+- `gitops/k8s-manifests/<CLUSTER>/<APP_NAME>/production/ExternalSecret.*.yaml`
+- `gitops/k8s-manifests/<CLUSTER>/<APP_NAME>/sandbox/ExternalSecret.*.yaml`
 - `docs/architecture.md` (new row)
 
 ### TODO before first ArgoCD sync — seed OpenBao secrets
 
 ```sh
 # production
-bao kv put secret/server2/production/<bao_path_suffix_1> <key1>=<value> <key2>=<value>
-bao kv put secret/server2/production/<bao_path_suffix_2> ...
+bao kv put secret/<CLUSTER>/production/<bao_path_suffix_1> <key1>=<value> <key2>=<value>
+bao kv put secret/<CLUSTER>/production/<bao_path_suffix_2> ...
 
 # sandbox
-bao kv put secret/server2/sandbox/<bao_path_suffix_1> ...
-bao kv put secret/server2/sandbox/<bao_path_suffix_2> ...
+bao kv put secret/<CLUSTER>/sandbox/<bao_path_suffix_1> ...
+bao kv put secret/<CLUSTER>/sandbox/<bao_path_suffix_2> ...
 ```
 
 ### Notes

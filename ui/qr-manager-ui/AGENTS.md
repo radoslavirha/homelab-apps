@@ -9,8 +9,8 @@
 ```text
 src/
 ├── api/
-│   ├── client.ts? — none currently; lives in qrCodes.ts
 │   ├── qrCodes.ts            # createQrCodesClient(apiBaseURL) → typed CRUD client
+│   ├── useQrCodesClient.ts   # hook exposing the client to components
 │   └── types.ts              # QrCode, QR_TYPES, request/response/filter types
 ├── components/
 │   ├── Filters.tsx           # type + active filter selects

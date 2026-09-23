@@ -33,9 +33,9 @@ role groups — whose registered redirect URIs are `http://localhost:5173/callba
 `homelab` → `gitops/helm-values/server3/authentik-blueprints.yaml`. So local development does the real
 flow against the real IdP.
 
-**Sandbox applications no longer carry a loopback URI** (they did until 2026-09-07). If a login from
-`pnpm dev` fails with `Invalid redirect URI`, the app's config is still pointing at the sandbox
-`client_id` — point it at `<app>-local`. And a local token is **not** a sandbox token: its `iss` and
+**Sandbox applications carry no loopback URI.** If a login from `pnpm dev` fails with
+`Invalid redirect URI`, the app's config is pointing at the sandbox `client_id` — point it at
+`<app>-local`. And a local token is **not** a sandbox token: its `iss` and
 `aud` are the local application's, so an API accepts it only through a trusted-issuer row in that
 developer's own `config/localhost.json`, which never ships.
 

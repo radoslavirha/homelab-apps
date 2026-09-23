@@ -81,8 +81,7 @@ they document the current API, including renames the old shapes leave traps behi
 | `using-redaction` | logging anything that may carry secrets |
 | `using-config-eslint` / `-typescript` / `-vitest` / `-tsdown` | adding or changing a package's `eslint.config.mjs`, `tsconfig.json`, `vitest.config.ts`, `tsdown.config.ts` |
 
-Repo-local skills live in `.apm/skills/`: `add-workspace-member`, `instrument-entry-point`,
-`onboard-to-homelab`, `update-docs`.
+Repo-local skills live in `.apm/skills/`.
 
 Managing them:
 
@@ -247,8 +246,8 @@ ui/<ui-name>/
    | Rule | Why it is not cosmetic |
    | --- | --- |
    | Final stage is `FROM runtime-base`, never `FROM base` | `base` carries a global pnpm install. A package manager in a running pod is attacker tooling, and it is 40MB of it. `runtime-base` is distroless — no shell, no package manager, 10 OS packages. |
-| `CMD` carries node's **arguments**, not a command line | The distroless ENTRYPOINT is already the node binary. Repeating the `node` word fails instantly with `Cannot find module '/home/app/node'`. |
-| Debugging is `kubectl exec <pod> -- /nodejs/bin/node -e '…'` | There is no shell and `node` is not on `PATH`. `fs.readdirSync` / `fs.readFileSync` / `fetch` replace `ls` / `cat` / `curl`; `kubectl debug --image=busybox --target=<container>` gives a real shell without changing the image. |
+   | `CMD` carries node's **arguments**, not a command line | The distroless ENTRYPOINT is already the node binary. Repeating the `node` word fails instantly with `Cannot find module '/home/app/node'`. |
+   | Debugging is `kubectl exec <pod> -- /nodejs/bin/node -e '…'` | There is no shell and `node` is not on `PATH`. `fs.readdirSync` / `fs.readFileSync` / `fetch` replace `ls` / `cat` / `curl`; `kubectl debug --image=busybox --target=<container>` gives a real shell without changing the image. |
    | Never add `USER`, `WORKDIR` or `ENV NODE_ENV` to an app stage | `runtime-base` sets all three (`USER 65532`, `/home/app`, production). Re-declaring them is how they drift apart. |
    | `COPY --from=build-<app> --chown=65532:65532` | Without the chown the files land as root. 65532 is distroless's `nonroot` user; the homelab values pin the same UID. |
    | `CMD` keeps `--import /home/app/dist/otel/instrument.js` | Dropping it silently removes every trace and every `trace_id` from logs. Nothing fails; the data just stops. |
@@ -266,7 +265,7 @@ ui/<ui-name>/
    Spot-check a built image by hand when you touch any of the above:
 
    ```sh
-   docker inspect <ref> --format '{{.Config.User}}'                     # 1000
+   docker inspect <ref> --format '{{.Config.User}}'                     # 65532
    docker run --rm --entrypoint sh <ref> -c 'command -v pnpm; ls node_modules/typescript'
    docker run --rm --entrypoint sh <ref> -c 'find dist -name "*.map" -o -name "*.spec.js"'
    ```
@@ -331,7 +330,6 @@ Every API exposes `/health/live`, `/health/ready` and `/health` via `HealthContr
   asserting that `/health` returns 200 does not catch it.
 - **Mount `HealthController` at `/`**, never under a version prefix — the probe path must be
   identical across apps or the Helm chart's probe block stops being copy-paste.
-  `interactive-map-feeder-api` mounts its own controllers at `/v1` and health still at `/`.
 - **Never mount a single-segment catch-all at the root.** `@Controller('/')` with
   `@Get('/:slug')` matches every literal top-level path, `/health` included, and Express
   resolves in registration order — so the `mount` array becomes load-bearing and a reorder
