@@ -3,9 +3,9 @@ import AxiosMockAdapter from 'axios-mock-adapter';
 import { PlatformTest } from '@tsed/platform-http/testing';
 import { HttpProviderService } from '@radoslavirha/tsed-http-provider';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { ExternalApi } from '../../../global/models/ExternalApi.enum.js';
+import { ExternalApi } from '../../models/config/ExternalApi.enum.js';
 // registers the HttpProviderService override bound to this API's config
-import '../../../global/providers/HttpProviderProvider.js';
+import '../../providers/HttpProviderProvider.js';
 import { ChmiPortalEndpoint } from './ChmiPortalEndpoint.js';
 
 const MockAdapter = AxiosMockAdapter as unknown as new (

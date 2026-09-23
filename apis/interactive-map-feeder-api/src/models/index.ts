@@ -6,3 +6,4 @@ export * from './Position.js';
 export * from './DataSourceCitiesResponse.js';
 export * from './RGB.js';
 export * from './RGBA.js';
+export * from './SwaggerDocs.enum.js';

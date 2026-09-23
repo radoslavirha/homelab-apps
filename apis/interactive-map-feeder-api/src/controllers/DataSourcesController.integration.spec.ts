@@ -2,7 +2,7 @@ import { describe, beforeEach, afterEach, expect, it } from 'vitest';
 import { PlatformTest } from '@tsed/platform-http/testing';
 import SuperTest from 'supertest';
 import { mintTestToken } from '@radoslavirha/tsed-auth';
-import { Server } from '../../Server.js';
+import { Server } from '../Server.js';
 
 /**
  * One trust domain, two issuers.
@@ -30,11 +30,11 @@ describe('DataSourcesController (integration)', () => {
         audience: 'test-device-audience'
     });
 
-    const IOT = '/v1/data-sources/radar/cities/iot';
+    const IOT = '/data-sources/radar/cities/iot';
     const PERSON_ROUTES = [
-        '/v1/data-sources/list',
-        '/v1/data-sources/radar/cities',
-        '/v1/data-sources/radar/image'
+        '/data-sources/list',
+        '/data-sources/radar/cities',
+        '/data-sources/radar/image'
     ];
 
     beforeEach(PlatformTest.bootstrap(Server));

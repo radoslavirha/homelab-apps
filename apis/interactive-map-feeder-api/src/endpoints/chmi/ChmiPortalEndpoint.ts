@@ -1,6 +1,6 @@
 import { InjectHttpClient, type HttpClient } from '@radoslavirha/tsed-http-provider';
 import { ProviderScope, Scope, Service } from '@tsed/di';
-import { ExternalApi } from '../../../global/models/ExternalApi.enum.js';
+import { ExternalApi } from '../../models/config/ExternalApi.enum.js';
 
 /**
  * Static basemap layers published by CHMI.

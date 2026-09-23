@@ -1,7 +1,7 @@
 import { InjectHttpClient, type HttpClient } from '@radoslavirha/tsed-http-provider';
 import { NumberUtils } from '@radoslavirha/utils';
 import { ProviderScope, Scope, Service } from '@tsed/di';
-import { ExternalApi } from '../../../global/models/ExternalApi.enum.js';
+import { ExternalApi } from '../../models/config/ExternalApi.enum.js';
 
 /**
  * Precipitation radar composite published on CHMI open data.

@@ -1,6 +1,6 @@
 import { HttpProviderService } from '@radoslavirha/tsed-http-provider';
 import { Injectable, ProviderScope } from '@tsed/di';
-import { ExternalApi } from '../models/ExternalApi.enum.js';
+import { ExternalApi } from '../models/config/ExternalApi.enum.js';
 import { ConfigService } from '../services/ConfigService.js';
 
 /**

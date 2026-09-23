@@ -2,10 +2,11 @@ import { Platform, ServerConfiguration } from '@radoslavirha/tsed-platform';
 import { createShutdownHandler } from '@radoslavirha/tsed-health';
 import { openTelemetry } from '@radoslavirha/otel';
 import { SwaggerConfig, SwaggerDocumentConfig, SwaggerProvider, SwaggerSecurityScheme } from '@radoslavirha/tsed-swagger';
-import { CommonUtils } from '@radoslavirha/utils';
+import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
 import { Server } from './Server.js';
 import { injector } from '@tsed/di';
-import { ConfigService } from './global/services/ConfigService.js';
+import { ConfigService } from './services/ConfigService.js';
+import { SwaggerDocs } from './models/SwaggerDocs.enum.js';
 import { Logger } from '@radoslavirha/tsed-logger';
 import { describeAuthConfig } from '@radoslavirha/tsed-auth';
 
@@ -28,12 +29,12 @@ try {
         title: config.api.service,
         version: config.api.version,
         description: config.api.description!,
-        documents: [
+        documents: ObjectUtils.values(SwaggerDocs).map((doc) =>
             CommonUtils.buildModelStrict(SwaggerDocumentConfig, {
-                docs: 'v1',
+                docs: doc,
                 security: [SwaggerSecurityScheme.BEARER_JWT]
             })
-        ],
+        ),
         swaggerUIOptions: {
             validatorUrl: null
         },

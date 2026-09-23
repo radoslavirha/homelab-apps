@@ -6,7 +6,7 @@ import {
 } from '@radoslavirha/tsed-health';
 import { HttpProviderService } from '@radoslavirha/tsed-http-provider';
 import { Inject, Injectable, ProviderScope, Scope } from '@tsed/di';
-import { ExternalApi } from '../models/ExternalApi.enum.js';
+import { ExternalApi } from '../models/config/ExternalApi.enum.js';
 import { HealthStatus } from '@radoslavirha/tsed-health';
 
 /**

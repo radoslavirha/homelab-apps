@@ -4,8 +4,8 @@ import { PlatformTest } from '@tsed/platform-http/testing';
 import SuperTest from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UpstreamHealthCheck } from './UpstreamHealthCheck.js';
-import { ExternalApi } from '../models/ExternalApi.enum.js';
-import { Server } from '../../Server.js';
+import { ExternalApi } from '../models/config/ExternalApi.enum.js';
+import { Server } from '../Server.js';
 
 describe('Health endpoints (integration)', () => {
     let request: SuperTest.Agent;
@@ -44,20 +44,6 @@ describe('Health endpoints (integration)', () => {
             const checks = PlatformTest.get<HealthCheckService>(HealthCheckService).checks();
 
             expect(checks.every((check) => !check.critical)).toBe(true);
-        });
-    });
-
-    describe('Mounting', () => {
-        // Controllers here live under /v1; health must not follow, or the chart's probe
-        // block stops being identical across apps.
-        it('Should serve health at the root, not under /v1', async () => {
-            expect.assertions(2);
-
-            const root = await request.get('/health/live').expect(200);
-            const versioned = await request.get('/v1/health/live').expect(404);
-
-            expect(root.body).toEqual({ status: 'pass' });
-            expect(versioned.body.name).toBe('NOT_FOUND');
         });
     });
 
