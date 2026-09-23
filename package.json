@@ -1,9 +1,9 @@
 {
-  "name": "iot-miniservers",
+  "name": "homelab-apps",
   "version": "0.0.1",
   "private": true,
   "description": "IoT miniservers",
-  "repository": "git@github.com:radoslavirha/iot-miniservers.git",
+  "repository": "git@github.com:radoslavirha/homelab-apps.git",
   "license": "MIT",
   "author": "Radoslav Irha <radoslav.irha@gmail.com>",
   "type": "module",

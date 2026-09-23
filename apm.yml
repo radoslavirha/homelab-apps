@@ -1,6 +1,6 @@
-name: iot-miniservers
+name: homelab-apps
 version: 1.0.0
-description: APM project for iot-miniservers
+description: APM project for homelab-apps
 author: Radoslav Irha
 targets:
   - claude
