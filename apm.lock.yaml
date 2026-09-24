@@ -560,7 +560,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:3ce36029782a625a66a4c02ac3f6577cbb85bac2d104d20060e3c2ae95beebf8
+  content_hash: sha256:a63e5f55956b4be8111c7afe109b5f453a96ad662add3ccaaf9b2c31cdbe5a8e
 - kind: project-relative
   target: agents
   value: .agents/skills/update-docs
@@ -857,7 +857,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:3ce36029782a625a66a4c02ac3f6577cbb85bac2d104d20060e3c2ae95beebf8
+  content_hash: sha256:a63e5f55956b4be8111c7afe109b5f453a96ad662add3ccaaf9b2c31cdbe5a8e
 - kind: project-relative
   target: claude
   value: .claude/skills/receiving-code-review
@@ -2470,14 +2470,14 @@ local_deployed_files:
 local_deployed_file_hashes:
   .agents/skills/add-workspace-member/SKILL.md: sha256:0d8be337dc14c9daad150789ffa8854dafd72e64d927697b998f69c7017bc972
   .agents/skills/instrument-entry-point/SKILL.md: sha256:dde43317847d390b4f6d3515d52e8d6ab6d99adce9533f3507f4e99597a80f79
-  .agents/skills/onboard-to-homelab/SKILL.md: sha256:3ce36029782a625a66a4c02ac3f6577cbb85bac2d104d20060e3c2ae95beebf8
+  .agents/skills/onboard-to-homelab/SKILL.md: sha256:a63e5f55956b4be8111c7afe109b5f453a96ad662add3ccaaf9b2c31cdbe5a8e
   .agents/skills/update-docs/SKILL.md: sha256:7a1d94bcdfecfdb6dbabde23c41994664a6a343ddc04ed755b847ec60cdcd43e
   .agents/skills/verify-auth-in-browser/SKILL.md: sha256:d4f05055a8381ab1b04bad9d2fd19836269fc907a2d7fb97d07562b4b0b54f75
   .claude/rules/react-testing.md: sha256:45a4ab8588aa844636eef05b55e54948497e4394f2cfbc4cacb5ed1544153b68
   .claude/rules/tsed-testing.md: sha256:36917ee79d421096a6ac3b99428ae9429e26e08771e80ee8d538ddbb7c48a889
   .claude/skills/add-workspace-member/SKILL.md: sha256:0d8be337dc14c9daad150789ffa8854dafd72e64d927697b998f69c7017bc972
   .claude/skills/instrument-entry-point/SKILL.md: sha256:dde43317847d390b4f6d3515d52e8d6ab6d99adce9533f3507f4e99597a80f79
-  .claude/skills/onboard-to-homelab/SKILL.md: sha256:3ce36029782a625a66a4c02ac3f6577cbb85bac2d104d20060e3c2ae95beebf8
+  .claude/skills/onboard-to-homelab/SKILL.md: sha256:a63e5f55956b4be8111c7afe109b5f453a96ad662add3ccaaf9b2c31cdbe5a8e
   .claude/skills/update-docs/SKILL.md: sha256:7a1d94bcdfecfdb6dbabde23c41994664a6a343ddc04ed755b847ec60cdcd43e
   .claude/skills/verify-auth-in-browser/SKILL.md: sha256:d4f05055a8381ab1b04bad9d2fd19836269fc907a2d7fb97d07562b4b0b54f75
   .github/instructions/react-testing.instructions.md: sha256:43b715b7aba6c6313f67d6307e53e3ae9f0318f5cb32aae190a7fcbc677cc50a

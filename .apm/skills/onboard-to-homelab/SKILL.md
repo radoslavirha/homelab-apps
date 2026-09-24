@@ -45,9 +45,9 @@ If anything is ambiguous or missing from the above sources, ask the user before 
 Read these files from `radoslavirha/homelab` (branch: `main`) to use as structural templates:
 
 1. `gitops/argocd-manifests/apps/apps/MiotBridgeApi.yaml` — ApplicationSet structure (cluster list, per-env `VAR_*` parameters)
-2. `gitops/helm-values/apps/miot-bridge-api/base.yaml` — base values structure
-3. `gitops/helm-values/apps/miot-bridge-api/production.yaml` — production config template pattern
-4. `gitops/helm-values/apps/miot-bridge-api/sandbox.yaml` — sandbox config template pattern
+2. `gitops/helm-values/server1/apps/miot-bridge-api/base.yaml` — base values structure
+3. `gitops/helm-values/server1/apps/miot-bridge-api/production.yaml` — production config template pattern
+4. `gitops/helm-values/server1/apps/miot-bridge-api/sandbox.yaml` — sandbox config template pattern
 5. `gitops/k8s-manifests/server1/miot-bridge-api/production/ExternalSecret.mqtt.yaml` — ExternalSecret structure
 6. `docs/architecture.md` — technology stack table (to append a new row)
 
@@ -58,11 +58,11 @@ Use Step 3 templates as structural guides. Substitute the new app's values every
 ### A. ArgoCD ApplicationSet
 **File:** `gitops/argocd-manifests/apps/apps/<APPSET_NAME>.yaml`
 
-Copy MiotBridgeApi.yaml. Substitute every `miot-bridge-api` with `<APP_NAME>` — `metadata.name`, `template.metadata.name`, `helm.releaseName`, the `valueFiles` paths and the k8s-manifests path. Keep the generators, `parameters` and `common/values.yaml` as they are.
+Copy MiotBridgeApi.yaml. Substitute every `miot-bridge-api` with `<APP_NAME>` — `metadata.name`, `template.metadata.name`, `helm.releaseName`, the `valueFiles` paths and the k8s-manifests path. Keep the generators, `parameters` and `server1/apps/values.yaml` as they are.
 - **If app has no secrets:** remove the third `sources` block (k8s-manifests)
 
 ### B. Helm base values
-**File:** `gitops/helm-values/apps/<APP_NAME>/base.yaml`
+**File:** `gitops/helm-values/server1/apps/<APP_NAME>/base.yaml`
 
 ```yaml
 # <APP_NAME> — shared base values
@@ -119,7 +119,7 @@ apps:
 ```
 
 ### C. Helm production values
-**File:** `gitops/helm-values/apps/<APP_NAME>/production.yaml`
+**File:** `gitops/helm-values/server1/apps/<APP_NAME>/production.yaml`
 
 Generate `apps.<APP_KEY>.templates.config.content` as inline JSON using the config schema from Step 2.
 
@@ -135,7 +135,7 @@ Template variable conventions (follow miot-bridge pattern exactly):
 - If UDP: `udpIngress.entrypoint: <UDP_ENTRYPOINT_PRODUCTION>` from AGENTS.md
 
 ### D. Helm sandbox values
-**File:** `gitops/helm-values/apps/<APP_NAME>/sandbox.yaml`
+**File:** `gitops/helm-values/server1/apps/<APP_NAME>/sandbox.yaml`
 
 Same as production with these sandbox differences:
 - publicURL: `{{ VAR_PROTOCOL }}://{{ VAR_SUBDOMAIN }}.{{ COMPONENT }}.{{ VAR_PUBLIC_DOMAIN }}/...`
@@ -161,7 +161,7 @@ Copy ExternalSecret.mqtt.yaml structure. Per file substitute:
 Read the current technology stack table in `docs/architecture.md`. Append a row following the existing format:
 
 ```
-| <APP_DESCRIPTION> | <CLUSTER> | ArgoCD (AppSet) | [`radoslavirha/<IMAGE_NAME>`](https://hub.docker.com/r/radoslavirha/<IMAGE_NAME>) | [base](gitops/helm-values/apps/<APP_NAME>/base.yaml) · [prod](gitops/helm-values/apps/<APP_NAME>/production.yaml) · [sbx](gitops/helm-values/apps/<APP_NAME>/sandbox.yaml) | — |
+| <APP_DESCRIPTION> | <CLUSTER> | ArgoCD (AppSet) | [`radoslavirha/<IMAGE_NAME>`](https://hub.docker.com/r/radoslavirha/<IMAGE_NAME>) | [base](gitops/helm-values/server1/apps/<APP_NAME>/base.yaml) · [prod](gitops/helm-values/server1/apps/<APP_NAME>/production.yaml) · [sbx](gitops/helm-values/server1/apps/<APP_NAME>/sandbox.yaml) | — |
 ```
 
 ## Step 5 — Create branch + push all files via GitHub MCP
@@ -184,9 +184,9 @@ Scaffolded by agent from `radoslavirha/homelab-apps`.
 
 ### Files generated
 - `gitops/argocd-manifests/apps/apps/<APPSET_NAME>.yaml`
-- `gitops/helm-values/apps/<APP_NAME>/base.yaml`
-- `gitops/helm-values/apps/<APP_NAME>/production.yaml`
-- `gitops/helm-values/apps/<APP_NAME>/sandbox.yaml`
+- `gitops/helm-values/server1/apps/<APP_NAME>/base.yaml`
+- `gitops/helm-values/server1/apps/<APP_NAME>/production.yaml`
+- `gitops/helm-values/server1/apps/<APP_NAME>/sandbox.yaml`
 - `gitops/k8s-manifests/<CLUSTER>/<APP_NAME>/production/ExternalSecret.*.yaml`
 - `gitops/k8s-manifests/<CLUSTER>/<APP_NAME>/sandbox/ExternalSecret.*.yaml`
 - `docs/architecture.md` (new row)

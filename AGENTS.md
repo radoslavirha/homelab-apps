@@ -259,7 +259,7 @@ ui/<ui-name>/
    **None of this is enforced by CI, deliberately** — one Dockerfile, few hands, and a gate
    that can fail for its own reasons on every PR is not worth it. Do not add one without
    asking. The backstop is the cluster: pods run with `runAsNonRoot` and a read-only root
-   filesystem (`homelab:gitops/helm-values/apps/<app>/base.yaml`), so an image that regains
+   filesystem (`homelab:gitops/helm-values/server1/apps/<app>/base.yaml`), so an image that regains
    root fails admission instead of running.
 
    Spot-check a built image by hand when you touch any of the above:
