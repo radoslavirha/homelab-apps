@@ -52,7 +52,7 @@ though the app answers fine on the pod's IPv4 address — see
 ## What this package does *not* do
 
 **It does not validate the config against a schema.** That runs in a separate
-initContainer the `iot-applications` chart generates from
+initContainer the homelab `app` chart generates from
 `templates.<name>.validate`, using the app's own Zod schema compiled into an
 `<app>-config-validator` image.
 

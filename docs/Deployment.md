@@ -85,29 +85,29 @@ Brief description of what this app does.
 ### Homelab deployment metadata
 
 - **Docker Hub image:** `radoslavirha/<image-name>`
-- **Helm values key:** `apps.<appKey>` (the key under `apps:` in helm values, e.g. `miot-bridge-api`)
+- **Helm release name:** `<app-name>` — the homelab `app` chart deploys one app per release; values are top-level, no `apps:` wrapper
 - **ArgoCD app name:** `<app-name>-iot`
 - **HTTP port:** 4000 (or whatever the app listens on)
-- **UDP port:** 4000 (omit line if no UDP)
-- **Traefik UDP entrypoints:** `production=udp-<app>-prod`, `sandbox=udp-<app>-sbx` (omit if no UDP)
 
 ### Secret groups
 
-Each group becomes one ExternalSecret in each namespace (production + sandbox).
+Each key becomes an entry in `templates.config.secrets` of the app's `values-<env>.yaml`
+in homelab; the config template reads it as `{{ .secrets.<name> }}`, and ESO fetches it from
+OpenBao at `<cluster>/<env>/<path suffix>`.
 
 ```
 group: mqtt
   OpenBao path suffix: <app-name>-emqx
   keys:
-    SECRET_MQTT_<APP>_USERNAME  ← mqtt-username
-    SECRET_MQTT_<APP>_PASSWORD  ← mqtt-password
+    mqttUsername  ← mqtt-username
+    mqttPassword  ← mqtt-password
 
 group: mongodb
   OpenBao path suffix: <app-name>-mongodb
   keys:
-    SECRET_MONGODB_DATABASE     ← mongodb-database
-    SECRET_MONGODB_USERNAME     ← mongodb-username
-    SECRET_MONGODB_PASSWORD     ← mongodb-password
+    mongodbDatabase  ← mongodb-database
+    mongodbUsername  ← mongodb-username
+    mongodbPassword  ← mongodb-password
 ```
 
 Omit this section entirely if the app has no secrets.
@@ -116,7 +116,7 @@ Omit this section entirely if the app has no secrets.
 
 Describe any non-obvious config.json fields that the agent should know about when generating
 the ConfigMap template. E.g.:
-- Which fields use VAR_* cluster variables vs hardcoded values
+- Which fields use template variables (`.vars.*`, `.app.*`) vs hardcoded values
 - Any fields that differ meaningfully between production and sandbox beyond the standard patterns
 - Fields that should be omitted or left as empty strings in the template
 

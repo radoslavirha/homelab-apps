@@ -2,7 +2,7 @@
  * Entry point for the qr-manager-ui-config-validator image.
  *
  * Bundled by esbuild (`pnpm run build:validator`) into a standalone script with
- * zod inlined, then run as an initContainer by the iot-applications chart:
+ * zod inlined, then run as an initContainer by the homelab `app` chart:
  *
  *     node /app/validate-config.js /config/config.json
  *

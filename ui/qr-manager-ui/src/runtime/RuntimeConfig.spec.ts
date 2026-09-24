@@ -39,7 +39,7 @@ describe('RuntimeConfigSchema', () => {
 
     it.each([
         ['absent', {}],
-        ['empty — the empty-Jinja2-substitution case', { apiBaseURL: '', auth }],
+        ['empty — the empty-substitution case', { apiBaseURL: '', auth }],
         ['not a URL', { apiBaseURL: 'nope', auth }],
         ['scheme-less, which plain z.url() would accept', { apiBaseURL: 'localhost:4002', auth }],
         ['a non-http scheme', { apiBaseURL: 'ftp://api.server.home', auth }]

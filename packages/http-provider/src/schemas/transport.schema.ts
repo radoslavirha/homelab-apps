@@ -28,11 +28,12 @@ const StaticEntrySchema = z.strictObject({
  * `value: 'Bearer {{credential}}'`, interpolated here. It expressed one thing
  * more — two credentials inside a single value — that nothing has ever used, and
  * it cost a placeholder syntax that any config renderer downstream may claim as
- * its own. This deployment renders these files with Jinja2, whose `{{ }}` is
- * exactly that syntax and whose default for an unknown name is the empty string:
- * `Bearer {{value}}` would have rendered as `Bearer `, a silent 401 rather than a
- * loud failure. Naming the credential in its own field means there is no
- * placeholder for any renderer, present or future, to consume.
+ * its own. This deployment renders these files with ESO (Go templates), whose
+ * `{{ }}` is exactly that syntax: the renderer consumes the placeholder before
+ * this code ever sees it. The Jinja2 renderer before it was worse — an unknown
+ * name became the empty string, so `Bearer {{value}}` rendered as `Bearer `, a
+ * silent 401 rather than a loud failure. Naming the credential in its own field
+ * means there is no placeholder for any renderer, present or future, to consume.
  *
  * If a value ever genuinely needs two credentials, a template field can be added
  * beside this one — additive, and by then its real shape will be known.

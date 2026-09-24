@@ -41,8 +41,8 @@ Loaded from `/config.json` before React bundle runs. In production: k8s ConfigMa
 Nothing here is secret; a public client has none. **The `auth` block is required** — the validating
 initContainer refuses to start the pod without it, so a UI can never quietly ship with login disabled.
 
-In `homelab` these values are **templated per deployment** from `VAR_CLUSTER` and `NAMESPACE`, because
-one values file serves both clusters. Literals there would point server2 at server1's application.
+In `homelab` these values are **templated per deployment** from `.vars.cluster`, `.app.namespace` and `.app.host`,
+so they cannot drift from the route the app is served on. Literals there would point another cluster at server1's application.
 
 ## Local development
 
