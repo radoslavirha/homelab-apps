@@ -307,7 +307,7 @@ runAsGroup: 1000
 fsGroup: 1000
 ```
 
-at `gitops/helm-values/apps/<app>/base.yaml` for `qr-manager-api`, `miot-bridge-api` and
+at `gitops/helm-values/server1/apps/<app>/base.yaml` for `qr-manager-api`, `miot-bridge-api` and
 `interactive-map-feeder-api`.
 
 **Those three files must change to 65532 in the same rollout as this Dockerfile.** Not before,
@@ -469,7 +469,7 @@ Ship it, as one coordinated change across both repos:
 
 1. This `Dockerfile` + `docs/README.md` change in `iot-miniservers`.
 2. `runAsUser` / `runAsGroup` / `fsGroup` → `65532` in the three
-   `gitops/helm-values/apps/<app>/base.yaml` files in `homelab`.
+   `gitops/helm-values/server1/apps/<app>/base.yaml` files in `homelab`.
 3. First sync to `sandbox` only, and confirm on the first pod: it reaches Ready, `/health`
    returns `pass`, and a trace with a `trace_id` shows up in Tempo. The trace check is the one
    that cannot be inferred from the pod being green.

@@ -318,7 +318,7 @@ Two repo rules apply to adding them:
   lacks `auth`, which is the failure everyone wants: loud, at deploy time, in one place.
   **The consequence is a coupled release** — the `homelab` values change lands with (or before) the
   UI image that requires it. `homelab` adds the keys to
-  `gitops/helm-values/apps/qr-manager-ui/{sandbox,production}.yaml` under
+  `gitops/helm-values/server1/apps/qr-manager-ui/{sandbox,production}.yaml` under
   `templates.config.content`, in the same `{{ VAR_* }}` style already there. Sandbox first; a
   mismatch there is a CrashLoopBackOff on the initContainer, not a broken login.
 
