@@ -74,7 +74,7 @@ try {
         onShutdown: (phase) => logger.info(`Server ${phase}.`, { event: 'SERVER_SHUTDOWN' }),
         // Budget: preStop 10s + drain 5s + this 10s, inside the chart's
         // terminationGracePeriodSeconds of 30 — see
-        // homelab:gitops/helm-values/server1/apps/<app>/base.yaml.
+        // homelab:gitops/helm-values/server1/apps/<app>/values.yaml.
         hardDeadlineMs: 10_000,
         // Logged rather than silent. A pod that exits here has a connection that never
         // closed or a dependency that never released, and this line is the only evidence

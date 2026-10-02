@@ -19,24 +19,21 @@ Determine which app to onboard:
 
 Read the following (paths relative to the app directory unless noted):
 
-1. **AGENTS.md** — description, Docker Hub image name, secret group names, Traefik UDP entrypoint names, config structure notes
-2. **Root `Dockerfile`**, the app's stage — `EXPOSE` lines (HTTP + UDP ports)
-3. **`src/models/config/ConfigModel.ts`** and `config/localhost.json` (APIs) or `public/config.example.json` (UIs) — full config structure for ConfigMap template generation
-4. **src/** (scan for `process.env.SECRET_*` or env var references) — discover required secret keys
+1. **AGENTS.md** — description, image name, secret group names, config structure notes
+2. **Root `Dockerfile`**, the app's stage — `EXPOSE` line (HTTP port)
+3. **`src/models/config/ConfigModel.ts`** and `config/localhost.json` (APIs) or `public/config.example.json` (UIs) — full config structure for the config template
+4. **The config schema** — which fields are credentials (passwords, usernames, tokens); those become `templates.config.secrets`
 
 From these, extract:
 - `APP_NAME`: kebab-case app name (e.g. `new-sensor-api`)
-- `APP_KEY`: key used in helm values `apps.<APP_KEY>` — check AGENTS.md or infer from app directory name
 - `CLUSTER`: the cluster existing apps run on — read it from the Step 3 ApplicationSet generator (currently `server1`)
 - `APPSET_NAME`: PascalCase of `APP_NAME` (e.g. `NewSensorApi`)
-- `DOCKER_IMAGE`: Docker Hub repo from AGENTS.md (e.g. `radoslavirha/new-sensor`)
+- `IMAGE`: image repository from AGENTS.md (e.g. `ghcr.io/radoslavirha/new-sensor-api`)
 - `HTTP_PORT`: from Dockerfile EXPOSE (default: 4000)
-- `UDP_PORT`: from Dockerfile EXPOSE if present — omit all UDP config if absent
 - `SECRET_GROUPS`: list of credential groups, each with:
   - `name`: group identifier (e.g. `mqtt`, `mongodb`)
-  - `secret_name`: K8s secret name `<APP_NAME>-<group>-credentials`
   - `bao_path_suffix`: OpenBao path suffix from AGENTS.md (e.g. `new-sensor-api-emqx`)
-  - `keys`: list of `{ secretKey, property }` pairs discovered from code + AGENTS.md
+  - `keys`: list of `{ name, property }` pairs — `name` is the camelCase key the template reads as `.secrets.<name>`
 
 If anything is ambiguous or missing from the above sources, ask the user before proceeding.
 
@@ -44,124 +41,109 @@ If anything is ambiguous or missing from the above sources, ask the user before 
 
 Read these files from `radoslavirha/homelab` (branch: `main`) to use as structural templates:
 
-1. `gitops/argocd-manifests/apps/apps/MiotBridgeApi.yaml` — ApplicationSet structure (cluster list, per-env `VAR_*` parameters)
-2. `gitops/helm-values/server1/apps/miot-bridge-api/base.yaml` — base values structure
-3. `gitops/helm-values/server1/apps/miot-bridge-api/production.yaml` — production config template pattern
-4. `gitops/helm-values/server1/apps/miot-bridge-api/sandbox.yaml` — sandbox config template pattern
-5. `gitops/k8s-manifests/server1/miot-bridge-api/production/ExternalSecret.mqtt.yaml` — ExternalSecret structure
-6. `docs/architecture.md` — technology stack table (to append a new row)
+1. `gitops/argocd-manifests/apps/apps/MiotBridgeApi.yaml` — ApplicationSet structure (cluster × env matrix, `valueFiles`)
+2. `gitops/helm-values/server1/apps/miot-bridge-api/values.yaml` — shared values
+3. `gitops/helm-values/server1/apps/miot-bridge-api/values-production.yaml` — production config template + `secrets`
+4. `gitops/helm-values/server1/apps/miot-bridge-api/values-sandbox.yaml` — sandbox config template + `secrets`
+5. `gitops/helm-values/server1/apps/vars/` — the `vars:` every template can read
+6. `gitops/helm-charts/app/Readme.md` — the chart: one app per release, template variables, `validate`
+7. `docs/architecture.md` — technology stack table (to append a new row)
 
 ## Step 4 — Generate all files
 
 Use Step 3 templates as structural guides. Substitute the new app's values everywhere.
 
+The `app` chart deploys ONE app per release: the release name (`helm.releaseName`) is the app name, and every value is top-level — there is no `apps:` wrapper.
+
 ### A. ArgoCD ApplicationSet
 **File:** `gitops/argocd-manifests/apps/apps/<APPSET_NAME>.yaml`
 
-Copy MiotBridgeApi.yaml. Substitute every `miot-bridge-api` with `<APP_NAME>` — `metadata.name`, `template.metadata.name`, `helm.releaseName`, the `valueFiles` paths and the k8s-manifests path. Keep the generators, `parameters` and `server1/apps/values.yaml` as they are.
-- **If app has no secrets:** remove the third `sources` block (k8s-manifests)
+Copy MiotBridgeApi.yaml. Substitute every `miot-bridge-api` with `<APP_NAME>` — `metadata.name`, `template.metadata.name`, `helm.releaseName` and the `valueFiles` paths. Keep the generators and the two `vars/` value files as they are. Keep the third `sources` block (k8s-manifests) only if the app ships raw manifests of its own; config secrets do NOT need it.
 
-### B. Helm base values
-**File:** `gitops/helm-values/server1/apps/<APP_NAME>/base.yaml`
+### B. Helm shared values
+**File:** `gitops/helm-values/server1/apps/<APP_NAME>/values.yaml`
 
 ```yaml
-# <APP_NAME> — shared base values
+# <APP_NAME> — shared values
 
-apps:
-  <APP_KEY>:
-    image:
-      repository: <DOCKER_IMAGE>
-      tag: "0.1.0"          # GitHub Actions bumps this on every release
-      pullPolicy: Always
-    replicas: 1
-    resources:
-      requests:
-        cpu: 250m
-        memory: 250Mi
-      limits:
-        cpu: 500m
-        memory: 500Mi
-    labels:
-      component: api
-      partOf: iot
-    services:
-      http:
-        enabled: true
-        protocol: TCP
-        port: 80
-        targetPort: <HTTP_PORT>
-      # include udp block only if UDP_PORT found:
-      udp:
-        enabled: true
-        protocol: UDP
-        port: <UDP_PORT>
-        targetPort: <UDP_PORT>
-    ingress:
-      enabled: true
-      serviceRef: http
-      pathName: <APP_NAME>
-    # include udpIngress only if UDP:
-    udpIngress:
-      enabled: true
-      serviceRef: udp
-      # entrypoint defined per-env
-    # include secretRefs only if SECRET_GROUPS non-empty:
-    secretRefs:
-      - name: <APP_NAME>-<group>-credentials
-        keys:
-          - SECRET_<GROUP>_<APP>_<FIELD>
-          # ... one entry per key in the group
-    templates:
-      config:
-        file: production.json
-        path: /home/app/config
-        # content defined per-env
+annotations:
+  reloader.stakater.com/auto: "true"   # restart when the rendered config changes
+image:
+  repository: <IMAGE>
+  tag: "0.1.0"          # the homelab-apps deploy action bumps this in values-<env>.yaml
+  pullPolicy: Always
+replicas: 1
+resources:
+  requests:
+    cpu: 250m
+    memory: 250Mi
+  limits:
+    cpu: 500m
+    memory: 500Mi
+labels:
+  component: api
+  partOf: iot
+services:
+  http:
+    enabled: true
+    protocol: TCP
+    port: 80
+    targetPort: <HTTP_PORT>
+ingress:
+  enabled: true
+  serviceRef: http
+  pathName: iot/<APP_NAME>
+templates:
+  config:
+    file: production.json
+    path: /home/app/config
+    # content and secrets defined per-env
 ```
 
+Copy probes, `lifecycle`, `strategy` and the security contexts from miot-bridge-api's `values.yaml`.
+
 ### C. Helm production values
-**File:** `gitops/helm-values/server1/apps/<APP_NAME>/production.yaml`
+**File:** `gitops/helm-values/server1/apps/<APP_NAME>/values-production.yaml`
 
-Generate `apps.<APP_KEY>.templates.config.content` as inline JSON using the config schema from Step 2.
+`image.tag`, then `templates.config.content` as inline JSON using the config schema from Step 2, and `templates.config.secrets` when the app has credentials.
 
-Template variable conventions (follow miot-bridge pattern exactly):
-- Port values: `{{ CONTAINER_PORT }}`, `{{ CONTAINER_UDP_PORT }}`
-- App identity: `{{ APPLICATION }}`, `{{ COMPONENT }}`, `{{ PATH_NAME }}`, `{{ APPLICATION_GROUP }}`, `{{ NAMESPACE }}`
-- Cluster vars: `{{ VAR_PROTOCOL }}`, `{{ VAR_PUBLIC_DOMAIN }}`, `{{ VAR_MQTT_URL }}`, `{{ VAR_MONGODB_URL }}`
-- Secrets: `{{ SECRET_<GROUP>_<APP>_<FIELD> }}` — must match keys in `secretRefs`
-- Production publicURL: `{{ VAR_PROTOCOL }}://{{ COMPONENT }}.{{ VAR_PUBLIC_DOMAIN }}/{{ APPLICATION_GROUP }}/{{ PATH_NAME }}`
-- MQTT clientId: `<APP_NAME>-production`
-- MQTT topicPrefix: `{{ APPLICATION_GROUP }}/`
+Template syntax is Go templates (the same as Helm), rendered by ESO. The prefix says where a value comes from:
+- `{{ .vars.* }}` — `gitops/helm-values/server1/apps/vars/`: `protocol`, `domain`, `cluster`, `mqtt.url`, `mongodb.url`
+- `{{ .app.* }}` — chart built-ins: `name`, `group`, `component`, `namespace`, `containerPort`, `pathName`, `host` (the HTTPRoute hostname)
+- `{{ .secrets.* }}` — the keys of `templates.config.secrets`; pipe passwords through `toJson` (`"pass": {{ .secrets.mongodbPassword | toJson }}`)
+
+Conventions (follow miot-bridge-api exactly):
+- `httpPort`: `{{ .app.containerPort }}`
+- publicURL: `{{ .vars.protocol }}://{{ .app.host }}/{{ .app.pathName }}` — identical in both stages, `vars.domain` carries the stage
+- MQTT clientId: `<APP_NAME>-production`; topicPrefix: `{{ .app.group }}/`
 - OTel debug: omit (false by default)
-- If UDP: `udpIngress.entrypoint: <UDP_ENTRYPOINT_PRODUCTION>` from AGENTS.md
+
+Secrets, one entry per credential:
+```yaml
+templates:
+  config:
+    secrets:
+      mongodbPassword:
+        key: <CLUSTER>/production/<bao_path_suffix>
+        property: mongodb-password
+```
 
 ### D. Helm sandbox values
-**File:** `gitops/helm-values/server1/apps/<APP_NAME>/sandbox.yaml`
+**File:** `gitops/helm-values/server1/apps/<APP_NAME>/values-sandbox.yaml`
 
 Same as production with these sandbox differences:
-- publicURL: `{{ VAR_PROTOCOL }}://{{ VAR_SUBDOMAIN }}.{{ COMPONENT }}.{{ VAR_PUBLIC_DOMAIN }}/...`
-- MQTT clientId: `<APP_NAME>-sandbox`
-- MQTT topicPrefix: `{{ APPLICATION_GROUP }}/{{ NAMESPACE }}/`
+- `secrets[].key`: `<CLUSTER>/sandbox/<bao_path_suffix>`
+- MQTT clientId: `<APP_NAME>-sandbox`; topicPrefix: `{{ .app.group }}/{{ .app.namespace }}/`
 - OTel `debug: true`
-- If UDP: `udpIngress.entrypoint: <UDP_ENTRYPOINT_SANDBOX>` from AGENTS.md
 
-### E. ExternalSecrets
-**Files per secret group × 2 envs:**
-- `gitops/k8s-manifests/<CLUSTER>/<APP_NAME>/production/ExternalSecret.<group>.yaml`
-- `gitops/k8s-manifests/<CLUSTER>/<APP_NAME>/sandbox/ExternalSecret.<group>.yaml`
-
-Copy ExternalSecret.mqtt.yaml structure. Per file substitute:
-- `metadata.name` + `target.name` → `<APP_NAME>-<group>-credentials`
-- `metadata.namespace` → `production` or `sandbox`
-- `data[].remoteRef.key` → `<CLUSTER>/<env>/<bao_path_suffix>`
-- `data[].secretKey` / `data[].remoteRef.property` → from the group's key list
-
-**Skip this entire section if no SECRET_GROUPS.**
+### E. homelab-apps deploy.json
+In THIS repo, `<app dir>/deploy.json` — one entry per env: `"file": "gitops/helm-values/server1/apps/<APP_NAME>/values-<env>.yaml"`, `"yamlPath": ".image.tag"`.
 
 ### F. docs/architecture.md row
 Read the current technology stack table in `docs/architecture.md`. Append a row following the existing format:
 
 ```
-| <APP_DESCRIPTION> | <CLUSTER> | ArgoCD (AppSet) | [`radoslavirha/<IMAGE_NAME>`](https://hub.docker.com/r/radoslavirha/<IMAGE_NAME>) | [base](gitops/helm-values/server1/apps/<APP_NAME>/base.yaml) · [prod](gitops/helm-values/server1/apps/<APP_NAME>/production.yaml) · [sbx](gitops/helm-values/server1/apps/<APP_NAME>/sandbox.yaml) | — |
+| <APP_DESCRIPTION> | <CLUSTER> | ArgoCD (AppSet) | [`radoslavirha/<IMAGE_NAME>`](https://hub.docker.com/r/radoslavirha/<IMAGE_NAME>) | [values](gitops/helm-values/server1/apps/<APP_NAME>/values.yaml) · [prod](gitops/helm-values/server1/apps/<APP_NAME>/values-production.yaml) · [sbx](gitops/helm-values/server1/apps/<APP_NAME>/values-sandbox.yaml) | — |
 ```
 
 ## Step 5 — Create branch + push all files via GitHub MCP
@@ -184,11 +166,9 @@ Scaffolded by agent from `radoslavirha/homelab-apps`.
 
 ### Files generated
 - `gitops/argocd-manifests/apps/apps/<APPSET_NAME>.yaml`
-- `gitops/helm-values/server1/apps/<APP_NAME>/base.yaml`
-- `gitops/helm-values/server1/apps/<APP_NAME>/production.yaml`
-- `gitops/helm-values/server1/apps/<APP_NAME>/sandbox.yaml`
-- `gitops/k8s-manifests/<CLUSTER>/<APP_NAME>/production/ExternalSecret.*.yaml`
-- `gitops/k8s-manifests/<CLUSTER>/<APP_NAME>/sandbox/ExternalSecret.*.yaml`
+- `gitops/helm-values/server1/apps/<APP_NAME>/values.yaml`
+- `gitops/helm-values/server1/apps/<APP_NAME>/values-production.yaml`
+- `gitops/helm-values/server1/apps/<APP_NAME>/values-sandbox.yaml`
 - `docs/architecture.md` (new row)
 
 ### TODO before first ArgoCD sync — seed OpenBao secrets
@@ -205,10 +185,9 @@ bao kv put secret/<CLUSTER>/sandbox/<bao_path_suffix_2> ...
 
 ### Notes
 - Image tag `"0.1.0"` is a placeholder — GitHub Actions will overwrite on first release
-- Verify UDP Traefik entrypoint names before merge
 ```
 
 ## Notes
-- Never generate secrets or real credentials — only the ExternalSecret K8s manifests that reference OpenBao paths
+- Never generate secrets or real credentials — only `templates.config.secrets` entries that reference OpenBao paths
 - If the app config schema is complex or ambiguous, show the generated JSON template to the user for review before pushing
 - Image tag is always `"0.1.0"` — do not try to detect or query a real version

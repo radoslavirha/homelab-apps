@@ -23,7 +23,7 @@ export type RuntimeConfig = z.infer<typeof RuntimeConfigSchema>;
 1. **Browser** — `loadRuntimeConfig({ schema })` fetches, parses and validates.
 2. **Pod start** — `runConfigValidatorCli(schema, process.argv[2])`, bundled by
    esbuild into an `<app>-config-validator` image, run as an initContainer by the
-   `iot-applications` chart before the app container starts.
+   `app` chart before the app container starts.
 
 Two build outputs, one source of truth. Nothing restates the rules in shell, jq
 or JSON Schema.

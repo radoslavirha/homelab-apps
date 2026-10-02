@@ -1,10 +1,10 @@
 {
   "sandbox": {
-    "file": "gitops/helm-values/server1/apps/miot-bridge-api/sandbox.yaml",
-    "yamlPath": ".apps.miot-bridge-api.image.tag"
+    "file": "gitops/helm-values/server1/apps/miot-bridge-api/values-sandbox.yaml",
+    "yamlPath": ".image.tag"
   },
   "production": {
-    "file": "gitops/helm-values/server1/apps/miot-bridge-api/production.yaml",
-    "yamlPath": ".apps.miot-bridge-api.image.tag"
+    "file": "gitops/helm-values/server1/apps/miot-bridge-api/values-production.yaml",
+    "yamlPath": ".image.tag"
   }
 }

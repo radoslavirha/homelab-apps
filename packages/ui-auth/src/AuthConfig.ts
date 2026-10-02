@@ -27,10 +27,10 @@ export const AuthConfigSchema = z.object({
         message: 'issuer must keep its trailing slash'
     }),
     /**
-     * Empty-Jinja2-substitution guard, the same hazard `httpUrl` catches for
-     * apiBaseURL. These values are rendered per deployment from VAR_CLUSTER and
-     * NAMESPACE, and jinja renders an undefined variable as an empty string
-     * rather than failing — so a missing VAR_CLUSTER yields the well-formed and
+     * Empty-substitution guard, the same hazard `httpUrl` catches for
+     * apiBaseURL. These values are rendered per deployment from `.vars.cluster`
+     * and `.app.namespace`. The renderer (ESO) fails on a missing variable, but
+     * not on an empty one — so `vars.cluster: ""` yields the well-formed and
      * completely wrong `qr-manager--sandbox`, which reaches the IdP as an
      * unknown client. `min(1)` alone would wave it through.
      */
@@ -38,7 +38,7 @@ export const AuthConfigSchema = z.object({
         .string()
         .min(1)
         .refine(value => !value.includes('--'), {
-            message: 'clientId has an empty segment — a VAR_* did not substitute'
+            message: 'clientId has an empty segment — a template variable rendered empty'
         }),
     /**
      * Asserted rather than defaulted, because both omissions fail silently:

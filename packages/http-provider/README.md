@@ -415,7 +415,7 @@ A **static** entry keeps the plain `value` field instead — for a fixed API key
 
 An entry naming a credential the strategy did not produce, or produced empty, **throws** rather than sending a bare prefix: `Authorization: Bearer ` would come back as a `401` from the far end and read like a genuine refusal.
 
-There is deliberately **no template syntax**. It could express one thing more — two credentials inside a single value — that nothing used, and it cost a placeholder that a downstream config renderer may claim. These files are rendered by Jinja2, whose `{{ }}` is exactly that syntax and whose default for an unknown name is the empty string.
+There is deliberately **no template syntax**. It could express one thing more — two credentials inside a single value — that nothing used, and it cost a placeholder that a downstream config renderer may claim. These files are rendered by ESO with Go templates, whose `{{ }}` is exactly that syntax — the renderer would consume the placeholder before this code saw it.
 
 For multi-field token exchange, use `as` to name each field → reference by that name in transport.
 

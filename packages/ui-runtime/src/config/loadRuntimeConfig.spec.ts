@@ -92,7 +92,7 @@ describe('loadRuntimeConfig', () => {
             .rejects.toMatchObject({ reason: 'invalid' });
     });
 
-    it('rejects an empty required value — the empty-Jinja2-substitution case', async () => {
+    it('rejects an empty required value — the empty-substitution case', async () => {
         mockFetch(() => jsonResponse({ apiBaseURL: '' }));
 
         await expect(loadRuntimeConfig({ schema, url: '/config.json' }))

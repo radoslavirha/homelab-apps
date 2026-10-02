@@ -3,7 +3,7 @@ import { validateConfigFile } from './validateConfigFile.js';
 
 /**
  * Entry point for an app's config validator, run by the validating
- * initContainer the `iot-applications` chart generates.
+ * initContainer the homelab `app` chart generates.
  *
  * The config path comes from argv, never a hardcoded filename: the chart passes
  * `/config/<templates.<name>.file>`, and that `file` key is configurable per app.
