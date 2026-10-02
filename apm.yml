@@ -4,10 +4,8 @@ description: APM project for homelab-apps
 author: Radoslav Irha
 targets:
   - claude
-  - copilot
 dependencies:
   apm:
-    - obra/superpowers
     - radoslavirha/toolkit-hub/packages/utils
     - radoslavirha/toolkit-hub/tsed/platform
     - radoslavirha/toolkit-hub/tsed/configuration
