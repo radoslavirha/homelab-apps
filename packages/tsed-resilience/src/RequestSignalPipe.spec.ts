@@ -21,7 +21,7 @@ describe('RequestSignalPipe', () => {
 
         expect(signal).toBe(getRequestSignal(ctx));
 
-        raw.emit('close');
+        raw.emit('aborted');
         expect(signal.aborted).toBe(true);
     });
 });
