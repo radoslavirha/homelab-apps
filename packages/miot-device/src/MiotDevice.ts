@@ -35,6 +35,8 @@ export class MiotDevice {
     private readonly logger: ILogger;
     private _deviceId: number | undefined;
     private _stampState: StampState | undefined;
+    /** Tail of the command queue; see `runWithStamp`. */
+    private _queue: Promise<void> = Promise.resolve();
 
     constructor(options: MiotDeviceOptions) {
         this.options = options;
@@ -153,7 +155,18 @@ export class MiotDevice {
      * @param method - The miIO method `fn` will call, so a failure keeps naming it after the
      *                 stamp-refresh retry has re-thrown.
      */
-    private async runWithStamp<T>(
+    private runWithStamp<T>(
+        method: MiotMethod,
+        fn: (stamp: number, deviceId: number) => Promise<{ result: T; finalStamp?: number }>
+    ): Promise<T> {
+        // Serialize per instance: the next stamp is derived from `_stampState`, which is only
+        // advanced once a command completes, so concurrent calls would reuse the same stamp.
+        const run = this._queue.then(() => this.runWithStampExclusive(method, fn));
+        this._queue = run.then(() => undefined, () => undefined);
+        return run;
+    }
+
+    private async runWithStampExclusive<T>(
         method: MiotMethod,
         fn: (stamp: number, deviceId: number) => Promise<{ result: T; finalStamp?: number }>
     ): Promise<T> {
