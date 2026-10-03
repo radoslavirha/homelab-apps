@@ -21,6 +21,9 @@ export class NotificationDeleteHandler {
             throw new Forbidden(`Notification ${id} does not belong to device ${deviceId}.`);
         }
         await this.notificationStorageService.deleteById(id);
-        this.devicePropertyPollerService.removeSubscription(deviceId, notification.property);
+        const remaining = await this.notificationStorageService.getAllByDeviceId(deviceId);
+        if (!remaining.some(n => n.property === notification.property)) {
+            this.devicePropertyPollerService.removeSubscription(deviceId, notification.property);
+        }
     }
 }
