@@ -14,6 +14,9 @@ import { ATTR_MIOT_DEVICE_ID, ATTR_MIOT_PROPERTY, identifierAttribute } from '..
 /** QoS used for outbound notification publishes. */
 const QOS = 1;
 
+/** Upper bound for an outbound notification POST; a hung sink must not leak pending requests. */
+const HTTP_TIMEOUT_MS = 10_000;
+
 /**
  * Central hub for all inbound property-value observations, regardless of transport.
  *
@@ -101,7 +104,8 @@ export class NotificationDispatchService {
             const response = await fetch(address, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
+                signal: AbortSignal.timeout(HTTP_TIMEOUT_MS)
             });
             this.logger.debug('NOTIFICATION_HTTP_SENT',{
                 address,
