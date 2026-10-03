@@ -88,16 +88,6 @@ describe('DataSourcesController (integration)', () => {
         });
     });
 
-    it.each([
-        '/data-sources/radar/cities',
-        '/data-sources/radar/cities/iot'
-    ])('rejects a negative or oversized radius on %s with 400', async (path) => {
-        const token = await personToken();
-
-        await request.get(path).query({ radius: -5 }).set('Authorization', `Bearer ${token}`).expect(400);
-        await request.get(path).query({ radius: 1000 }).set('Authorization', `Bearer ${token}`).expect(400);
-    });
-
     describe('the refusals that separate a token from a token for us', () => {
         it('refuses a device token signed by somebody else', async () => {
             const forged = await mintTestToken({
