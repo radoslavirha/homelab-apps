@@ -5,7 +5,7 @@ Gateway between home automation controllers (Loxone and others) and Xiaomi devic
 Responsibilities:
 - Registers devices: performs handshake, fetches MIoT spec from `miot-spec.org`, caches device capabilities
 - Sends commands: `GetProperty`, `SetProperty`, `Action` — unified payload across HTTP and MQTT
-- Polls device properties on interval; dispatches change notifications via HTTP or MQTT
+- Polls device properties on interval; publishes change notifications over MQTT
 
 ## Authentication
 
@@ -39,10 +39,19 @@ closed ones.
 
 ## External Dependencies
 
+Communication with the controllers is REST and MQTT only:
+
+| Direction | Transport |
+|-----------|-----------|
+| Inbound | REST (`/command` and the management routes), MQTT command topic |
+| Outbound | MQTT (command responses, property-change notifications) |
+
 The only UDP left in this service is the outbound MIoT protocol to the devices themselves. The
 inbound UDP command listener and the outbound UDP notification transport were removed — the
 controllers use MQTT, and an unauthenticated datagram socket accepting device commands on the LAN was
-a command path no decorator or broker ACL could reach.
+a command path no decorator or broker ACL could reach. The outbound HTTP notification transport
+(`http.notifications`) was removed too: MQTT already carries every notification. A config file that
+still sets `http` boots normally and the key is ignored.
 
 | System | Protocol | Condition | Purpose |
 |--------|----------|-----------|---------|
@@ -118,14 +127,16 @@ Hidden from Swagger, excluded from traces and request logs. See
 |-------|-----------|-------------|
 | `[prefix/]miot-bridge/device/{deviceId}/command` | inbound | Send command |
 | `[prefix/]miot-bridge/device/{deviceId}/response` | outbound | Command response |
-| `[prefix/]miot-bridge/device/{deviceId}/notification` | outbound | Property change event |
+| `[prefix/]miot-bridge/device/{deviceId}/notifications` | outbound | Property change event (`mqtt.notifications.enabled`) |
 
 Command payload: `{ deviceId: number, command: "service:property", operation: "GetProperty|SetProperty|Action", [value] }`
 
-## Notification Payload (all transports)
+## Notification Payload
+
+Published to the device's `notifications` topic; the device id is in the topic, not the body.
 
 ```json
-{ "deviceId": number, "property": "service:property-name", "value": any }
+{ "service:property-name": any }
 ```
 
 ## Shared Package
