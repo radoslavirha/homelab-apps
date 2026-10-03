@@ -95,7 +95,13 @@ export const createQrCodesClient = (apiBaseURL: string, options: QrCodesClientOp
     };
 
     return {
-        list: async (filter) => parse<QrCodeListResponse>(await send(buildListPath(filter))).then(r => r.items),
+        list: async (filter) => {
+            const body = await parse<QrCodeListResponse>(await send(buildListPath(filter)));
+            if (!Array.isArray(body?.items)) {
+                throw new Error('Malformed list response: missing items array');
+            }
+            return body.items;
+        },
         create: async (request) => parse<QrCode>(await send('/qr-codes', { method: 'POST' }, request)),
         update: async (id, request) => parse<QrCode>(await send(`/qr-codes/${id}`, { method: 'PUT' }, request)),
         deactivate: async (id) => parse<QrCode>(await send(`/qr-codes/${id}`, { method: 'PUT' }, { active: false })),
