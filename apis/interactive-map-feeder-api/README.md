@@ -117,7 +117,7 @@ Update the ConfigMap first, then roll image updates.
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/data-sources/list` | Available data sources |
-| GET | `/data-sources/:dataSource/cities` | Cities with RGB color from data source. `radius` query param (km, default 2.5) |
+| GET | `/data-sources/:dataSource/cities` | Cities with RGB color from data source. `radius` query param (km, default 2.5, 0–100; otherwise `400`) |
 | GET | `/data-sources/:dataSource/cities/iot` | Same as above, reduced response (IoT-optimized payload) |
 | GET | `/data-sources/:dataSource/image` | Composited PNG image with city markers |
 
