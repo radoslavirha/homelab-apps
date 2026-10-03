@@ -68,7 +68,10 @@ export async function fetchDnsRecords(
         }
         options.onOutcome?.({ kind: 'server-error', status: res.status });
     } else {
-        options.onOutcome?.(outcome);
+        // Any other non-2xx (404 while the Network app restarts, 408/429) is a
+        // transient controller fault, not a config one: report it as degraded
+        // so the recovery probe keeps polling.
+        options.onOutcome?.({ kind: 'server-error', status: res.status });
     }
 
     throw new Error(`Could not retrieve DNS records from Unifi (HTTP ${res.status}).`);
