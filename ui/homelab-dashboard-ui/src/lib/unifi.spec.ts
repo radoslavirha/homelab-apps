@@ -40,4 +40,18 @@ describe('fetchDnsRecords', () => {
         // "no headers were set".
         expect(fetchMock.mock.calls[0]).toHaveLength(1);
     });
+
+    it.each([
+        ['HTML (SPA fallback)', '<!doctype html><html></html>'],
+        ['non-array JSON', '{"error":"nope"}']
+    ])('does not report success for a 200 with %s', async (_name, body) => {
+        Object.assign(globalThis, { fetch: vi.fn().mockResolvedValue(new Response(body, { status: 200 })) });
+        const outcomes: { kind: string }[] = [];
+
+        await expect(
+            fetchDnsRecords({ unifi: { site: 'default' } } as AppConfig, { onOutcome: o => outcomes.push(o) })
+        ).rejects.toThrow();
+
+        expect(outcomes.at(-1)?.kind).not.toBe('success');
+    });
 });
