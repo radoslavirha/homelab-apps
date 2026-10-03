@@ -24,8 +24,4 @@ import './services/MqttListenerService.js';
         CommandResponseFilter
     ]
 })
-export class Server extends BaseServer {
-    $beforeRoutesInit(): void {
-        this.registerMiddlewares();
-    }
-}
+export class Server extends BaseServer {}

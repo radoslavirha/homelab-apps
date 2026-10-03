@@ -73,6 +73,28 @@ describe('Server', () => {
         await request.get('/x7k2').expect(404);
     });
 
+    /**
+     * CORS belongs to Traefik in front of the API. If the app emitted its own headers they
+     * would be duplicated or, worse, reflect any origin with credentials — which is what
+     * `BaseServer` did before tsed-platform 5.0.6.
+     */
+    it('emits no Access-Control-* headers, even for a cross-origin preflight', async () => {
+        const origin = 'https://evil.example';
+        const responses = [
+            await request.get('/health').set('Origin', origin),
+            await request
+                .options('/qr-codes')
+                .set('Origin', origin)
+                .set('Access-Control-Request-Method', 'POST')
+                .set('Access-Control-Request-Headers', 'authorization')
+        ];
+
+        for (const response of responses) {
+            const corsHeaders = Object.keys(response.headers).filter((name) => name.startsWith('access-control-'));
+            expect(corsHeaders).toEqual([]);
+        }
+    });
+
     it('returns 404 for an unknown multi-segment path', async () => {
         const response = await request.get('/missing/path').expect(404);
         expect(response.body).toEqual({

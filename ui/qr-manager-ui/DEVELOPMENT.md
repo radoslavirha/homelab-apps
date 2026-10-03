@@ -32,6 +32,21 @@ A Vite build embeds `import.meta.env.*` at build time. We want one container ima
 
 The fetch happens in `index.html` *before* the bundle script tag so React mounts only after a valid config exists. Validation lives in `runtime/RuntimeConfig.ts` — bad config crashes loudly on first paint.
 
+## Local development and CORS
+
+`qr-manager-api` sends no `Access-Control-*` headers — in the cluster CORS is handled by
+Traefik in front of it. Calling `localhost:4002` straight from `localhost:5173` would be
+blocked by the browser, so the Vite dev server proxies instead:
+
+- `public/config.json` sets `apiBaseURL` to `http://localhost:5173/api` — same origin as the UI.
+- `vite.config.ts` forwards `/api/*` to `http://localhost:4002`, stripping the `/api` prefix.
+
+Run the API (`pnpm start` in `apis/qr-manager-api`) and then `pnpm dev` here. Do not point
+`apiBaseURL` back at `localhost:4002`, and do not add CORS to the API to make it work.
+
+The proxy exists only in `pnpm dev`. `vite preview` and the production image have no proxy;
+there `apiBaseURL` comes from the mounted ConfigMap and points at the Traefik-fronted API.
+
 ## Why not react-query / Redux
 
 The data model is a single CRUD list with no caching needs. `useEffect + useState` keeps the surface area small and easy to test. If we add multiple cross-page caches (e.g. user profiles, dashboards), revisit then.

@@ -26,8 +26,4 @@ import { ObjectUtils } from '@radoslavirha/utils';
         '/': [SwaggerController, HealthController, ...ObjectUtils.values(rest)]
     }
 })
-export class Server extends BaseServer {
-    $beforeRoutesInit(): void {
-        this.registerMiddlewares();
-    }
-}
+export class Server extends BaseServer {}

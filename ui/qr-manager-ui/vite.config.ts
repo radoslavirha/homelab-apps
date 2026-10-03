@@ -16,6 +16,15 @@ export default defineConfig({
         copyPublicDir: false
     },
     server: {
-        port: 5173
+        port: 5173,
+        // The API sends no CORS headers — in the cluster Traefik owns CORS. Proxying keeps
+        // local development same-origin: public/config.json points apiBaseURL at
+        // http://localhost:5173/api, and the prefix is stripped before reaching qr-manager-api.
+        proxy: {
+            '/api': {
+                target: 'http://localhost:4002',
+                rewrite: (path) => path.replace(/^\/api/, '')
+            }
+        }
     }
 });

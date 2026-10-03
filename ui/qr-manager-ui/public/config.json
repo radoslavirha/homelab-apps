@@ -1,5 +1,5 @@
 {
-    "apiBaseURL": "http://localhost:4002",
+    "apiBaseURL": "http://localhost:5173/api",
     "basePath": "/",
     "auth": {
         "issuer": "https://auth.irha.cz/application/o/qr-manager-local/",
