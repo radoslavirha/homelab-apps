@@ -78,6 +78,17 @@ describe('OpenTelemetryService', () => {
             expect(mocks.start).toHaveBeenCalledOnce();
         });
 
+        it('Should keep Winston log sending enabled when only logs are enabled', () => {
+            new OpenTelemetryService().init({
+                ...OPTIONS,
+                otel: { logs: { enabled: true, exporter } }
+            });
+
+            const options = mocks.WinstonInstrumentation.mock.calls[0][0] as { enabled: boolean; disableLogSending: boolean };
+            expect(options.disableLogSending).toBe(false);
+            expect(options.enabled).toBe(true);
+        });
+
         it('Should wire only the signals that are enabled', () => {
             new OpenTelemetryService().init({
                 ...OPTIONS,
