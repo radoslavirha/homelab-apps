@@ -375,6 +375,34 @@ describe('MiotDevice', () => {
 
             expect(store.setStamp).toHaveBeenCalled();
         });
+
+        it('does not re-send a successful action when the stamp store write fails (cached stamp)', async () => {
+            const store: IStampStore = {
+                getStamp: vi.fn<() => Promise<StampState | null>>().mockResolvedValue({ stamp: STAMP, updatedAt: 0 }),
+                setStamp: vi.fn<() => Promise<void>>().mockRejectedValueOnce(new Error('redis down'))
+            };
+            mockCallAction.mockResolvedValue(undefined);
+
+            const device = new MiotDevice({ address: '1.2.3.4', token: TOKEN, deviceId: DEVICE_ID, stampStore: store });
+            await device.callAction(2, 1);
+
+            expect(mockCallAction).toHaveBeenCalledTimes(1);
+            expect(mockHandshake).not.toHaveBeenCalled();
+        });
+
+        it('does not re-send a successful action when the stamp store write fails (fresh stamp)', async () => {
+            const store: IStampStore = {
+                getStamp: vi.fn<() => Promise<StampState | null>>().mockResolvedValue(null),
+                setStamp: vi.fn<() => Promise<void>>().mockRejectedValueOnce(new Error('redis down'))
+            };
+            mockCallAction.mockResolvedValue(undefined);
+
+            const device = new MiotDevice({ address: '1.2.3.4', token: TOKEN, deviceId: DEVICE_ID, stampStore: store });
+            await device.callAction(2, 1);
+
+            expect(mockCallAction).toHaveBeenCalledTimes(1);
+            expect(mockHandshake).toHaveBeenCalledTimes(1);
+        });
     });
 
     // -----------------------------------------------------------------------
