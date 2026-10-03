@@ -139,6 +139,21 @@ describe('MiotDevice', () => {
             expect(value).toBe(42);
         });
 
+        it('does not send two concurrent commands with the same stamp', async () => {
+            mockGetProperty.mockImplementation(async () => {
+                await new Promise(resolve => setTimeout(resolve, 10));
+                return 1;
+            });
+
+            const device = new MiotDevice({ address: '1.2.3.4', token: TOKEN, deviceId: DEVICE_ID });
+            device.setStampState({ stamp: STAMP, updatedAt: 0 });
+
+            await Promise.all([device.getProperty(2, 1), device.getProperty(2, 2)]);
+
+            const stamps = mockGetProperty.mock.calls.map(call => (call as unknown[])[1]);
+            expect(stamps).toEqual([STAMP + 1, STAMP + 2]);
+        });
+
         it('increments stamp by 1 before call', async () => {
             mockGetProperty.mockResolvedValue(0);
 
