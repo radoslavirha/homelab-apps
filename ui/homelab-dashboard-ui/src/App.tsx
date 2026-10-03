@@ -20,6 +20,8 @@ export function App({ config }: Props) {
     });
     const [query, setQuery] = useState('');
     const searchRef = useRef<HTMLInputElement>(null);
+    // Bumped when the recovery probe succeeds, to re-run the load effect.
+    const [reloadKey, setReloadKey] = useState(0);
 
     // This dashboard lives on an unattended screen, so it polls to notice the
     // controller coming back rather than waiting for someone to press reload.
@@ -29,6 +31,8 @@ export function App({ config }: Props) {
             probe: async () => {
                 try {
                     await fetchDnsRecords(config);
+                    // The probe discards the records, so reload them for real.
+                    setReloadKey(k => k + 1);
                     return true;
                 } catch {
                     return false;
@@ -90,7 +94,7 @@ export function App({ config }: Props) {
         return () => {
             cancelled = true;
         };
-    }, [config, report]);
+    }, [config, report, reloadKey]);
 
     const filtered = useMemo(() => {
         const q = query.toLowerCase().trim();
