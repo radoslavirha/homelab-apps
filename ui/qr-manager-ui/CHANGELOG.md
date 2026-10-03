@@ -1,5 +1,11 @@
 # qr-manager-ui
 
+## 0.13.2
+
+### Patch Changes
+
+- [#145](https://github.com/radoslavirha/homelab-apps/pull/145) [`758f97f`](https://github.com/radoslavirha/homelab-apps/commit/758f97fa95628837efc8e4db0fad776e09f02202) Thanks [@radoslavirha](https://github.com/radoslavirha)! - The QR code list page shows an error instead of a blank screen when the API returns a 200 response without an items array.
+
 ## 0.13.1
 
 ### Patch Changes

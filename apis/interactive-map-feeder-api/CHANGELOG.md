@@ -1,5 +1,13 @@
 # interactive-map-feeder
 
+## 0.16.1
+
+### Patch Changes
+
+- [#126](https://github.com/radoslavirha/homelab-apps/pull/126) [`e4e3900`](https://github.com/radoslavirha/homelab-apps/commit/e4e3900198ee38ae77bc1b56c344e3b224e0cf4a) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Reject a negative or oversized `radius` query parameter with 400 instead of returning NaN (null) city colours.
+- Updated dependencies [[`1be7a0d`](https://github.com/radoslavirha/homelab-apps/commit/1be7a0d96854461f62c726e3de31c63d579341ae)]:
+  - @radoslavirha/otel@0.6.3
+
 ## 0.16.0
 
 ### Minor Changes

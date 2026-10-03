@@ -1,5 +1,11 @@
 # @radoslavirha/otel
 
+## 0.6.3
+
+### Patch Changes
+
+- [#148](https://github.com/radoslavirha/homelab-apps/pull/148) [`1be7a0d`](https://github.com/radoslavirha/homelab-apps/commit/1be7a0d96854461f62c726e3de31c63d579341ae) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Export logs when only the logs signal is enabled (Winston instrumentation no longer depends on traces).
+
 ## 0.6.2
 
 ### Patch Changes

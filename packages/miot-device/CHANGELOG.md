@@ -1,5 +1,13 @@
 # @radoslavirha/miot-device
 
+## 0.7.1
+
+### Patch Changes
+
+- [#158](https://github.com/radoslavirha/homelab-apps/pull/158) [`e296f11`](https://github.com/radoslavirha/homelab-apps/commit/e296f1179475e78ed692c932e4b63fd2ac9bea39) Thanks [@radoslavirha](https://github.com/radoslavirha)! - A failing stamp store write no longer causes an already successful device command to be sent a second time.
+
+- [#144](https://github.com/radoslavirha/homelab-apps/pull/144) [`1ef4693`](https://github.com/radoslavirha/homelab-apps/commit/1ef4693ab5d0ce5c0e4ff95082372e2cb9f36dd8) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Concurrent commands on one MiotDevice no longer reuse the same stamp; they are now run one after another.
+
 ## 0.7.0
 
 ### Minor Changes
