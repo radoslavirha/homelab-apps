@@ -1,4 +1,4 @@
-import { BadGateway, GatewayTimeout, ServiceUnavailable } from '@tsed/exceptions';
+import { BadGateway, Exception, GatewayTimeout, ServiceUnavailable } from '@tsed/exceptions';
 import { isBrokenCircuitError, isTaskCancelledError } from '@radoslavirha/resilience';
 import { CommonUtils } from '@radoslavirha/utils';
 import axios, { type AxiosInstance } from 'axios';
@@ -30,6 +30,11 @@ export function attachErrorTranslation(instance: AxiosInstance, api: string): vo
 }
 
 function toHttpException(error: unknown, api: string): Error {
+    // A replayed request (auth retry) already ran this interceptor; don't wrap its result again.
+    if (error instanceof Exception) {
+        return error;
+    }
+
     if (isBrokenCircuitError(error)) {
         return new ServiceUnavailable(`External API ${api} is unavailable (circuit open).`, error);
     }
