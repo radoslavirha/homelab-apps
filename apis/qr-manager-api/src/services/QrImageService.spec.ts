@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { PRINT_PNG_SIZE } from '../constants.js';
 import { QrErrorCorrection } from '../models/QrErrorCorrection.enum.js';
 import { QrImageFormat } from '../models/QrImageFormat.enum.js';
 import { QrImageService } from './QrImageService.js';
@@ -39,5 +40,11 @@ describe('QrImageService', () => {
         // PNG IHDR chunk: bytes 16-19 = width (big-endian 32-bit)
         const width = buffer.readUInt32BE(16);
         expect(width).toBe(256);
+    });
+
+    it('falls back to PRINT_PNG_SIZE when no size is given', async () => {
+        const result = await service.render(URL, QrImageFormat.PNG);
+        const buffer = result.body as Buffer;
+        expect(buffer.readUInt32BE(16)).toBe(PRINT_PNG_SIZE);
     });
 });
