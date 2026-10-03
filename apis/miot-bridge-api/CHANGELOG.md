@@ -1,5 +1,24 @@
 # miot-bridge
 
+## 0.28.0
+
+### Minor Changes
+
+- [#161](https://github.com/radoslavirha/homelab-apps/pull/161) [`c902a21`](https://github.com/radoslavirha/homelab-apps/commit/c902a2105a268a7effb47bb1e1fe1865c6b1067a) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Remove the outbound HTTP notification transport. Property-change notifications are now published over MQTT only, and controllers talk to the bridge over REST and MQTT. UDP is used solely for the MIoT protocol to the devices.
+  
+  The `http.notifications` config key is no longer read. A config that still carries it keeps booting — the key is ignored — so the ConfigMap can be cleaned up after the rollout.
+
+### Patch Changes
+
+- [#133](https://github.com/radoslavirha/homelab-apps/pull/133) [`be42db9`](https://github.com/radoslavirha/homelab-apps/commit/be42db96da55c7329188745ff4db447a56565c89) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Deleting a device now drops its pooled MiotDevice, so re-registering it with a new address or token no longer keeps talking to the old one.
+
+- [#146](https://github.com/radoslavirha/homelab-apps/pull/146) [`a72cd59`](https://github.com/radoslavirha/homelab-apps/commit/a72cd59856d88d33dab3ff09d5cd91f2febd9a41) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Re-subscribing to the same device property no longer creates duplicate notification rows, and deleting one row no longer stops polling while another remains.
+
+- [#159](https://github.com/radoslavirha/homelab-apps/pull/159) [`d0b1731`](https://github.com/radoslavirha/homelab-apps/commit/d0b17310bf96face16ca107cabe158ace807c632) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Abort outbound HTTP notification POSTs after 10 seconds so an unresponsive sink no longer leaks pending requests.
+- Updated dependencies [[`e296f11`](https://github.com/radoslavirha/homelab-apps/commit/e296f1179475e78ed692c932e4b63fd2ac9bea39), [`1ef4693`](https://github.com/radoslavirha/homelab-apps/commit/1ef4693ab5d0ce5c0e4ff95082372e2cb9f36dd8), [`1be7a0d`](https://github.com/radoslavirha/homelab-apps/commit/1be7a0d96854461f62c726e3de31c63d579341ae)]:
+  - @radoslavirha/miot-device@0.7.1
+  - @radoslavirha/otel@0.6.3
+
 ## 0.27.0
 
 ### Minor Changes

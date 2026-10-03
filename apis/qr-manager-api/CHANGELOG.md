@@ -1,5 +1,13 @@
 # qr-manager-api
 
+## 0.10.1
+
+### Patch Changes
+
+- [#151](https://github.com/radoslavirha/homelab-apps/pull/151) [`f936e82`](https://github.com/radoslavirha/homelab-apps/commit/f936e821de13adc0de927d21f9cb735d209dd07f) Thanks [@radoslavirha](https://github.com/radoslavirha)! - PNG QR images now default to 512 px wide when no `size` is given, instead of a tiny ~108 px image.
+- Updated dependencies [[`1be7a0d`](https://github.com/radoslavirha/homelab-apps/commit/1be7a0d96854461f62c726e3de31c63d579341ae)]:
+  - @radoslavirha/otel@0.6.3
+
 ## 0.10.0
 
 ### Minor Changes

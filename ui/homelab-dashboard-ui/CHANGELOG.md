@@ -1,5 +1,17 @@
 # homelab-dashboard-ui
 
+## 0.8.2
+
+### Patch Changes
+
+- [#128](https://github.com/radoslavirha/homelab-apps/pull/128) [`04d6ed1`](https://github.com/radoslavirha/homelab-apps/commit/04d6ed1ae1b510ee0508097c295f1310b122a919) Thanks [@radoslavirha](https://github.com/radoslavirha)! - The dashboard now reloads its DNS records once the Unifi controller recovers, instead of staying on the stale error until the page is reloaded.
+
+- [#137](https://github.com/radoslavirha/homelab-apps/pull/137) [`ae60a7d`](https://github.com/radoslavirha/homelab-apps/commit/ae60a7dedd183d4506b9b3e6f7a8a8e66bf4cacf) Thanks [@radoslavirha](https://github.com/radoslavirha)! - The API status banner now reports an error when the Unifi proxy answers 200 with an unusable body instead of showing healthy.
+
+- [#149](https://github.com/radoslavirha/homelab-apps/pull/149) [`cf65da7`](https://github.com/radoslavirha/homelab-apps/commit/cf65da796489f63db770a01c0a7ffc9dee099021) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Config validation now rejects a `serverPattern` without a capture group instead of rendering all servers as one wrong cluster.
+
+- [#154](https://github.com/radoslavirha/homelab-apps/pull/154) [`dfae600`](https://github.com/radoslavirha/homelab-apps/commit/dfae6006db2fc32b6233e57e1a3a9cb2c51074aa) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Keep retrying after a transient 404/408/429 from the controller proxy instead of staying on the error until reload.
+
 ## 0.8.1
 
 ### Patch Changes
