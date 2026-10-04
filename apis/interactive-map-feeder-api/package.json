@@ -53,7 +53,6 @@
     "body-parser": "catalog:express",
     "compression": "catalog:express",
     "cookie-parser": "catalog:express",
-    "dotenv": "catalog:",
     "express": "catalog:express",
     "sharp": "^0.35.4",
     "zod": "catalog:"

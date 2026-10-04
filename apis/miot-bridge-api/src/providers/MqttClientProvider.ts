@@ -14,7 +14,7 @@ const MAX_STARTUP_ERRORS = 5;
  * nothing else. MQTT 5 user properties are that carrier, and they are what makes an inbound
  * command join the caller's trace instead of starting an orphan one — see `withMqttConsumeSpan`
  * in `@radoslavirha/otel`. Embedding the header in the JSON payload instead is not an option:
- * `MqttCommandRequestModel` is `@AdditionalProperties(false)` and the payload is a contract
+ * `MqttCommandRequestSchema` is a strict object (unknown keys rejected) and the payload is a contract
  * with the miniserver.
  *
  * Safe to raise unilaterally — MQTT version is negotiated per connection, so publishers still

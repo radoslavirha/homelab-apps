@@ -1,10 +1,11 @@
 import { Inject, Injectable, Scope, ProviderScope, OnInit } from '@tsed/di';
 import { CommonUtils } from '@radoslavirha/utils';
-import { JSONSchemaValidator } from '@radoslavirha/tsed-common';
+import { ZodValidator } from '@radoslavirha/tsed-common';
 import { SpanStatusCode, type Span } from '@opentelemetry/api';
 import type { IPublishPacket, MqttClient } from 'mqtt';
+import { ZodError } from 'zod';
 import { DeviceCommandOperation } from '../models/DeviceCommandOperation.enum.js';
-import { MqttCommandRequestModel } from '../models/MqttCommandRequestModel.js';
+import { MqttCommandRequestSchema, type MqttCommandRequest } from '../models/MqttCommandRequest.js';
 import { MqttClientProvider } from '../providers/MqttClientProvider.js';
 import { MqttTopicService } from './MqttTopicService.js';
 import { MqttTracingService } from './MqttTracingService.js';
@@ -171,10 +172,10 @@ export class MqttListenerService implements OnInit {
             return 'error: Invalid JSON.';
         }
 
-        let request: MqttCommandRequestModel;
+        let request: MqttCommandRequest;
 
         try {
-            request = JSONSchemaValidator.validate(MqttCommandRequestModel, parsed);
+            request = ZodValidator.validate<MqttCommandRequest>(MqttCommandRequestSchema, parsed);
         } catch (error) {
             this.setSpanError(span, `Validation failed. ${this.stringifyError(error)}`);
             this.logger.warn('MQTT payload validation failed.', { error });
@@ -188,7 +189,7 @@ export class MqttListenerService implements OnInit {
                 deviceId: deviceId,
                 command: request.command,
                 operation: request.operation,
-                value: request.value
+                value: request.value as DeviceCommandRequest['value']
             });
 
             const response = await this.deviceCommandService.execute(commandRequest);
@@ -218,6 +219,10 @@ export class MqttListenerService implements OnInit {
     }
 
     private stringifyError(error: unknown): string {
+        // ZodError.message is pretty-printed JSON; keep the response payload on one line.
+        if (error instanceof ZodError) {
+            return JSON.stringify(error.issues);
+        }
         if (error instanceof Error) {
             return error.message;
         }

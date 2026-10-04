@@ -20,6 +20,9 @@ export class DeviceMongoRepository extends MongoRepository<DeviceMongoDTO> {
     }
 
     public async findById(id: string): Promise<DeviceMongoDTO | null> {
+        if (!this.isValidId(id)) {
+            return null;
+        }
         const result = await this.model.findById(id).lean<DeviceMongoDTO>();
         return this.deserialize(result);
     }
@@ -34,16 +37,22 @@ export class DeviceMongoRepository extends MongoRepository<DeviceMongoDTO> {
         return this.deserialize(this.convertHydratedDocumentToObject(doc));
     }
 
-    public async updateById(id: string, data: MongoUpdate<DeviceMongoDTO>): Promise<DeviceMongoDTO> {
+    public async updateById(id: string, data: MongoUpdate<DeviceMongoDTO>): Promise<DeviceMongoDTO | null> {
+        if (!this.isValidId(id)) {
+            return null;
+        }
         const result = await this.model.findByIdAndUpdate(
             id,
             { $set: data },
             { returnDocument: 'after' }
         ).lean<DeviceMongoDTO>();
-        return this.deserialize(result as DeviceMongoDTO);
+        return this.deserialize(result);
     }
 
     public async deleteById(id: string): Promise<void> {
+        if (!this.isValidId(id)) {
+            return;
+        }
         await this.model.findByIdAndDelete(id);
     }
 }
