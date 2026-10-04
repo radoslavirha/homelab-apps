@@ -116,7 +116,10 @@ export class JwtVerifier implements ITokenVerifier {
                 issuer: row.issuer,
                 audience: row.audience,
                 // The allowlist, never the header's own claim about itself.
-                algorithms: algorithmsFor(row)
+                algorithms: algorithmsFor(row),
+                // jose only checks `exp` when present; without this a token
+                // minted with no expiry would be valid forever.
+                requiredClaims: ['exp']
             });
             // No `sub`, no principal. Falling back to a placeholder would put a
             // fabricated subject in an audit column, which is worse than an
