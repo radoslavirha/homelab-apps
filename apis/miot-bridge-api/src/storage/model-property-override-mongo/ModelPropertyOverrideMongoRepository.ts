@@ -20,6 +20,9 @@ export class ModelPropertyOverrideMongoRepository extends MongoRepository<ModelP
     }
 
     public async findById(id: string): Promise<ModelPropertyOverrideMongoDTO | null> {
+        if (!this.isValidId(id)) {
+            return null;
+        }
         const result = await this.model.findById(id).lean<ModelPropertyOverrideMongoDTO>();
         return this.deserialize(result);
     }
@@ -35,6 +38,9 @@ export class ModelPropertyOverrideMongoRepository extends MongoRepository<ModelP
     }
 
     public async deleteById(id: string): Promise<void> {
+        if (!this.isValidId(id)) {
+            return;
+        }
         await this.model.findByIdAndDelete(id);
     }
 }

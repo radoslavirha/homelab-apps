@@ -1,4 +1,5 @@
 import { Injectable, Inject, Scope, ProviderScope } from '@tsed/di';
+import { NotFound } from '@tsed/exceptions';
 import { DeviceCache } from '../models/DeviceCache.js';
 import { DeviceMongoRepository } from '../storage/device-mongo/DeviceMongoRepository.js';
 import { MongoDeviceMapper } from '../mappers/MongoDeviceMapper.js';
@@ -40,6 +41,9 @@ export class DeviceMongoService {
     public async update(device: DeviceCache): Promise<DeviceCache> {
         const updateObj = await this.mapper.buildMongoUpdate(device);
         const dto = await this.repository.updateById(device.id, updateObj);
+        if (CommonUtils.isNil(dto)) {
+            throw new NotFound(`Device ${device.id} not found.`);
+        }
         return this.mapper.mongoToModel(dto);
     }
 

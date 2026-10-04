@@ -48,6 +48,9 @@ export class QrCodeMongoRepository extends MongoRepository<QrCodeMongoDTO> {
     }
 
     public async findById(id: string): Promise<QrCodeMongoDTO | null> {
+        if (!this.isValidId(id)) {
+            return null;
+        }
         const result = await this.model.findById(id).lean<QrCodeMongoDTO>();
         return this.deserialize(result);
     }
@@ -76,6 +79,9 @@ export class QrCodeMongoRepository extends MongoRepository<QrCodeMongoDTO> {
     }
 
     public async updateById(id: string, data: MongoUpdate<QrCodeMongoDTO>): Promise<QrCodeMongoDTO | null> {
+        if (!this.isValidId(id)) {
+            return null;
+        }
         const result = await this.model.findByIdAndUpdate(
             id,
             { $set: data },
@@ -85,6 +91,9 @@ export class QrCodeMongoRepository extends MongoRepository<QrCodeMongoDTO> {
     }
 
     public async deleteById(id: string): Promise<void> {
+        if (!this.isValidId(id)) {
+            return;
+        }
         await this.model.findByIdAndDelete(id);
     }
 }

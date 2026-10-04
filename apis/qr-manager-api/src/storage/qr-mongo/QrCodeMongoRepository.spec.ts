@@ -102,6 +102,11 @@ describe('QrCodeMongoRepository', () => {
             const result = await repository.findById('671b00000000000000000001');
             expect(result).toBeNull();
         });
+
+        it('returns null instead of throwing a CastError for a malformed id', async () => {
+            expect.assertions(1);
+            await expect(repository.findById('not-an-id')).resolves.toBeNull();
+        });
     });
 
     describe('findBySlug', () => {
@@ -152,6 +157,11 @@ describe('QrCodeMongoRepository', () => {
             const result = await repository.updateById('671b00000000000000000001', { active: false });
             expect(result).toBeNull();
         });
+
+        it('returns null instead of throwing a CastError for a malformed id', async () => {
+            expect.assertions(1);
+            await expect(repository.updateById('not-an-id', { active: false })).resolves.toBeNull();
+        });
     });
 
     describe('deleteById', () => {
@@ -166,6 +176,11 @@ describe('QrCodeMongoRepository', () => {
         it('does not throw when the id does not exist', async () => {
             expect.assertions(0);
             await repository.deleteById('671b00000000000000000001');
+        });
+
+        it('does not throw a CastError for a malformed id', async () => {
+            expect.assertions(1);
+            await expect(repository.deleteById('not-an-id')).resolves.toBeUndefined();
         });
     });
 });
