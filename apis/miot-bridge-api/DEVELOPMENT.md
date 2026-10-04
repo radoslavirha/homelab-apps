@@ -4,7 +4,7 @@ This document is for contributors and AI coding agents. For end-user documentati
 
 ## Overview
 
-miot-bridge-api is a Node.js API (Ts.ED framework) that bridges Loxone and other home-automation controllers to Xiaomi devices via the MIoT binary protocol. It exposes HTTP, UDP, and MQTT command interfaces over a unified payload model and manages device registration, MIoT spec caching, property polling, and notification subscriptions.
+miot-bridge-api is a Node.js API (Ts.ED framework) that bridges Loxone and other home-automation controllers to Xiaomi devices via the MIoT binary protocol. It exposes REST and MQTT command interfaces over a unified payload model, publishes notifications over MQTT, and manages device registration, MIoT spec caching, property polling, and notification subscriptions.
 
 ## Source structure
 
@@ -19,7 +19,7 @@ src/
 ├── miot/
 │   └── packet/         # MIoT binary protocol packet encoding/decoding
 ├── models/             # Ts.ED schema models, enums, request/response types
-│   ├── config/         # Zod config schemas (ConfigModel, HttpConfig, MqttConfig, PollingConfig, UdpConfig)
+│   ├── config/         # Zod config schemas (ConfigModel, MqttConfig, PollingConfig)
 │   ├── miot-spec-v2/   # Raw MIoT spec v2 shape models
 │   ├── notifications/  # Notification request/response models
 │   └── simplified-miot-spec/  # Internal simplified property/action map
@@ -85,17 +85,18 @@ Repositories return `null` for missing single-document results. Services convert
 - Per-device back-off after `maxErrorCount` consecutive errors (`errorSkipCycles` cycles skipped).
 - Emits `property:changed` events on value changes (or every cycle when `dispatchOnChange = false`).
 
-`NotificationDispatchService` receives `property:changed` events (and direct observations from `DeviceCommandService` for `GetProperty` calls) and forwards to all enabled transports: HTTP POST, UDP datagram, MQTT publish.
+`NotificationDispatchService` receives `property:changed` events (and direct observations from `DeviceCommandService` for `GetProperty` calls) and publishes them over MQTT when `mqtt.notifications.enabled`. MQTT is the only outbound notification transport; the HTTP POST and UDP datagram transports were removed.
 
 Subscription state mutations (`addSubscriptions`, `removeSubscription`, `removeAllSubscriptions`) are called synchronously by the notification REST handlers after persisting to storage, keeping the in-memory cache consistent without a storage round-trip per tick.
 
 ## Transport listeners
 
 - **HTTP**: standard Ts.ED/Express HTTP server on `server.httpPort`.
-- **UDP**: `UdpListenerService` binds a UDP4 socket on `udp.port`. Includes exponential back-off socket restart on errors (max 5 attempts). Payload uses `UdpCommandRequestModel` with an added `version` field for future routing.
+
+There is no inbound UDP listener. UDP is used only by the outbound MIoT client to the devices.
 - **MQTT**: `MqttClientProvider` creates the `mqtt` client; `MqttListenerService` subscribes to the command topic and routes to `DeviceCommandService`.
 
 ## Design decisions
 
 - **Single instance**: The bridge is deployed as a single `replicas: 1` pod. The poller holds in-memory state (`_subscriptions`, `_lastValues`, `_errorCounts`, `_skipCycles`) that cannot be shared across instances without a distributed lock or an extracted poller service. This is intentional — the target use case is monitoring a small number of local devices.
-- **No API versioning in routes**: Controllers are mounted at `/` without a version prefix. The `version` field on UDP payloads exists for future routing flexibility if needed.
+- **No API versioning in routes**: Controllers are mounted at `/` without a version prefix.

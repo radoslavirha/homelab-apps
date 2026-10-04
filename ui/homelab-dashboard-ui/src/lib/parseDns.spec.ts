@@ -97,6 +97,12 @@ describe('parseDnsRecords', () => {
         expect(clusters[0].services[0].url).toBe('http://traefik.home/dashboard');
     });
 
+    it('does not treat Object.prototype members as configured paths', () => {
+        const records = [aRecord('server1.home', '192.168.1.10'), aRecord('constructor.home', '192.168.1.10')];
+        const clusters = parseDnsRecords(records, { ...baseConfig, paths: {} });
+        expect(clusters[0].services[0].url).toBe('http://constructor.home');
+    });
+
     it('falls back to subnet grouping when no anchor records match', () => {
         const records = [
             aRecord('app1.home', '10.0.0.1'),
@@ -135,5 +141,19 @@ describe('parseDnsRecords', () => {
         const clusters = parseDnsRecords(records, baseConfig);
         expect(clusters).toHaveLength(2);
         expect(clusters[0].color).not.toBe(clusters[1].color);
+    });
+
+    it('omits fallback clusters whose services are all excluded and does not consume their index', () => {
+        const cfg = AppConfigSchema.parse({
+            unifi: { host: 'https://192.168.1.1', apiKey: 'key' },
+            serverPattern: '^nomatch(\\d+)$',
+            exclude: ['hidden.lan']
+        });
+        const clusters = parseDnsRecords(
+            [aRecord('hidden.lan', '10.0.1.5'), aRecord('app.lan', '10.0.2.5')],
+            cfg
+        );
+        expect(clusters.map(c => c.label)).toEqual(['10.0.2.x']);
+        expect(clusters[0].index).toBe(1);
     });
 });

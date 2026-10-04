@@ -20,9 +20,9 @@ function normalizeSuffix(suffix: string): string {
 
 function resolvePath(hostname: string, paths: Record<string, string> | undefined): string {
     if (!paths) return '';
-    if (hostname in paths) return normalizeSuffix(paths[hostname]);
+    if (Object.hasOwn(paths, hostname)) return normalizeSuffix(paths[hostname]);
     const label = hostname.split('.')[0];
-    return normalizeSuffix(paths[label] ?? '');
+    return Object.hasOwn(paths, label) ? normalizeSuffix(paths[label]) : '';
 }
 
 /** Finds every enabled `A` record whose key matches `pattern` — the cluster anchors. */
@@ -120,10 +120,10 @@ function fallbackBySubnet(
 
     for (const r of records) {
         if (r.record_type !== 'A' || r.enabled === false) continue;
-        const subnet = r.value.split('.').slice(0, 3).join('.');
-        if (!groups.has(subnet)) groups.set(subnet, { index: idx++, services: [] });
         const hostname = (r.key ?? '').toLowerCase();
         if (excluded.has(hostname)) continue;
+        const subnet = r.value.split('.').slice(0, 3).join('.');
+        if (!groups.has(subnet)) groups.set(subnet, { index: idx++, services: [] });
         groups.get(subnet)!.services.push({
             name: hostname.split('.')[0],
             hostname,

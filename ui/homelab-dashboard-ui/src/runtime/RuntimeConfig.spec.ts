@@ -43,6 +43,12 @@ describe('AppConfigSchema', () => {
         expect(result.success).toBe(false);
     });
 
+    it('rejects a serverPattern without a capture group for the server index', () => {
+        const result = AppConfigSchema.safeParse({ ...minimal, serverPattern: '^server\\d+\\.example\\.com$' });
+
+        expect(result.success).toBe(false);
+    });
+
     it('rejects an unknown scheme', () => {
         expect(AppConfigSchema.safeParse({ ...minimal, scheme: 'gopher' }).success).toBe(false);
     });

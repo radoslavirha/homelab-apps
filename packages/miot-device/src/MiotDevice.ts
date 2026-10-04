@@ -35,6 +35,8 @@ export class MiotDevice {
     private readonly logger: ILogger;
     private _deviceId: number | undefined;
     private _stampState: StampState | undefined;
+    /** Tail of the command queue; see `runWithStamp`. */
+    private _queue: Promise<void> = Promise.resolve();
 
     constructor(options: MiotDeviceOptions) {
         this.options = options;
@@ -153,7 +155,18 @@ export class MiotDevice {
      * @param method - The miIO method `fn` will call, so a failure keeps naming it after the
      *                 stamp-refresh retry has re-thrown.
      */
-    private async runWithStamp<T>(
+    private runWithStamp<T>(
+        method: MiotMethod,
+        fn: (stamp: number, deviceId: number) => Promise<{ result: T; finalStamp?: number }>
+    ): Promise<T> {
+        // Serialize per instance: the next stamp is derived from `_stampState`, which is only
+        // advanced once a command completes, so concurrent calls would reuse the same stamp.
+        const run = this._queue.then(() => this.runWithStampExclusive(method, fn));
+        this._queue = run.then(() => undefined, () => undefined);
+        return run;
+    }
+
+    private async runWithStampExclusive<T>(
         method: MiotMethod,
         fn: (stamp: number, deviceId: number) => Promise<{ result: T; finalStamp?: number }>
     ): Promise<T> {
@@ -218,7 +231,13 @@ export class MiotDevice {
 
     private async updateStamp(stamp: number): Promise<void> {
         this._stampState = { stamp, updatedAt: Date.now() };
-        await this.persistStamp(this._stampState);
+        // The command already succeeded on the device, so a store failure must not reach the
+        // retry logic (it would re-send a non-idempotent command). The in-memory stamp is kept.
+        try {
+            await this.persistStamp(this._stampState);
+        } catch (err) {
+            this.logger.warn(`Failed to persist stamp`, { reason: err instanceof Error ? err.message : String(err) });
+        }
     }
 
     private async persistStamp(state: StampState): Promise<void> {

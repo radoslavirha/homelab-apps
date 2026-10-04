@@ -1,6 +1,6 @@
 import { Controller, ProviderScope, Scope } from '@tsed/di';
 import { PathParams, QueryParams } from '@tsed/platform-params';
-import { Default, Description, Enum, Example, Get, Required, Returns } from '@tsed/schema';
+import { Default, Description, Enum, Example, Get, Max, Min, Required, Returns } from '@tsed/schema';
 import { Docs } from '@tsed/swagger';
 import { DataSourcesCityHandler, DataSourcesImageHandler, DataSourcesListHandler } from '../handlers/index.js';
 import { DataSourceCitiesResponse } from '../models/index.js';
@@ -45,6 +45,8 @@ export class DataSourcesController {
         @Description('Radius in kilometers around each city to calculate current conditions.')
         @QueryParams('radius')
         @Default(2.5)
+        @Min(0)
+        @Max(100)
         radius?: number
     ): Promise<DataSourceCitiesResponse> {
         return this.dataSourceCityHandler.execute(dataSource, radius);
@@ -64,6 +66,8 @@ export class DataSourcesController {
         @Description('Radius in kilometers around each city to calculate current conditions.')
         @QueryParams('radius')
         @Default(2.5)
+        @Min(0)
+        @Max(100)
         radius?: number
     ): Promise<DataSourceCitiesResponse> {
         return this.dataSourceCityHandler.execute(dataSource, radius);

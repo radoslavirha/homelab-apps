@@ -20,6 +20,8 @@ export function App({ config }: Props) {
     });
     const [query, setQuery] = useState('');
     const searchRef = useRef<HTMLInputElement>(null);
+    // Bumped when the recovery probe succeeds, to re-run the load effect.
+    const [reloadKey, setReloadKey] = useState(0);
 
     // This dashboard lives on an unattended screen, so it polls to notice the
     // controller coming back rather than waiting for someone to press reload.
@@ -29,6 +31,8 @@ export function App({ config }: Props) {
             probe: async () => {
                 try {
                     await fetchDnsRecords(config);
+                    // The probe discards the records, so reload them for real.
+                    setReloadKey(k => k + 1);
                     return true;
                 } catch {
                     return false;
@@ -36,6 +40,19 @@ export function App({ config }: Props) {
             }
         }
     });
+
+    // An offline→online blip forces apiStatus back to 'ok' without a successful
+    // request, which stops the recovery probe. If the last load failed, reload
+    // on that transition so the dashboard doesn't stay stuck on the error.
+    const prevApiStatus = useRef(apiStatus);
+    const loadFailed = status.state === 'error';
+    useEffect(() => {
+        const wasNotOk = prevApiStatus.current !== 'ok';
+        prevApiStatus.current = apiStatus;
+        if (wasNotOk && apiStatus === 'ok' && loadFailed) {
+            setReloadKey(k => k + 1);
+        }
+    }, [apiStatus, loadFailed]);
 
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
@@ -90,7 +107,7 @@ export function App({ config }: Props) {
         return () => {
             cancelled = true;
         };
-    }, [config, report]);
+    }, [config, report, reloadKey]);
 
     const filtered = useMemo(() => {
         const q = query.toLowerCase().trim();

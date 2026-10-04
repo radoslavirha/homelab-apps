@@ -254,7 +254,14 @@ export class HttpProviderFactory<K extends string> {
     ): void {
         instance.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
             const credentials = await strategy.getCredentials();
-            applyTransport(config, transport, credentials);
+            try {
+                applyTransport(config, transport, credentials);
+            } catch (error) {
+                // Credentials the transport rejects (blank/absent) never reach the wire, so no 401
+                // would ever invalidate them — drop them so the next request re-fetches.
+                strategy.invalidate();
+                throw error;
+            }
             return config;
         });
 

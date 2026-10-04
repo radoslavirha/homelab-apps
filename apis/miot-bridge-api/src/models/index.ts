@@ -2,7 +2,6 @@ export * from './CommandValueResponse.js';
 export * from './config/ConfigModel.js';
 export * from './Device.js';
 export * from './NotificationPayload.js';
-export * from './config/HttpConfig.js';
 export * from './DeviceCache.js';
 export * from './DeviceCommandOperation.enum.js';
 export * from './config/MqttConfig.js';

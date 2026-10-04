@@ -7,10 +7,11 @@ import { getRequestSignal } from './getRequestSignal.js';
  * Minimal stand-in for `PlatformContext`: the Map-like accessors the helper
  * memoises through, plus the raw request it binds its listeners to.
  */
-function buildContext(raw: EventEmitter | undefined): PlatformContext {
+function buildContext(raw: EventEmitter | undefined, res?: EventEmitter): PlatformContext {
     const store = new Map<string, unknown>();
     return {
         request: { raw },
+        response: { raw: res },
         get: (key: string) => store.get(key),
         set: (key: string, value: unknown) => store.set(key, value)
     } as unknown as PlatformContext;
@@ -30,12 +31,28 @@ describe('getRequestSignal', () => {
         expect(getRequestSignal(ctx)).toBe(getRequestSignal(ctx));
     });
 
-    it('aborts when the request closes', () => {
+    it('does not abort when the request closes after its body was consumed', () => {
         const raw = new EventEmitter();
         const signal = getRequestSignal(buildContext(raw));
 
         raw.emit('close');
+        expect(signal.aborted).toBe(false);
+    });
+
+    it('aborts when the response closes before it was sent', () => {
+        const res = Object.assign(new EventEmitter(), { writableEnded: false });
+        const signal = getRequestSignal(buildContext(new EventEmitter(), res));
+
+        res.emit('close');
         expect(signal.aborted).toBe(true);
+    });
+
+    it('does not abort when the response closes after it was sent', () => {
+        const res = Object.assign(new EventEmitter(), { writableEnded: true });
+        const signal = getRequestSignal(buildContext(new EventEmitter(), res));
+
+        res.emit('close');
+        expect(signal.aborted).toBe(false);
     });
 
     it('aborts when the client disconnects mid-flight', () => {
@@ -48,11 +65,13 @@ describe('getRequestSignal', () => {
 
     it('aborts only once when both events fire', () => {
         const raw = new EventEmitter();
-        const signal = getRequestSignal(buildContext(raw));
+        const res = Object.assign(new EventEmitter(), { writableEnded: false });
+        const ctx = buildContext(raw, res);
+        const sig = getRequestSignal(ctx);
 
         raw.emit('aborted');
-        raw.emit('close');
-        expect(signal.aborted).toBe(true);
+        res.emit('close');
+        expect(sig.aborted).toBe(true);
     });
 
     it('tolerates a context without a raw request', () => {

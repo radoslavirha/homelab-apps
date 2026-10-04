@@ -50,8 +50,8 @@ Responsible service is parsing raw JSON and creating structure where properties/
 
 ## Communication
 
-API - device is UDP
-client (Loxone) - API is UDP/HTTP/MQTT
+API - device is UDP (MIoT protocol). This is the only UDP in the service.
+client (Loxone) - API is REST/MQTT inbound, MQTT outbound. No inbound UDP, no HTTP or UDP notifications.
 
 All possible communication protocols must have same payload required/returned from/to client.
 

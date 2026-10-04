@@ -122,7 +122,7 @@ export class OpenTelemetryService {
                 }),
                 new ExpressInstrumentation({ enabled: tracesEnabled }),
                 new WinstonInstrumentation({
-                    enabled: tracesEnabled,
+                    enabled: tracesEnabled || logsEnabled,
                     disableLogSending: !logsEnabled
                 }),
                 ...extraInstrumentations

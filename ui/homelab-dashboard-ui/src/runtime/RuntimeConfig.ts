@@ -36,13 +36,17 @@ export const AppConfigSchema = z.object({
                 try {
                     // parseDns.ts compiles this; a malformed pattern currently
                     // throws mid-render instead of failing the config.
-                    new RegExp(value);
-                    return true;
+                    // Capture group 1 is the server index; without one every
+                    // anchor parses to NaN and all servers merge into one cluster.
+                    // Appending an empty alternative makes exec('') succeed on any
+                    // pattern so the group count can be read.
+                    const match = new RegExp(`${value}|`).exec('');
+                    return match !== null && match.length > 1;
                 } catch {
                     return false;
                 }
             },
-            { error: 'must be a valid regular expression' }
+            { error: 'must be a valid regular expression with a capture group for the server index' }
         ),
     /** Protocol used when building tile URLs from hostnames. */
     scheme: z.enum(['http', 'https']).default('http'),

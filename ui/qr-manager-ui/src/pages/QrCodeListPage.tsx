@@ -16,6 +16,7 @@ export const QrCodeListPage = () => {
         let cancelled = false;
         setLoading(true);
         setError(null);
+        setItems([]);
         client.list(filter)
             .then(list => {
                 if (!cancelled) {

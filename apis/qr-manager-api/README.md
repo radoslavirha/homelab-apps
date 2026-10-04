@@ -22,13 +22,13 @@ Use case: print a QR code once; change the target URL at any time without reprin
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/r/:slug` | — | Resolve slug → `302 Location: targetURL`. `404` if unknown or inactive, `400` if not 4-char alphanumeric |
+| GET | `/r/:slug` | — | Resolve slug → `302 Location: targetURL`. `404` if unknown or inactive, `400` if not 4-char alphanumeric, `503` when the lookup circuit is open, `504` when the lookup times out |
 | POST | `/qr-codes` | **Yes** | Allocate slug, persist record |
 | GET | `/qr-codes` | **Yes** | List records. Query: `type`, `active` |
 | GET | `/qr-codes/:id` | **Yes** | Get record by MongoDB id |
 | PUT | `/qr-codes/:id` | **Yes** | Update `targetURL`, `label`, `type`, `active` |
 | DELETE | `/qr-codes/:id` | **Yes** | Delete record |
-| GET | `/qr-codes/:id/image` | — | Render QR image. Query: `format=svg\|png`, `size` (px, PNG only), `ecLevel=L\|M\|Q\|H` |
+| GET | `/qr-codes/:id/image` | — | Render QR image. Query: `format=svg\|png`, `size` (px, PNG only, default 512), `ecLevel=L\|M\|Q\|H` |
 
 ## Authentication
 
