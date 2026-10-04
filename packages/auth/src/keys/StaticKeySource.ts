@@ -67,12 +67,39 @@ export class StaticKeySource implements IKeySource {
             return cached;
         }
 
-        const imported = key.algorithm.startsWith('HS')
-            ? new TextEncoder().encode(key.value)
-            : await importSPKI(key.value, key.algorithm);
+        let imported: VerificationKey;
+        if (key.algorithm.startsWith('HS')) {
+            imported = new TextEncoder().encode(key.value);
+        } else {
+            try {
+                imported = await importSPKI(key.value, key.algorithm);
+            } catch (error) {
+                // The key is local, so a PEM that will not import is a
+                // configuration fault, not a source being down. Leaving it a
+                // plain error would be filed as `indeterminate` (503) on every
+                // request, which reads as an IdP outage.
+                throw new InvalidStaticKeyError(issuer, error);
+            }
+        }
 
         this.#imported.set(issuer, imported);
         return imported;
+    }
+}
+
+/**
+ * The inline key for this issuer is not a usable PEM public key for its algorithm.
+ *
+ * `UnresolvableKeyError`: nothing local can ever succeed, and there is no remote
+ * to blame, so the verifier must not report it as the key source being down.
+ */
+export class InvalidStaticKeyError extends UnresolvableKeyError {
+    constructor(
+        readonly issuer: string,
+        cause: unknown
+    ) {
+        super(`Static key for issuer ${issuer} could not be imported: ${cause instanceof Error ? cause.message : String(cause)}`);
+        this.name = 'InvalidStaticKeyError';
     }
 }
 
