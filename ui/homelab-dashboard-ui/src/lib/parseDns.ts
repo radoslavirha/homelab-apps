@@ -15,9 +15,9 @@ interface Anchor {
 
 function resolvePath(hostname: string, paths: Record<string, string> | undefined): string {
     if (!paths) return '';
-    if (hostname in paths) return paths[hostname];
+    if (Object.hasOwn(paths, hostname)) return paths[hostname];
     const label = hostname.split('.')[0];
-    return paths[label] ?? '';
+    return Object.hasOwn(paths, label) ? paths[label] : '';
 }
 
 /** Finds every enabled `A` record whose key matches `pattern` — the cluster anchors. */
