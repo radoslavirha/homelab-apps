@@ -97,6 +97,12 @@ describe('parseDnsRecords', () => {
         expect(clusters[0].services[0].url).toBe('http://traefik.home/dashboard');
     });
 
+    it('does not treat Object.prototype members as configured paths', () => {
+        const records = [aRecord('server1.home', '192.168.1.10'), aRecord('constructor.home', '192.168.1.10')];
+        const clusters = parseDnsRecords(records, { ...baseConfig, paths: {} });
+        expect(clusters[0].services[0].url).toBe('http://constructor.home');
+    });
+
     it('falls back to subnet grouping when no anchor records match', () => {
         const records = [
             aRecord('app1.home', '10.0.0.1'),
