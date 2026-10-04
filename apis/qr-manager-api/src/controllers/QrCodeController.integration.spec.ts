@@ -259,4 +259,15 @@ describe('QrCodeController (integration)', () => {
             await request.get('/qr-codes/671b00000000000000000001/image').expect(200);
         });
     });
+
+    describe('PUT /qr-codes/:id validation', () => {
+        it.each(['targetURL', 'label'])('rejects an empty %s with 400, as POST does', async (field) => {
+            const update = vi.spyOn(qrCodeService, 'update').mockResolvedValue(undefined);
+
+            const response = await api.put('/qr-codes/671b00000000000000000001').send({ [field]: '' });
+
+            expect(response.status).toBe(400);
+            expect(update).not.toHaveBeenCalled();
+        });
+    });
 });
