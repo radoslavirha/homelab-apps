@@ -97,6 +97,19 @@ describe('JwtVerifier — refusals', () => {
         expect(outcome.reason).toBe('invalid');
     });
 
+    it('reports a token with no exp claim as invalid, never as a token that lives forever', async () => {
+        const token = await new SignJWT({})
+            .setProtectedHeader({ alg: 'HS256' })
+            .setIssuer(ISSUER)
+            .setAudience(AUDIENCE)
+            .setSubject('test-subject')
+            .sign(new TextEncoder().encode(TEST_SECRET));
+
+        const outcome = await verifierFor(issuerRow()).verify(token);
+
+        expect(outcome.reason).toBe('invalid');
+    });
+
     it('reports a token signed with the wrong secret as invalid', async () => {
         const outcome = await verifierFor(issuerRow()).verify(await mintTestToken({ secret: 'a-different-secret-000000000000' }));
 
