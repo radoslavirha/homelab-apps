@@ -2,7 +2,7 @@ import { describe, beforeEach, afterEach, expect, it, vi } from 'vitest';
 import { PlatformTest } from '@tsed/platform-http/testing';
 import SuperTest from 'supertest';
 import { authenticateBearerJwt } from '@radoslavirha/tsed-auth';
-import { Logger } from '@radoslavirha/tsed-logger';
+import { BaseLogger, type LoggerMetadata } from '@radoslavirha/tsed-logger';
 import { CommonUtils } from '@radoslavirha/utils';
 import { DeviceCache } from '../models/DeviceCache.js';
 import { MiotSpecV2 } from '../models/miot-spec-v2/index.js';
@@ -14,19 +14,19 @@ const TOKEN = 'a1b2c3d4e5f60718293a4b5c6d7e8f90';
 
 describe('Device token in request logs', () => {
     let api: SuperTest.Agent;
-    let emitted: ReturnType<typeof vi.fn<(message: string, meta: unknown) => void>>;
+    let emitted: ReturnType<typeof vi.fn<(message: string, meta?: LoggerMetadata) => void>>;
 
     beforeEach(PlatformTest.bootstrap(Server, { imports: [{ token: MqttClientProvider, use: null }] }));
     beforeEach(async () => {
         api = await authenticateBearerJwt(SuperTest.agent(PlatformTest.callback()));
-        const logger = PlatformTest.get<Logger>(Logger) as unknown as {
-            httpLog: { info: (m: string, meta: unknown) => void; error: (m: string, meta: unknown) => void };
-        };
-        emitted = vi.fn<(message: string, meta: unknown) => void>();
-        vi.spyOn(logger.httpLog, 'info').mockImplementation(emitted);
-        vi.spyOn(logger.httpLog, 'error').mockImplementation(emitted);
+        emitted = vi.fn<(message: string, meta?: LoggerMetadata) => void>();
+        vi.spyOn(BaseLogger.prototype, 'info').mockImplementation(emitted);
+        vi.spyOn(BaseLogger.prototype, 'error').mockImplementation(emitted);
     });
-    afterEach(PlatformTest.reset);
+    afterEach(() => {
+        vi.restoreAllMocks();
+        return PlatformTest.reset();
+    });
 
     const device = (): DeviceCache => CommonUtils.buildModelStrict(DeviceCache, {
         id: 'a',
