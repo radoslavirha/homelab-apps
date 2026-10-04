@@ -136,4 +136,18 @@ describe('parseDnsRecords', () => {
         expect(clusters).toHaveLength(2);
         expect(clusters[0].color).not.toBe(clusters[1].color);
     });
+
+    it('omits fallback clusters whose services are all excluded and does not consume their index', () => {
+        const cfg = AppConfigSchema.parse({
+            unifi: { host: 'https://192.168.1.1', apiKey: 'key' },
+            serverPattern: '^nomatch(\\d+)$',
+            exclude: ['hidden.lan']
+        });
+        const clusters = parseDnsRecords(
+            [aRecord('hidden.lan', '10.0.1.5'), aRecord('app.lan', '10.0.2.5')],
+            cfg
+        );
+        expect(clusters.map(c => c.label)).toEqual(['10.0.2.x']);
+        expect(clusters[0].index).toBe(1);
+    });
 });
