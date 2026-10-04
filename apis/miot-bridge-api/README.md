@@ -85,6 +85,10 @@ Apply ConfigMap changes before rolling application images.
 }
 ```
 
+## Configuration (logger)
+
+`logger.requests.request.redactPaths` and `logger.requests.response.redactPaths` default to the device secrets (`token`, `stamp`, plus `*.`/`*.*.` nested forms) so MIoT tokens never reach the request log. A configured list replaces the default; `[]` disables redaction for that body.
+
 ## REST API
 
 | Method | Path | Description |
