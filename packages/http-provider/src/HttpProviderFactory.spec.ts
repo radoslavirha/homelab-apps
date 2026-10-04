@@ -301,6 +301,35 @@ describe('HttpProviderFactory', () => {
         });
     });
 
+    describe('token-exchange blank credential', () => {
+        it('re-fetches credentials after a blank token made the previous request throw', async () => {
+            const created: AxiosInstance[] = [];
+            const factory = new HttpProviderFactory({
+                'svc': {
+                    baseURL: 'http://svc.local',
+                    auth: {
+                        strategy: AuthStrategy.TokenExchange,
+                        request: { method: 'POST', url: 'http://auth.local/token' },
+                        tokenExtractor: 'access_token',
+                        transport: { headers: [{ name: 'Authorization', credential: 'value', prefix: 'Bearer ' }] }
+                    }
+                }
+            }, { onInstanceCreated: (instance) => created.push(instance) });
+            const client = factory.get('svc');
+            const authMock = new MockAdapter(created[1]!);
+            const svcMock = new MockAdapter(transport(client));
+            authMock.onPost('http://auth.local/token')
+                .replyOnce(200, { access_token: '' })
+                .onPost('http://auth.local/token')
+                .reply(200, { access_token: 'good' });
+            svcMock.onGet('/x').reply(200, 'ok');
+
+            await expect(client.get('/x')).rejects.toThrow('needs credential');
+            await expect(client.get('/x')).resolves.toBe('ok');
+            expect(svcMock.history['get']?.[0]?.headers?.['Authorization']).toBe('Bearer good');
+        });
+    });
+
     describe('strategy selection', () => {
         it('creates a TokenExchangeStrategy for token-exchange config', () => {
             const factory = new HttpProviderFactory({
