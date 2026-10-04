@@ -1,4 +1,4 @@
-import { AdditionalProperties, CollectionOf, Description, Enum, Groups, Property, Required } from '@tsed/schema';
+import { AdditionalProperties, CollectionOf, Description, Enum, Groups, Optional, Property, Required } from '@tsed/schema';
 import { PropertyAccess } from './PropertyAccess.enum.js';
 import { MiotPropertyValue } from './MiotPropertyValue.js';
 import { GROUP_NEVER_SIMPLIFIED_SPEC } from '../../ModelGroups.js';
@@ -53,4 +53,25 @@ export class MiotProperty {
     @Description('Whether the entry came from the published spec or from a model property override')
     @Groups(GROUP_NEVER_SIMPLIFIED_SPEC)
     public source: MiotPropertySource;
+
+    /**
+     * Value format from the published spec (`BOOL`, `UINT8`, ...). Absent on overrides, which only
+     * carry a hand-listed `values` array. Used to validate writes to properties that publish no
+     * `value-list`; hidden from the simplified-spec response so the published contract is unchanged.
+     */
+    @Optional()
+    @Property(String)
+    @Description('Value format from the published spec')
+    @Groups(GROUP_NEVER_SIMPLIFIED_SPEC)
+    public format?: string;
+
+    /**
+     * `[min, max, step]` from the spec's `value-range`. Hidden from the simplified-spec response
+     * for the same reason as `format`.
+     */
+    @Optional()
+    @CollectionOf(Number)
+    @Description('Allowed value range [min, max, step] from the published spec')
+    @Groups(GROUP_NEVER_SIMPLIFIED_SPEC)
+    public valueRange?: number[];
 }

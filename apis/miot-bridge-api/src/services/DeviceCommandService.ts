@@ -1,7 +1,7 @@
 import { Service, Scope, ProviderScope } from '@tsed/di';
 import { BadRequest, NotFound } from '@tsed/exceptions';
 import type { Attributes, Span } from '@opentelemetry/api';
-import { CommonUtils } from '@radoslavirha/utils';
+import { BooleanUtils, CommonUtils, NumberUtils } from '@radoslavirha/utils';
 import { DeviceCommandOperation } from '../models/DeviceCommandOperation.enum.js';
 import { DeviceCommandRequest } from '../models/DeviceCommandRequest.js';
 import { RawCommandRequest } from '../models/RawCommandRequest.js';
@@ -458,15 +458,38 @@ export class DeviceCommandService {
     }
 
     private validatePropertyValue(command: string, value: unknown, property: MiotProperty): void {
-        // Check if the value is in the allowed list (strict equality: 4 !== "4")
-        const isValid = property.values.some(allowedVal => allowedVal.value === value);
-        if (!isValid) {
-            const allowed = property.values.map(v => `${v.value} (${v.description})`).join(', ');
+        const reject = (allowed: string): never => {
             throw new BadRequest(
-                `Property '${command}' value ${JSON.stringify(value)} is not allowed. ` +
-                `Allowed values: ${allowed}`
+                `Property '${command}' value ${JSON.stringify(value)} is not allowed. Allowed values: ${allowed}`
             );
+        };
+
+        // Enum property: the value must be one of the listed ones (strict equality: 4 !== "4")
+        if (property.values.length > 0) {
+            if (!property.values.some(allowedVal => allowedVal.value === value)) {
+                reject(property.values.map(v => `${v.value} (${v.description})`).join(', '));
+            }
+            return;
         }
+
+        // Ranged number: [min, max, step]
+        if (CommonUtils.notNil(property.valueRange) && property.valueRange.length >= 2) {
+            const [min, max, step] = property.valueRange;
+            const hasStep = CommonUtils.notNil(step) && step > 0;
+            if (!NumberUtils.isFiniteNumber(value) || value < min || value > max) {
+                return reject(`number between ${min} and ${max}${hasStep ? ` in steps of ${step}` : ''}`);
+            }
+            const steps = hasStep ? (value - min) / step : 0;
+            if (Math.abs(steps - Math.round(steps)) > 1e-9) {
+                reject(`number between ${min} and ${max} in steps of ${step}`);
+            }
+            return;
+        }
+
+        if (property.format?.toUpperCase() === 'BOOL' && !BooleanUtils.isBoolean(value)) {
+            reject('true, false');
+        }
+        // No value-list, range or bool format: the spec gives no constraint, let the device decide.
     }
 }
 
