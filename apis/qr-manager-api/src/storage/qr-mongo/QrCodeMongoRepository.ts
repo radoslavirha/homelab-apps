@@ -3,7 +3,7 @@ import type { MongooseModel } from '@tsed/mongoose';
 import { MongoRepository, MongoCreate, MongoUpdate } from '@radoslavirha/tsed-mongoose';
 import { createResiliencePolicy, type ResiliencePolicy } from '@radoslavirha/resilience';
 import { CommonUtils } from '@radoslavirha/utils';
-import type { QueryOptions } from 'mongoose';
+import { Types, type QueryOptions } from 'mongoose';
 import { QrCodeMongoDTO } from './dto/QrCodeMongoDTO.js';
 import { QrType } from '../../models/QrType.enum.js';
 
@@ -48,6 +48,10 @@ export class QrCodeMongoRepository extends MongoRepository<QrCodeMongoDTO> {
     }
 
     public async findById(id: string): Promise<QrCodeMongoDTO | null> {
+        // A malformed id can never match a document; mongoose would throw a CastError instead.
+        if (!Types.ObjectId.isValid(id)) {
+            return null;
+        }
         const result = await this.model.findById(id).lean<QrCodeMongoDTO>();
         return this.deserialize(result);
     }
@@ -76,6 +80,9 @@ export class QrCodeMongoRepository extends MongoRepository<QrCodeMongoDTO> {
     }
 
     public async updateById(id: string, data: MongoUpdate<QrCodeMongoDTO>): Promise<QrCodeMongoDTO | null> {
+        if (!Types.ObjectId.isValid(id)) {
+            return null;
+        }
         const result = await this.model.findByIdAndUpdate(
             id,
             { $set: data },
@@ -85,6 +92,9 @@ export class QrCodeMongoRepository extends MongoRepository<QrCodeMongoDTO> {
     }
 
     public async deleteById(id: string): Promise<void> {
+        if (!Types.ObjectId.isValid(id)) {
+            return;
+        }
         await this.model.findByIdAndDelete(id);
     }
 }
