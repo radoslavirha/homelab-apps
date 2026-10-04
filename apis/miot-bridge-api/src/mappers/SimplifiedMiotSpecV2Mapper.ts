@@ -46,7 +46,9 @@ export class SimplifiedMiotSpecV2Mapper extends MappingUtils {
                         siid: svc.iid,
                         piid: p.iid,
                         access: await this.mapArray(p.access, async (value) => await this.mapEnum({ MiotSpecV2PropertyAccess }, { PropertyAccess }, value)),
-                        values: values ?? []
+                        values: values ?? [],
+                        format: p.format,
+                        valueRange: p.valueRange
                     }));
                 }
             );

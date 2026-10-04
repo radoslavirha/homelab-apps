@@ -497,4 +497,59 @@ describe('DeviceCommandService', () => {
 
         expect(spans()).toHaveLength(0);
     });
+
+    // Writable properties published with `format: BOOL` or a `value-range` carry no `value-list`,
+    // so the mapper hands them over with `values: []`.
+    describe('SetProperty on properties without a value-list', () => {
+        const property = (piid: number, extra: Partial<MiotProperty>): MiotProperty =>
+            CommonUtils.buildModelStrict(MiotProperty, {
+                source: MIOT_PROPERTY_SOURCE_VALUE_SPEC,
+                siid: 2,
+                piid,
+                access: [PropertyAccess.Read, PropertyAccess.Write],
+                values: [],
+                ...extra
+            });
+
+        const set = (command: string, value: unknown) =>
+            service.execute(request({ command, operation: DeviceCommandOperation.SetProperty, value } as Partial<DeviceCommandRequest>));
+
+        beforeEach(() => {
+            const withProperties = spec();
+            withProperties.properties.set('light:on', property(2, { format: 'BOOL' }));
+            withProperties.properties.set('light:brightness', property(3, { format: 'UINT8', valueRange: [1, 100, 1] }));
+            withProperties.properties.set('light:name', property(4, { format: 'STRING' }));
+            vi.spyOn(PlatformTest.get<SimplifiedMiotSpecV2Mapper>(SimplifiedMiotSpecV2Mapper), 'map').mockResolvedValue(withProperties);
+        });
+
+        it('Should allow setting a bool property', async () => {
+            await set('light:on', true);
+
+            expect(miotDevice.setProperty).toHaveBeenCalledWith(2, 2, true);
+        });
+
+        it('Should reject a non-boolean value for a bool property', async () => {
+            await expect(set('light:on', 'yes')).rejects.toThrow('not allowed');
+
+            expect(miotDevice.setProperty).not.toHaveBeenCalled();
+        });
+
+        it('Should allow setting an in-range value', async () => {
+            await set('light:brightness', 50);
+
+            expect(miotDevice.setProperty).toHaveBeenCalledWith(2, 3, 50);
+        });
+
+        it.each([0, 101, 50.5, '50'])('Should reject out-of-range, off-step or non-numeric value %j', async (value) => {
+            await expect(set('light:brightness', value)).rejects.toThrow('not allowed');
+
+            expect(miotDevice.setProperty).not.toHaveBeenCalled();
+        });
+
+        it('Should not constrain a property that publishes no value-list or range', async () => {
+            await set('light:name', 'lamp');
+
+            expect(miotDevice.setProperty).toHaveBeenCalledWith(2, 4, 'lamp');
+        });
+    });
 });
