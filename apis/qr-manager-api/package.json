@@ -57,7 +57,6 @@
     "body-parser": "catalog:express",
     "compression": "catalog:express",
     "cookie-parser": "catalog:express",
-    "dotenv": "catalog:",
     "express": "catalog:express",
     "mongoose": "catalog:",
     "nanoid": "^6.0.1",

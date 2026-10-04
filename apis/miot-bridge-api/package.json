@@ -59,7 +59,6 @@
     "body-parser": "catalog:express",
     "compression": "catalog:express",
     "cookie-parser": "catalog:express",
-    "dotenv": "catalog:",
     "express": "catalog:express",
     "mongoose": "catalog:",
     "mqtt": "^5.15.2",
