@@ -12,6 +12,8 @@ interface Props {
 
 type StatusState = { state: 'loading' | 'ok' | 'error'; message: string };
 
+const DEFAULT_TITLE = 'Homelab dashboard';
+
 export function App({ config }: Props) {
     const [clusters, setClusters] = useState<Cluster[]>([]);
     const [status, setStatus] = useState<StatusState>({
@@ -53,6 +55,10 @@ export function App({ config }: Props) {
             setReloadKey(k => k + 1);
         }
     }, [apiStatus, loadFailed]);
+
+    useEffect(() => {
+        document.title = config.title ?? DEFAULT_TITLE;
+    }, [config.title]);
 
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
@@ -127,7 +133,7 @@ export function App({ config }: Props) {
     return (
         <AppShell
             headerLeft={
-                <span className="app-logo">{config.title ?? 'Homelab dashboard'}</span>
+                <span className="app-logo">{config.title ?? DEFAULT_TITLE}</span>
             }
             headerRight={
                 <input
