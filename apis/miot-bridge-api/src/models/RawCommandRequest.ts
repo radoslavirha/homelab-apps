@@ -17,5 +17,5 @@ export class RawCommandRequest {
     /** Action instance ID — required for ACTION operations. */
     public aiid?: number;
     /** Value for SET_PROPERTY operations or arguments for ACTION operations. */
-    public value?: string | number | string[] | number[];
+    public value?: string | number | boolean | string[] | number[];
 }

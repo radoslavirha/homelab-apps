@@ -35,7 +35,7 @@ export class CommandController {
         @QueryParams(CommandRequestModel) query: CommandRequestModel,
         @Context() ctx: PlatformContext
     ): Promise<CommandValueResponse | void> {
-        return this.commandHandler.execute(query, ctx);
+        return this.commandHandler.execute(query, ctx, { fromQuery: true });
     }
 
     @Post('/')
@@ -61,7 +61,7 @@ export class CommandController {
         @QueryParams(RawCommandRequestModel) query: RawCommandRequestModel,
         @Context() ctx: PlatformContext
     ): Promise<CommandValueResponse | void> {
-        return this.rawCommandHandler.execute(query, ctx);
+        return this.rawCommandHandler.execute(query, ctx, { fromQuery: true });
     }
 
     @Post('/raw')

@@ -6,14 +6,14 @@ import { DeviceCommandOperation } from '../models/DeviceCommandOperation.enum.js
 import { RawCommandRequest } from '../models/RawCommandRequest.js';
 import { RawCommandRequestModel } from '../models/RawCommandRequestModel.js';
 import { CommandValueResponse } from '../models/CommandValueResponse.js';
-import { DeviceCommandService } from '../services/DeviceCommandService.js';
+import { DeviceCommandService, type CommandSourceOptions } from '../services/DeviceCommandService.js';
 
 @Injectable()
 @Scope(ProviderScope.SINGLETON)
 export class RawCommandHandler {
     constructor(private readonly deviceCommandService: DeviceCommandService) {}
 
-    public async execute(request: RawCommandRequestModel, ctx: PlatformContext): Promise<CommandValueResponse | void> {
+    public async execute(request: RawCommandRequestModel, ctx: PlatformContext, options: CommandSourceOptions = {}): Promise<CommandValueResponse | void> {
         if (
             (request.operation === DeviceCommandOperation.GetProperty || request.operation === DeviceCommandOperation.SetProperty) &&
             CommonUtils.isNil(request.piid)
@@ -34,7 +34,7 @@ export class RawCommandHandler {
             value: request.value
         });
 
-        const response = await this.deviceCommandService.executeRaw(commandRequest);
+        const response = await this.deviceCommandService.executeRaw(commandRequest, options);
 
         if (response.operation === DeviceCommandOperation.Action) {
             ctx.response.status(204);
