@@ -41,6 +41,19 @@ export function App({ config }: Props) {
         }
     });
 
+    // An offline→online blip forces apiStatus back to 'ok' without a successful
+    // request, which stops the recovery probe. If the last load failed, reload
+    // on that transition so the dashboard doesn't stay stuck on the error.
+    const prevApiStatus = useRef(apiStatus);
+    const loadFailed = status.state === 'error';
+    useEffect(() => {
+        const wasNotOk = prevApiStatus.current !== 'ok';
+        prevApiStatus.current = apiStatus;
+        if (wasNotOk && apiStatus === 'ok' && loadFailed) {
+            setReloadKey(k => k + 1);
+        }
+    }, [apiStatus, loadFailed]);
+
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
             if (e.key === '/' && document.activeElement !== searchRef.current) {
