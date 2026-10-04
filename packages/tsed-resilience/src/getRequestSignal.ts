@@ -8,6 +8,12 @@ interface RawRequest {
     once?: (event: string, listener: () => void) => void;
 }
 
+/** The slice of Node's `ServerResponse` this module relies on. */
+interface RawResponse {
+    once?: (event: string, listener: () => void) => void;
+    writableEnded?: boolean;
+}
+
 /**
  * Returns the {@link AbortSignal} tied to this request's lifecycle. The signal
  * aborts when the client disconnects, so abandoned requests stop doing outbound
@@ -40,19 +46,29 @@ export function getRequestSignal(ctx: PlatformContext): AbortSignal {
     const controller = new AbortController();
     ctx.set(CONTROLLER_KEY, controller);
 
+    const onDisconnect = (): void => {
+        if (!controller.signal.aborted) {
+            controller.abort();
+        }
+    };
+
+    // `aborted` covers a client that leaves before the request body is complete.
+    // The request's own `close` is NOT a disconnect signal: Node emits it as soon
+    // as the body has been consumed (autoDestroy), while the handler still runs.
     const raw = ctx.request?.raw as RawRequest | undefined;
     if (typeof raw?.once === 'function') {
-        const onDisconnect = (): void => {
-            if (!controller.signal.aborted) {
-                controller.abort();
-            }
-        };
-        // On a client disconnect `aborted` fires first, so listening to it
-        // cancels marginally sooner. `close` is the modern (Node >= 16) signal
-        // and covers every other termination — on a *normal* request it fires
-        // only once the handler has finished, so it never cancels early.
         raw.once('aborted', onDisconnect);
-        raw.once('close', onDisconnect);
+    }
+
+    // The response's `close` fires either after a normal `end()` (ignored through
+    // `writableEnded`) or when the connection drops before the response was sent.
+    const res = ctx.response?.raw as RawResponse | undefined;
+    if (typeof res?.once === 'function') {
+        res.once('close', () => {
+            if (!res.writableEnded) {
+                onDisconnect();
+            }
+        });
     }
 
     return controller.signal;

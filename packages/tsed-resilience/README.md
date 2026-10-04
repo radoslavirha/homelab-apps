@@ -79,11 +79,13 @@ returns the same signal and it is garbage-collected with the context.
 
 ## When the signal aborts
 
-It is bound to the Node request's `aborted` and `close` events:
+It is bound to the request's `aborted` event and the response's `close` event:
 
-- **Client disconnects mid-flight** → `aborted` fires, then `close`; the signal aborts while the
-  handler is still running, cancelling in-flight work.
-- **Normal request** → since Node 16 `close` fires only *after* the response completes, so the
-  signal never aborts work that is still needed.
+- **Client disconnects mid-flight** → `aborted` (body incomplete) or the response `close` before
+  the response was sent fires; the signal aborts while the handler is still running, cancelling
+  in-flight work.
+- **Normal request** → the signal never aborts work that is still needed. The request's own
+  `close` is deliberately ignored: Node emits it as soon as the request body is consumed, which
+  happens before the handler finishes for every POST/PUT/PATCH with a body.
 
 Requires Node.js ≥ 24 (native `AbortController` / `AbortSignal`).
