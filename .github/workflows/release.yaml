@@ -1,5 +1,5 @@
 ---
-name: Release APPs
+name: Release applications
 
 # yamllint disable-line rule:truthy
 on:
@@ -9,7 +9,7 @@ on:
 
 jobs:
   release:
-    name: Release APPs
+    name: Release applications
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-apps-matrix.outputs.json }}
@@ -27,12 +27,12 @@ jobs:
         id: changesets
         uses: changesets/action@v2
         with:
-          pr-title: Release APPs
-          commit-message: Version APPs
+          pr-title: Publish applications
+          commit-message: Publish applications
           version-script: pnpm changeset:version
           publish-script: pnpm changeset:tag
           github-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set APPs matrix
+      - name: Set applications matrix
         id: set-apps-matrix
         shell: bash
         env:
