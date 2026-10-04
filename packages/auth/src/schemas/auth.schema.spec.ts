@@ -98,6 +98,13 @@ describe('JwtVerifierSchema', () => {
         expect(() => JwtVerifierSchema.parse(entry())).toThrow(/at least one trusted issuer/);
     });
 
+    it('refuses two trusted issuers with the same iss, since the later one would silently replace the earlier', () => {
+        const other = { ...devIssuer, name: 'dev-other', audience: 'other-api' };
+
+        expect(() => JwtVerifierSchema.parse(entry(devIssuer, other))).toThrow(/duplicate trusted issuer 'dev'/);
+        expect(() => AuthConfigSchema.parse({ [TEST_METHOD]: entry(devIssuer, other) })).toThrow(/duplicate trusted issuer/);
+    });
+
     it('lets two entries share a type, which is why the name is not the mechanism', () => {
         // The limitation the split exists to remove: one `jwt` key meant every
         // guarded route shared one issuer list, so a cluster's ServiceAccount
