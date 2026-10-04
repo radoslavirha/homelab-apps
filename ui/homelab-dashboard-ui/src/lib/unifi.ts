@@ -44,16 +44,34 @@ export async function fetchDnsRecords(
 
     // 401/403 classify as client-error, so the outage banner stays down — the
     // controller is answering, our credential is wrong.
-    options.onOutcome?.(classifyResponse(res));
+    const outcome = classifyResponse(res);
 
     if (res.status === 401 || res.status === 403) {
+        options.onOutcome?.(outcome);
         throw new UnifiAuthError(`Unifi API key rejected (HTTP ${res.status}).`);
     }
 
     if (res.ok) {
-        const body = (await res.json()) as unknown;
+        // A 200 only counts as success once the body is a usable DNS array. A
+        // proxy fallback (e.g. index.html) or an error object is a backend fault.
+        let body: unknown;
+        try {
+            body = await res.json();
+        } catch (error) {
+            options.onOutcome?.({ kind: 'server-error', status: res.status });
+            throw error;
+        }
         // Response is a direct array
-        if (Array.isArray(body)) return body as DnsRecord[];
+        if (Array.isArray(body)) {
+            options.onOutcome?.(outcome);
+            return body as DnsRecord[];
+        }
+        options.onOutcome?.({ kind: 'server-error', status: res.status });
+    } else {
+        // Any other non-2xx (404 while the Network app restarts, 408/429) is a
+        // transient controller fault, not a config one: report it as degraded
+        // so the recovery probe keeps polling.
+        options.onOutcome?.({ kind: 'server-error', status: res.status });
     }
 
     throw new Error(`Could not retrieve DNS records from Unifi (HTTP ${res.status}).`);

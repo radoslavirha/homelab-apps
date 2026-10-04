@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { QrCodeListPage } from './QrCodeListPage.js';
@@ -40,5 +40,12 @@ describe('QrCodeListPage', () => {
         await userEvent.selectOptions(screen.getByLabelText('Active'), 'false');
         await screen.findByRole('alert');
         expect(screen.queryByText('Active one')).not.toBeInTheDocument();
+    });
+
+    it('shows an error rather than crashing when a 200 body has no items array', async () => {
+        Object.assign(globalThis, { fetch: vi.fn().mockResolvedValue(json({})) });
+        vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        renderPage();
+        await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
     });
 });

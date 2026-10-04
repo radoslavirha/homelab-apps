@@ -1,6 +1,7 @@
 import { Injectable, Scope, ProviderScope } from '@tsed/di';
 import { NotFound } from '@tsed/exceptions';
 import { DeviceStorageService } from '../../services/DeviceStorageService.js';
+import { MiotDeviceRegistry } from '../../services/MiotDeviceRegistry.js';
 import { NotificationDeleteAllHandler } from '../notifications/NotificationDeleteAllHandler.js';
 import { CommonUtils } from '@radoslavirha/utils';
 
@@ -9,7 +10,8 @@ import { CommonUtils } from '@radoslavirha/utils';
 export class DeviceDeleteHandler {
     constructor(
         private readonly deviceStorageService: DeviceStorageService,
-        private readonly notificationDeleteAllHandler: NotificationDeleteAllHandler
+        private readonly notificationDeleteAllHandler: NotificationDeleteAllHandler,
+        private readonly miotDeviceRegistry: MiotDeviceRegistry
     ) {}
 
     async execute(id: string): Promise<void> {
@@ -19,5 +21,6 @@ export class DeviceDeleteHandler {
         }
         await this.notificationDeleteAllHandler.execute(id);
         await this.deviceStorageService.delete(id);
+        this.miotDeviceRegistry.remove(device.deviceId);
     }
 }

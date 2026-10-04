@@ -1,8 +1,8 @@
 import { AdditionalProperties, Description, Example, Property, Required } from '@tsed/schema';
 
 /**
- * Payload sent to all configured outbound notification transports
- * (HTTP POST body / MQTT message) when a property value is observed.
+ * A property-value observation on its way to the outbound notification transport.
+ * The MQTT message body is `{ [property]: value }`, published to the device's notifications topic.
  */
 @AdditionalProperties(false)
 export class NotificationPayload {

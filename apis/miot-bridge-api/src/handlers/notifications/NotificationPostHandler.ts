@@ -43,8 +43,14 @@ export class NotificationPostHandler {
             }
         }
 
+        const existing = await this.notificationStorageService.getAllByDeviceId(deviceId);
         const created: DeviceNotification[] = [];
-        for (const property of request.properties) {
+        for (const property of new Set(request.properties)) {
+            const duplicate = existing.find(n => n.property === property);
+            if (CommonUtils.notNil(duplicate)) {
+                created.push(duplicate);
+                continue;
+            }
             const notification = await this.notificationStorageService.create(CommonUtils.buildModelCore(DeviceNotification, { deviceId, property }));
             created.push(notification);
         }

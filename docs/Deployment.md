@@ -134,8 +134,6 @@ MQTT-to-MongoDB bridge for Loxone IoT miniserver data ingestion.
 - **Helm values key:** `apps.miot-bridge-api`
 - **ArgoCD app name:** `miot-bridge-api`
 - **HTTP port:** 4000
-- **UDP port:** 4000
-- **Traefik UDP entrypoints:** `production=udp-miot-prod`, `sandbox=udp-miot-sbx`
 
 ### Secret groups
 
@@ -156,6 +154,5 @@ group: mongodb
 
 ### Config structure notes
 
-- `udp.notifications.address` is a hardcoded Loxone miniserver IP — use `192.168.1.140:50450`
 - `mqtt.topicPrefix` differs: production=`iot/`, sandbox=`iot/{{ NAMESPACE }}/`
 - `polling` block is identical across envs — no template vars needed
