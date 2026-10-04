@@ -13,11 +13,16 @@ interface Anchor {
     hostname: string;
 }
 
+/** A suffix not starting with `/`, `?` or `#` would fuse onto the hostname, so it gets a `/` prefix. */
+function normalizeSuffix(suffix: string): string {
+    return suffix === '' || /^[/?#]/.test(suffix) ? suffix : `/${suffix}`;
+}
+
 function resolvePath(hostname: string, paths: Record<string, string> | undefined): string {
     if (!paths) return '';
-    if (hostname in paths) return paths[hostname];
+    if (hostname in paths) return normalizeSuffix(paths[hostname]);
     const label = hostname.split('.')[0];
-    return paths[label] ?? '';
+    return normalizeSuffix(paths[label] ?? '');
 }
 
 /** Finds every enabled `A` record whose key matches `pattern` — the cluster anchors. */
