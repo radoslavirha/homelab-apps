@@ -71,6 +71,45 @@ describe('useApiStatus', () => {
         expect(result.current.status).toBe('unreachable');
     });
 
+    it('clears unreachable when the browser comes back online', () => {
+        const { result } = renderHook(() => useApiStatus());
+
+        act(() => {
+            window.dispatchEvent(new Event('offline'));
+        });
+        act(() => {
+            window.dispatchEvent(new Event('online'));
+        });
+
+        expect(result.current.status).toBe('ok');
+    });
+
+    it('does not clear a 5xx degraded status just because the browser came back online', () => {
+        const { result } = renderHook(() => useApiStatus());
+
+        act(() => {
+            result.current.report(classifyResponse({ status: 503 }));
+        });
+        act(() => {
+            window.dispatchEvent(new Event('online'));
+        });
+
+        expect(result.current.status).toBe('degraded');
+    });
+
+    it('does not clear unauthenticated when the browser comes back online', () => {
+        const { result } = renderHook(() => useApiStatus());
+
+        act(() => {
+            result.current.report(classifyResponse({ status: 401 }));
+        });
+        act(() => {
+            window.dispatchEvent(new Event('online'));
+        });
+
+        expect(result.current.status).toBe('unauthenticated');
+    });
+
     it('does not run the recovery probe while ok', () => {
         const probe = vi.fn().mockResolvedValue(true);
         renderHook(() => useApiStatus({ recoveryProbe: { probe } }));
