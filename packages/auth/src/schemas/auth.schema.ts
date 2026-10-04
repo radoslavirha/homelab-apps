@@ -132,6 +132,21 @@ export const JwtVerifierSchema = z.object({
      */
     trustedIssuers: z.array(TrustedIssuerSchema)
         .min(1, 'a bearer-jwt verifier needs at least one trusted issuer; with none it could never verify anything')
+        .superRefine((issuers, ctx) => {
+            // A verifier looks sources up by `iss`; a repeated issuer would let the later row
+            // silently replace the earlier one, quietly changing who is trusted.
+            const seen = new Set<string>();
+            issuers.forEach((trusted, index) => {
+                if (seen.has(trusted.issuer)) {
+                    ctx.addIssue({
+                        code: z.ZodIssueCode.custom,
+                        path: [index, 'issuer'],
+                        message: `duplicate trusted issuer '${trusted.issuer}'; each issuer may appear once per entry`
+                    });
+                }
+                seen.add(trusted.issuer);
+            });
+        })
 });
 
 /**
