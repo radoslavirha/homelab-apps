@@ -184,6 +184,10 @@ beforeEach(PlatformTest.bootstrap(Server, {
 }));
 ```
 
+## Don't test the framework
+
+Never add tests for framework decorators (`@MinLength`, `@Required`, `@Enum`, ...) or other behaviour Ts.ED/Ajv/Mongoose already guarantee. Test our own logic only. A validation-only bugfix (adding a decorator) needs no regression test.
+
 ## File naming
 
 - Unit test: `<ClassName>.spec.ts` — co-located with source file
