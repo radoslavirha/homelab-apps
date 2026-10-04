@@ -115,10 +115,10 @@ function fallbackBySubnet(
 
     for (const r of records) {
         if (r.record_type !== 'A' || r.enabled === false) continue;
-        const subnet = r.value.split('.').slice(0, 3).join('.');
-        if (!groups.has(subnet)) groups.set(subnet, { index: idx++, services: [] });
         const hostname = (r.key ?? '').toLowerCase();
         if (excluded.has(hostname)) continue;
+        const subnet = r.value.split('.').slice(0, 3).join('.');
+        if (!groups.has(subnet)) groups.set(subnet, { index: idx++, services: [] });
         groups.get(subnet)!.services.push({
             name: hostname.split('.')[0],
             hostname,
