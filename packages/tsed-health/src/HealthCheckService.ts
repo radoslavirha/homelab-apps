@@ -1,4 +1,4 @@
-import { HealthRegistry, type HealthCheck, type HealthConfig, type HealthReport } from '@radoslavirha/health';
+import { HealthConfigSchema, HealthRegistry, buildReport, type HealthCheck, type HealthConfig, type HealthReport } from '@radoslavirha/health';
 import { Injectable, ProviderScope, Scope, injectMany } from '@tsed/di';
 import { HEALTH_CHECKS } from './HEALTH_CHECKS.js';
 
@@ -41,9 +41,9 @@ export class HealthCheckService {
      */
     public async evaluate(): Promise<{ ready: boolean; report: HealthReport }> {
         const registry = this.get();
-        const { ready } = await registry.evaluate();
+        const { ready, evaluated } = await registry.evaluate();
 
-        return { ready, report: await registry.report() };
+        return { ready, report: buildReport(evaluated, HealthConfigSchema.parse(this.config).exposeDetail) };
     }
 
     /** Full `application/health+json` report. */
