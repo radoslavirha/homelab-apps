@@ -1,0 +1,102 @@
+---
+name: Agent setup
+description: >-
+  Prepare a checkout for a Claude agent workflow: toolchain, registry auth,
+  dependencies, build, skills, the labels agents use, and the prompt to run.
+  Mirrors .github/actions/prepare, minus the checkout.
+inputs:
+  token:
+    description: GitHub App installation token
+    required: true
+  app-slug:
+    description: GitHub App slug, for the bot's git identity
+    required: true
+  NODE_AUTH_TOKEN:
+    description: Token with read:packages, for @radoslavirha/* on GitHub Packages
+    required: true
+  prompt:
+    description: Prompt file under .github/claude/, read from the default branch
+    required: true
+outputs:
+  prompt:
+    description: Prompt text
+    value: ${{ steps.prompt.outputs.text }}
+  bot-id:
+    description: User id of the App's bot account
+    value: ${{ steps.bot.outputs.id }}
+  bot-name:
+    description: Login of the App's bot account
+    value: ${{ steps.bot.outputs.name }}
+runs:
+  using: composite
+  steps:
+    - name: Use pnpm 11
+      uses: pnpm/action-setup@v6
+      with:
+        version: 11
+    - name: Set up Node.js v24
+      uses: actions/setup-node@v7
+      with:
+        node-version: 24
+        cache: pnpm
+        registry-url: https://npm.pkg.github.com/
+        scope: '@radoslavirha'
+    # Same as .github/actions/prepare: .npmrc maps the scope, the token lives in
+    # user config, so pnpm in the agent's own shell can install too.
+    - name: Configure pnpm auth token
+      shell: bash
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.NODE_AUTH_TOKEN }}
+      run: pnpm config set //npm.pkg.github.com/:_authToken "$NODE_AUTH_TOKEN"
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
+    # Apps and packages resolve sibling workspace packages through dist/.
+    - name: Build workspace
+      shell: bash
+      run: pnpm build
+    - name: Install APM CLI
+      uses: microsoft/apm-action@v1
+      with:
+        setup-only: true
+        apm-version: '0.28.0'
+    # Skills help but aren't required; prompts fall back to reading them from
+    # toolkit-hub on GitHub.
+    - name: Install APM dependencies
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}
+      run: apm install || echo "::warning::apm install failed — agents read toolkit-hub skills from GitHub"
+    - name: Resolve bot identity
+      id: bot
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        APP_SLUG: ${{ inputs.app-slug }}
+      run: |
+        echo "name=${APP_SLUG}[bot]" >> "$GITHUB_OUTPUT"
+        echo "id=$(gh api "/users/${APP_SLUG}%5Bbot%5D" --jq .id)" >> "$GITHUB_OUTPUT"
+    - name: Ensure agent labels
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+      run: |
+        for l in bug agent-found agent-review-log agent-in-progress agent-needs-human \
+                 agent-cannot-reproduce agent-pr agent-upstream agent-todo; do
+          gh label create "$l" -R "$GITHUB_REPOSITORY" 2>/dev/null || true
+        done
+    # Read from the default branch, so a PR branch the agent works on can't
+    # change its own instructions.
+    - name: Load prompt
+      id: prompt
+      shell: bash
+      env:
+        PROMPT: ${{ inputs.prompt }}
+        DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      run: |
+        git fetch --quiet origin "$DEFAULT_BRANCH"
+        {
+          echo "text<<__AGENT_PROMPT__"
+          git show "FETCH_HEAD:.github/claude/$PROMPT"
+          echo "__AGENT_PROMPT__"
+        } >> "$GITHUB_OUTPUT"

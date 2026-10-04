@@ -1,0 +1,64 @@
+---
+name: Agent bug resolver
+
+# yamllint disable-line rule:truthy
+on:
+  schedule:
+    - cron: '30 * * * *'
+  workflow_dispatch:
+  # The owner labeling an issue `agent-todo` starts a run right away.
+  issues:
+    types: [labeled]
+
+# A run that outlasts the hour queues the next one instead of overlapping it.
+concurrency:
+  group: agent-bug-resolver
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    name: Resolve a bug
+    if: >-
+      github.event_name != 'issues'
+      || (github.event.label.name == 'agent-todo'
+        && github.event.sender.login == 'radoslavirha')
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Create agent token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.AGENT_APP_CLIENT_ID }}
+          private-key: ${{ secrets.AGENT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          fetch-depth: 0
+      - name: Agent setup
+        id: setup
+        uses: ./.github/actions/agent-setup
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          app-slug: ${{ steps.app-token.outputs.app-slug }}
+          NODE_AUTH_TOKEN: ${{ secrets.TOOLKIT_HUB_PACKAGES }}
+          prompt: bug-resolver.md
+      - name: Run Claude
+        uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ steps.app-token.outputs.token }}
+          bot_id: ${{ steps.setup.outputs.bot-id }}
+          bot_name: ${{ steps.setup.outputs.bot-name }}
+          display_report: true
+          prompt: ${{ steps.setup.outputs.prompt }}
+          settings: '{"env":{"BASH_DEFAULT_TIMEOUT_MS":"600000"}}'
+          claude_args: |
+            --model claude-sonnet-5-5
+            --allowedTools "Bash,Read,Edit,Write,Glob,Grep,Skill,Task,TodoWrite"
