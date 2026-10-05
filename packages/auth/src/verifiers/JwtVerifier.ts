@@ -90,6 +90,17 @@ export class JwtVerifier implements ITokenVerifier {
             return { reason: VerificationReason.UnknownIssuer, detail: `no trusted issuer matches ${issuer}` };
         }
 
+        // The allowlist comes from configuration, so a token naming any other
+        // algorithm (`none`, an HMAC aimed at an RSA key) is refused before the
+        // key source is asked. Otherwise a JWKS matcher can throw on an
+        // algorithm it cannot serve and a forged token reads as an IdP outage.
+        if (!StringUtils.isNotEmpty(algorithm) || !algorithmsFor(row).includes(algorithm)) {
+            return {
+                reason: VerificationReason.Invalid,
+                detail: `token algorithm ${algorithm ?? '(none)'} is not allowed for ${issuer}`
+            };
+        }
+
         // Two very different failures hide behind one `await`.
         //
         // `UnresolvableKeyError` means the token asked for a key that will never
