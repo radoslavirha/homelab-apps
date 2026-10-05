@@ -10,7 +10,7 @@ import { resourceFromAttributes } from '@opentelemetry/resources';
 import { BatchLogRecordProcessor, type LogRecordProcessor } from '@opentelemetry/sdk-logs';
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { type SpanExporter } from '@opentelemetry/sdk-trace-node';
+import { BatchSpanProcessor, type SpanProcessor } from '@opentelemetry/sdk-trace-node';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
 import { isIgnoredTracePath } from './ignoredPaths.js';
@@ -109,7 +109,7 @@ export class OpenTelemetryService {
                 [ATTR_SERVICE_NAME]: serviceName,
                 [ATTR_SERVICE_VERSION]: serviceVersion
             }),
-            traceExporter: this.getTraceExporter(config.traces),
+            spanProcessors: this.getSpanProcessors(config.traces),
             metricReaders: this.getMetricReaders(config.metrics),
             logRecordProcessors: this.getLoggerProcessors(config.logs),
             instrumentations: [
@@ -139,9 +139,9 @@ export class OpenTelemetryService {
         this.sdk = sdk;
     }
 
-    private getMetricReaders(config?: OTELMetricsConfig): PeriodicExportingMetricReader[] | undefined {
+    private getMetricReaders(config?: OTELMetricsConfig): PeriodicExportingMetricReader[] {
         if (!ObjectUtils.isEnabled(config)) {
-            return undefined;
+            return [];
         }
 
         return [
@@ -151,12 +151,12 @@ export class OpenTelemetryService {
         ];
     }
 
-    private getTraceExporter(config?: OTELTracesConfig): SpanExporter | undefined {
+    private getSpanProcessors(config?: OTELTracesConfig): SpanProcessor[] {
         if (!ObjectUtils.isEnabled(config)) {
-            return undefined;
+            return [];
         }
 
-        return new OTLPTraceExporter({ url: config.exporter.url, headers: {} });
+        return [new BatchSpanProcessor(new OTLPTraceExporter({ url: config.exporter.url, headers: {} }))];
     }
 
     private getLoggerProcessors(config?: OTELLogsConfig): LogRecordProcessor[] {

@@ -42,12 +42,14 @@ export async function fetchDnsRecords(
         throw error;
     }
 
-    // 401/403 classify as client-error, so the outage banner stays down — the
-    // controller is answering, our credential is wrong.
     const outcome = classifyResponse(res);
 
     if (res.status === 401 || res.status === 403) {
-        options.onOutcome?.(outcome);
+        // Report client-error, not classifyResponse's 'unauthorized': there is no
+        // viewer session to renew, so the "sign in again" banner would be wrong.
+        // The outage banner stays down too — the controller is answering, our
+        // server-side credential is wrong.
+        options.onOutcome?.({ kind: 'client-error', status: res.status });
         throw new UnifiAuthError(`Unifi API key rejected (HTTP ${res.status}).`);
     }
 

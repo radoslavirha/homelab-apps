@@ -54,4 +54,17 @@ describe('fetchDnsRecords', () => {
 
         expect(outcomes.at(-1)?.kind).not.toBe('success');
     });
+
+    // The dashboard has no login; the key is server-side, so a rejected key must
+    // not be reported as 'unauthorized' (which renders a "sign in again" banner).
+    it.each([401, 403])('reports client-error, not unauthorized, for HTTP %i', async status => {
+        Object.assign(globalThis, { fetch: vi.fn().mockResolvedValue(new Response(null, { status })) });
+        const outcomes: { kind: string }[] = [];
+
+        await expect(
+            fetchDnsRecords({ unifi: { site: 'default' } } as AppConfig, { onOutcome: o => outcomes.push(o) })
+        ).rejects.toThrow(/API key rejected/);
+
+        expect(outcomes).toEqual([{ kind: 'client-error', status }]);
+    });
 });
