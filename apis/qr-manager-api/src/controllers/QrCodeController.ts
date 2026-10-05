@@ -1,6 +1,7 @@
 import { Controller, Scope, ProviderScope } from '@tsed/di';
 import { BodyParams, Context, PathParams, QueryParams } from '@tsed/platform-params';
 import { PlatformContext } from '@tsed/platform-http';
+import { UseBefore } from '@tsed/platform-middlewares';
 import { Delete, Description, Enum, Get, Maximum, Minimum, Post, Put, Required, Returns } from '@tsed/schema';
 import { MAX_PNG_SIZE, MIN_PNG_SIZE } from '../constants.js';
 import { Docs } from '@tsed/swagger';
@@ -18,6 +19,7 @@ import { QrErrorCorrection } from '../models/QrErrorCorrection.enum.js';
 import { QrImageFormat } from '../models/QrImageFormat.enum.js';
 import { QrType } from '../models/QrType.enum.js';
 import { SwaggerDocs } from '../models/SwaggerDocs.enum.js';
+import { RejectNullFieldsMiddleware } from '../middlewares/RejectNullFieldsMiddleware.js';
 import { Anonymous, Authenticate } from '@radoslavirha/tsed-auth';
 import { AuthMethod } from '../models/config/AuthMethod.enum.js';
 
@@ -65,6 +67,7 @@ export class QrCodeController {
     }
 
     @Put('/:id')
+    @UseBefore(RejectNullFieldsMiddleware)
     @Description('Updates a QR code mapping. All fields are optional; omitted fields are left unchanged.')
     @Returns(200, QrCodeResponse)
     public async update(

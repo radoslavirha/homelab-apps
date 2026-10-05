@@ -135,9 +135,21 @@ describe('QrCodeController (integration)', () => {
 
             await api
                 .put('/qr-codes/671b00000000000000000001')
-                
+
                 .send({ active: false })
                 .expect(404);
+        });
+
+        it('rejects active: null instead of deactivating the QR code', async () => {
+            expect.assertions(1);
+            const updateSpy = vi.spyOn(qrCodeService, 'update').mockResolvedValue(sampleModel({ active: false }));
+
+            await api
+                .put('/qr-codes/671b00000000000000000001')
+                .send({ active: null })
+                .expect(400);
+
+            expect(updateSpy).not.toHaveBeenCalled();
         });
     });
 
