@@ -101,11 +101,18 @@ describe('OpenTelemetryService', () => {
 
             const options = sdkOptions();
 
-            expect(options.traceExporter).toBeDefined();
+            expect(options.spanProcessors).toHaveLength(1);
             expect(options.logRecordProcessors).toHaveLength(1);
-            // Metrics were left out of the config, so the reader list must be absent
-            // rather than empty — NodeSDK treats the two differently.
-            expect(options.metricReaders).toBeUndefined();
+            // Metrics were left out of the config, so the reader list must be explicitly
+            // empty — NodeSDK treats an absent list as "fall back to env" and starts OTLP.
+            expect(options.metricReaders).toEqual([]);
+        });
+
+        it('Should explicitly disable spans when traces are omitted', () => {
+            new OpenTelemetryService().init(OPTIONS);
+
+            // An absent list would make NodeSDK fall back to env and start OTLP.
+            expect(sdkOptions().spanProcessors).toEqual([]);
         });
 
         // The long comment on `ignoreIncomingRequestHook` explains why probes are dropped;
