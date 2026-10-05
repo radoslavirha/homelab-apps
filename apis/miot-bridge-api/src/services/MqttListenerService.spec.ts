@@ -144,6 +144,21 @@ describe('MqttListenerService', () => {
 
             expect(spans()).toHaveLength(0);
         });
+
+        // Brokers that ignore `rh: 2` still replay a retained command right after SUBSCRIBE — on
+        // every pod start and every reconnect — which would actuate the device again each time.
+        it('Should not re-execute a retained command replayed by the broker', async () => {
+            const payload = Buffer.from(JSON.stringify({ command: 'vacuum:start-sweep', operation: DeviceCommandOperation.Action }));
+            const retained = { qos: 1, retain: true } as IPublishPacket;
+
+            client.emit('message', COMMAND_TOPIC, payload, retained);
+            client.emit('connect');
+            client.emit('message', COMMAND_TOPIC, payload, retained);
+            await new Promise((resolve) => setTimeout(resolve, 50));
+
+            expect(deviceCommandService.execute).not.toHaveBeenCalled();
+            expect(client.publishAsync).not.toHaveBeenCalled();
+        });
     });
 
     describe('Tracing', () => {
