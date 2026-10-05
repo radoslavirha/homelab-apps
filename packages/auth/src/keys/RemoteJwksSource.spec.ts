@@ -6,6 +6,7 @@ import { RemoteJwksSource, SERVICE_ACCOUNT_TOKEN_PATH } from './RemoteJwksSource
 import { UnresolvableKeyError } from '../IKeySource.js';
 import { JwtVerifier } from '../verifiers/JwtVerifier.js';
 import { TrustedIssuerSchema } from '../schemas/auth.schema.js';
+import { mintTestToken } from '../test/mintTestToken.js';
 
 vi.mock('node:fs/promises', () => ({ readFile: vi.fn() }));
 
@@ -223,5 +224,32 @@ describe('RemoteJwksSource — the projected token file', () => {
         // Trimmed: a trailing newline in the header would be rejected outright.
         expect(captured[0]).toBe('Bearer sa-token-from-file');
         globalFetch.mockRestore();
+    });
+});
+
+describe('RemoteJwksSource — algorithm outside what a JWKS can serve', () => {
+    const verifierFor = async () => {
+        const { jwk } = await publishedKey('key-1');
+        const { impl } = servingFetch({ keys: [jwk] });
+        const issuer = row();
+        return new JwtVerifier([issuer], new RemoteJwksSource([issuer], { fetch: impl }));
+    };
+
+    it('reports an HS256 token against a reachable JWKS issuer as invalid, not indeterminate', async () => {
+        const verifier = await verifierFor();
+
+        // The algorithm-confusion attempt: an HS256 token aimed at an RS256 JWKS issuer.
+        const token = await mintTestToken({ issuer: ISSUER, audience: AUDIENCE });
+
+        expect(await verifier.verify(token)).toMatchObject({ reason: 'invalid' });
+    });
+
+    it('reports an alg:none token against a reachable JWKS issuer as invalid, not indeterminate', async () => {
+        const verifier = await verifierFor();
+
+        const b64 = (v: object) => Buffer.from(JSON.stringify(v)).toString('base64url');
+        const token = `${b64({ alg: 'none' })}.${b64({ iss: ISSUER, aud: AUDIENCE, sub: 'x', exp: 9999999999 })}.`;
+
+        expect(await verifier.verify(token)).toMatchObject({ reason: 'invalid' });
     });
 });
