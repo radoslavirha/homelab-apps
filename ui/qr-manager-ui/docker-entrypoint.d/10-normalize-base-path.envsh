@@ -1,0 +1,7 @@
+# Sourced by the stock nginx entrypoint (*.envsh) before 20-envsubst-on-templates.sh.
+# nginx.conf.template appends "/" to ${NGINX_BASE_PATH}, so a root mount must be
+# the empty string. Accept "/" (the image default) and "/qr-manager/" too.
+while [ "${NGINX_BASE_PATH%/}" != "${NGINX_BASE_PATH:-}" ]; do
+    NGINX_BASE_PATH="${NGINX_BASE_PATH%/}"
+done
+export NGINX_BASE_PATH="${NGINX_BASE_PATH:-}"
