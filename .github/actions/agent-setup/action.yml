@@ -82,7 +82,7 @@ runs:
         GH_TOKEN: ${{ inputs.token }}
       run: |
         for l in bug agent-found agent-review-log agent-in-progress agent-needs-human \
-                 agent-cannot-reproduce agent-pr agent-upstream agent-todo; do
+                 agent-cannot-reproduce agent-pr agent-upstream agent-todo no-regression-test; do
           gh label create "$l" -R "$GITHUB_REPOSITORY" 2>/dev/null || true
         done
     # Read from the default branch, so a PR branch the agent works on can't

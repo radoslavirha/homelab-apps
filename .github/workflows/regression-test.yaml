@@ -1,0 +1,54 @@
+---
+name: Regression test
+
+# Proves that a PR's changed specs fail without its source changes and pass
+# with them — see scripts/check-regression-test.sh.
+# yamllint disable-line rule:truthy
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    name: Regression test
+    # Label changes only matter for the opt-out label.
+    if: >-
+      (github.event.action != 'labeled' && github.event.action != 'unlabeled')
+      || github.event.label.name == 'no-regression-test'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # Not .github/actions/prepare: its shallow checkout would drop the
+      # history the merge base needs.
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Use pnpm 11
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11
+      - name: Set up Node.js v24
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          registry-url: https://npm.pkg.github.com/
+          scope: '@radoslavirha'
+      - name: Configure pnpm auth token
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.TOOLKIT_HUB_PACKAGES }}
+        run: pnpm config set //npm.pkg.github.com/:_authToken "$NODE_AUTH_TOKEN"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      # Apps and packages resolve sibling workspace packages through dist/.
+      - name: Build workspace
+        run: pnpm build
+      - name: Check the regression test
+        env:
+          BASE_BRANCH: ${{ github.base_ref }}
+          ALLOW_NO_TEST: ${{ contains(github.event.pull_request.labels.*.name, 'no-regression-test') && '1' || '0' }}
+        run: bash scripts/check-regression-test.sh "$BASE_BRANCH"

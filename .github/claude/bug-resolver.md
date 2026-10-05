@@ -136,7 +136,14 @@ Check what CI checks for the member you changed — lint, build and test:
     pnpm --filter "...{./<member-path>}" lint
     pnpm --filter "...{./<member-path>}" build
     pnpm --filter "...{./<member-path>}" test
-All must pass. If anything fails and you can't fix it within the scope above,
+All must pass.
+Then prove the regression test: `bash scripts/check-regression-test.sh` must
+pass. It runs your changed specs with and without your source changes; a test
+that passes either way doesn't detect the bug — rewrite it until the check
+passes. For a fix that genuinely needs no test (AGENTS.md or the testing
+instructions say so), add the `no-regression-test` label to the PR and say why
+in its Background.
+If anything fails and you can't fix it within the scope above,
 handle it like the stop case in step 4.
 
 # 6. Changeset
