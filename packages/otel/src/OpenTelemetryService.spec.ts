@@ -190,6 +190,19 @@ describe('OpenTelemetryService', () => {
             await expect(service.shutdown()).resolves.toBeUndefined();
         });
 
+        it('Should not leave the timeout timer pending once the flush has finished', async () => {
+            const timers = (): number => process.getActiveResourcesInfo().filter((r) => r === 'Timeout').length;
+            const before = timers();
+            const service = new OpenTelemetryService();
+            service.init(OPTIONS);
+
+            await service.shutdown();
+
+            // A pending, ref'd 3s timer keeps the event loop alive after a fast flush, so a
+            // process that exits by draining its loop lingers for the whole budget.
+            expect(timers()).toBe(before);
+        });
+
         it('Should default the flush timeout to three seconds', () => {
             expect(DEFAULT_OTEL_SHUTDOWN_MS).toBe(3_000);
         });

@@ -3,12 +3,12 @@ import { PlatformTest } from '@tsed/platform-http/testing';
 import SuperTest from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MongoHealthCheck } from '@radoslavirha/tsed-health/mongoose';
-import { MqttHealthCheck } from './MqttHealthCheck.js';
+import { MqttHealthCheck } from '../health/MqttHealthCheck.js';
 import { MqttClientProvider } from '../providers/MqttClientProvider.js';
 import { Server } from '../Server.js';
 import { HealthStatus } from '@radoslavirha/tsed-health';
 
-describe('Health endpoints (integration)', () => {
+describe('HealthController (integration)', () => {
     let request: SuperTest.Agent;
     let mongoCheck: MongoHealthCheck;
     let mqttCheck: MqttHealthCheck;

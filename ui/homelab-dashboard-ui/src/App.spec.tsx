@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from './App.js';
 import { AppConfigSchema } from './runtime/RuntimeConfig.js';
@@ -31,7 +31,9 @@ function mockFetch(records = dnsRecords) {
 }
 
 afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
+    document.title = '';
 });
 
 describe('<App />', () => {
@@ -96,5 +98,81 @@ describe('<App />', () => {
         const cfgNoTitle = AppConfigSchema.parse({ unifi: config.unifi, serverPattern: config.serverPattern });
         render(<App config={cfgNoTitle} />);
         await waitFor(() => expect(screen.getByText('Homelab dashboard')).toBeInTheDocument());
+    });
+
+    describe('browser tab title', () => {
+        it('sets document.title from config.title (README: "Browser tab title")', async () => {
+            mockFetch([]);
+            render(<App config={AppConfigSchema.parse({ unifi: config.unifi, serverPattern: config.serverPattern, title: 'My Lab' })} />);
+            await screen.findByText(/Loaded 0 DNS records/);
+
+            expect(document.title).toBe('My Lab');
+        });
+
+        it('falls back to the default title when config.title is unset', async () => {
+            mockFetch([]);
+            render(<App config={AppConfigSchema.parse({ unifi: config.unifi, serverPattern: config.serverPattern })} />);
+            await screen.findByText(/Loaded 0 DNS records/);
+
+            expect(document.title).toBe('Homelab dashboard');
+        });
+    });
+
+    describe('recovery', () => {
+        it('shows the DNS records once the controller recovers after a failed first load', async () => {
+            vi.useFakeTimers();
+            const fetchMock = vi.fn()
+                .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+                .mockImplementation(() => Promise.resolve(new Response(JSON.stringify(dnsRecords), { status: 200 })));
+            Object.assign(globalThis, { fetch: fetchMock });
+
+            render(<App config={config} />);
+            await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+            expect(screen.getByText(/Failed to fetch/)).toBeInTheDocument();
+
+            // recovery probe succeeds, banner clears
+            await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
+            expect(fetchMock.mock.calls.length).toBeGreaterThan(1);
+
+            expect(screen.queryByText(/Failed to fetch/)).not.toBeInTheDocument();
+            expect(screen.getByText('app1')).toBeInTheDocument();
+        });
+
+        it.each([404, 429])('keeps retrying after HTTP %i and shows the records once the controller answers', async status => {
+            vi.useFakeTimers();
+            const fetchMock = vi.fn()
+                .mockResolvedValueOnce(new Response('', { status }))
+                .mockImplementation(() => Promise.resolve(new Response(JSON.stringify(dnsRecords), { status: 200 })));
+            Object.assign(globalThis, { fetch: fetchMock });
+
+            render(<App config={config} />);
+            await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+            expect(screen.getByText(new RegExp(`HTTP ${status}`))).toBeInTheDocument();
+
+            await act(async () => { await vi.advanceTimersByTimeAsync(10 * 60_000); });
+
+            expect(fetchMock.mock.calls.length).toBeGreaterThan(1);
+            expect(screen.getByText('app1')).toBeInTheDocument();
+        });
+
+        it('still recovers after an offline/online blip while the controller is down', async () => {
+            vi.useFakeTimers();
+            const fetchMock = vi.fn()
+                .mockResolvedValueOnce(new Response('', { status: 503 }))
+                .mockImplementation(() => Promise.resolve(new Response(JSON.stringify(dnsRecords), { status: 200 })));
+            Object.assign(globalThis, { fetch: fetchMock });
+
+            render(<App config={config} />);
+            await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+            expect(screen.getByText(/Could not retrieve DNS records/)).toBeInTheDocument();
+
+            await act(async () => {
+                window.dispatchEvent(new Event('offline'));
+                window.dispatchEvent(new Event('online'));
+            });
+            await act(async () => { await vi.advanceTimersByTimeAsync(120_000); });
+
+            expect(screen.getByText('app1')).toBeInTheDocument();
+        });
     });
 });

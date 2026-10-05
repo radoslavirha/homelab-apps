@@ -5,6 +5,7 @@ import { CommonUtils } from '@radoslavirha/utils';
 import { Server } from '../Server.js';
 import { QrCodeService } from '../services/QrCodeService.js';
 import { QrImageService } from '../services/QrImageService.js';
+import { ConfigService } from '../services/ConfigService.js';
 import { QrCode } from '../models/QrCode.js';
 import { QrErrorCorrection } from '../models/QrErrorCorrection.enum.js';
 import { QrImageFormat } from '../models/QrImageFormat.enum.js';
@@ -59,8 +60,8 @@ describe('QrCodeController (integration)', () => {
 
     describe('POST /qr-codes', () => {
         it('returns 201 with the created QR code response', async () => {
-            expect.assertions(3);
-            vi.spyOn(qrCodeService, 'create').mockResolvedValue(sampleModel());
+            expect.assertions(4);
+            const createSpy = vi.spyOn(qrCodeService, 'create').mockResolvedValue(sampleModel());
 
             const response = await api
                 .post('/qr-codes')
@@ -71,6 +72,7 @@ describe('QrCodeController (integration)', () => {
             expect(response.body.id).toBe('671b00000000000000000001');
             expect(response.body.slug).toBe('x7k2');
             expect(response.body.qrURL).toBe('http://localhost:4011/x7k2');
+            expect(createSpy).toHaveBeenCalledWith(expect.objectContaining({ active: true, type: QrType.IOT_DEVICE }));
         });
 
         it('returns 400 when required body fields are missing', async () => {
@@ -143,10 +145,13 @@ describe('QrCodeController (integration)', () => {
 
     describe('DELETE /qr-codes/:id', () => {
         it('returns 204 on successful deletion', async () => {
+            expect.assertions(1);
             vi.spyOn(qrCodeService, 'getById').mockResolvedValue(sampleModel());
-            vi.spyOn(qrCodeService, 'delete').mockResolvedValue(undefined);
+            const deleteSpy = vi.spyOn(qrCodeService, 'delete').mockResolvedValue(undefined);
 
             await api.delete('/qr-codes/671b00000000000000000001').expect(204);
+
+            expect(deleteSpy).toHaveBeenCalledWith('671b00000000000000000001');
         });
 
         it('returns 404 when the QR code does not exist', async () => {
@@ -158,13 +163,33 @@ describe('QrCodeController (integration)', () => {
 
     describe('GET /qr-codes/:id/image', () => {
         it('returns 200 with SVG content type by default', async () => {
-            expect.assertions(1);
+            expect.assertions(2);
             vi.spyOn(qrCodeService, 'getById').mockResolvedValue(sampleModel());
-            vi.spyOn(qrImageService, 'render').mockResolvedValue({ contentType: 'image/svg+xml', body: '<svg></svg>' });
+            const renderSpy = vi.spyOn(qrImageService, 'render')
+                .mockResolvedValue({ contentType: 'image/svg+xml', body: '<svg></svg>' });
 
             const response = await request.get('/qr-codes/671b00000000000000000001/image').expect(200);
 
             expect(response.headers['content-type']).toContain('image/svg+xml');
+            expect(renderSpy).toHaveBeenCalledWith(
+                'http://localhost:4011/x7k2',
+                QrImageFormat.SVG,
+                { size: undefined, ecLevel: undefined }
+            );
+        });
+
+        it('encodes the slug URL without a double slash when the redirect base URL has a trailing slash', async () => {
+            expect.assertions(1);
+            const configService = PlatformTest.get<ConfigService>(ConfigService);
+            const config = configService.config;
+            vi.spyOn(configService, 'config', 'get').mockReturnValue({ ...config, redirect: { ...config.redirect, baseURL: 'http://localhost:4011/' } });
+            vi.spyOn(qrCodeService, 'getById').mockResolvedValue(sampleModel());
+            const renderSpy = vi.spyOn(qrImageService, 'render')
+                .mockResolvedValue({ contentType: 'image/svg+xml', body: '<svg></svg>' });
+
+            await request.get('/qr-codes/671b00000000000000000001/image').expect(200);
+
+            expect(renderSpy).toHaveBeenCalledWith('http://localhost:4011/x7k2', QrImageFormat.SVG, expect.anything());
         });
 
         it('returns 200 with PNG content type when format=png', async () => {

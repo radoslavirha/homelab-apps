@@ -145,5 +145,29 @@ describe('HttpProviderService', () => {
             expect(error.status).toBe(502);
             mock.restore();
         });
+
+        it('does not translate a failed 401 auth replay a second time', async () => {
+            const service = new HttpProviderService<ApiKey>({
+                [ApiKey.Example]: {
+                    baseURL: 'http://example.test',
+                    auth: {
+                        strategy: AuthStrategy.None,
+                        transport: { headers: [{ name: 'X-Api-Key', value: 'static' }] }
+                    }
+                }
+            });
+            const client = service.get(ApiKey.Example);
+            const mock = new MockAdapter(client.raw as AxiosInstance);
+            mock.onGet('/data').reply(401);
+
+            const error = (await client.get('/data').catch((e: unknown) => e)) as CapturedError & {
+                origin?: { response?: { status?: number } };
+            };
+
+            expect(error.message).toMatch(/^External API example responded with 401\./);
+            expect(error.message).not.toContain('could not be reached');
+            expect(error.origin?.response?.status).toBe(401);
+            mock.restore();
+        });
     });
 });

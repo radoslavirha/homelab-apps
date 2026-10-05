@@ -3,11 +3,11 @@ import { CircuitState, HttpProviderService } from '@radoslavirha/tsed-http-provi
 import { PlatformTest } from '@tsed/platform-http/testing';
 import SuperTest from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { UpstreamHealthCheck } from './UpstreamHealthCheck.js';
+import { UpstreamHealthCheck } from '../health/UpstreamHealthCheck.js';
 import { ExternalApi } from '../models/config/ExternalApi.enum.js';
 import { Server } from '../Server.js';
 
-describe('Health endpoints (integration)', () => {
+describe('HealthController (integration)', () => {
     let request: SuperTest.Agent;
     let http: HttpProviderService<ExternalApi>;
 

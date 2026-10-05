@@ -2,10 +2,12 @@ import { describe, beforeEach, afterEach, expect, it, vi } from 'vitest';
 import { PlatformTest } from '@tsed/platform-http/testing';
 import SuperTest from 'supertest';
 import { CommonUtils } from '@radoslavirha/utils';
+import { BrokenCircuitError, TaskCancelledError } from '@radoslavirha/resilience';
 import { Server } from '../Server.js';
 import { QrCodeService } from '../services/QrCodeService.js';
 import { QrCode } from '../models/QrCode.js';
 import { QrType } from '../models/QrType.enum.js';
+import { QrCodeMongoRepository } from '../storage/qr-mongo/QrCodeMongoRepository.js';
 
 const sampleModel = (overrides: Partial<QrCode> = {}): QrCode =>
     CommonUtils.buildModelStrict(QrCode, {
@@ -55,5 +57,23 @@ describe('RedirectController (integration)', () => {
 
     it('returns 400 when the slug does not match the 4-character alphanumeric pattern', async () => {
         await request.get('/r/toolong').expect(400);
+    });
+
+    describe('when the slug lookup policy rejects', () => {
+        let repository: QrCodeMongoRepository;
+
+        beforeEach(() => {
+            repository = PlatformTest.get<QrCodeMongoRepository>(QrCodeMongoRepository);
+        });
+
+        it('answers 503 when the circuit is open', async () => {
+            vi.spyOn(repository, 'findBySlug').mockRejectedValue(new BrokenCircuitError());
+            await request.get('/r/x7k2').expect(503);
+        });
+
+        it('answers 504 when the lookup times out', async () => {
+            vi.spyOn(repository, 'findBySlug').mockRejectedValue(new TaskCancelledError('Operation timed out'));
+            await request.get('/r/x7k2').expect(504);
+        });
     });
 });

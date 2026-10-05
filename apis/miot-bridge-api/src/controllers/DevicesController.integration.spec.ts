@@ -9,6 +9,8 @@ import { MiotSpecV2 } from '../models/miot-spec-v2/index.js';
 import { Server } from '../Server.js';
 import { MqttClientProvider } from '../providers/MqttClientProvider.js';
 import { DeviceStorageService } from '../services/DeviceStorageService.js';
+import { MiotDeviceRegistry } from '../services/MiotDeviceRegistry.js';
+import { NotificationStorageService } from '../services/NotificationStorageService.js';
 
 /**
  * The device registry. Registration performs a handshake and fetches a spec from
@@ -97,6 +99,38 @@ describe('DevicesController (integration)', () => {
 
                 expect(JSON.stringify(response.body)).not.toContain('some-other-api');
             });
+        });
+    });
+
+    describe('DELETE /devices/:id', () => {
+        const device = { id: 'storage-1', deviceId: 442, address: '192.168.1.10', token: 'a'.repeat(32), stamp: 1, stampUpdatedAt: 0 } as DeviceCache;
+        let storage: DeviceStorageService;
+
+        beforeEach(() => {
+            storage = PlatformTest.get<DeviceStorageService>(DeviceStorageService);
+            vi.spyOn(storage, 'delete').mockResolvedValue(undefined);
+            vi.spyOn(PlatformTest.get<NotificationStorageService>(NotificationStorageService), 'deleteAllByDeviceId').mockResolvedValue(undefined);
+        });
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        it('drops the pooled MiotDevice so a re-registered device does not reuse the old address/token', async () => {
+            const registry = PlatformTest.get<MiotDeviceRegistry>(MiotDeviceRegistry);
+            vi.spyOn(storage, 'getById').mockResolvedValue(device);
+            const stale = registry.getOrCreate(device);
+
+            await api.delete('/devices/storage-1').expect(204);
+
+            const reregistered = registry.getOrCreate({ ...device, address: '192.168.1.99' });
+            expect(reregistered).not.toBe(stale);
+        });
+
+        it('returns 404 when the device does not exist', async () => {
+            vi.spyOn(storage, 'getById').mockResolvedValue(undefined);
+
+            await api.delete('/devices/storage-1').expect(404);
+            expect(storage.delete).not.toHaveBeenCalled();
         });
     });
 
