@@ -1,5 +1,26 @@
 # qr-manager-api
 
+## 0.10.1
+
+### Patch Changes
+
+- [#173](https://github.com/radoslavirha/homelab-apps/pull/173) [`c06b0ad`](https://github.com/radoslavirha/homelab-apps/commit/c06b0adf4032b82abed1bae16facc1af9fa0dac3) Thanks [@radoslavirha](https://github.com/radoslavirha)! - `PUT /qr-codes/:id` now rejects an empty `targetURL` or `label` with 400, as `POST` does, instead of saving a broken QR code.
+
+- [#193](https://github.com/radoslavirha/homelab-apps/pull/193) [`9a79cc4`](https://github.com/radoslavirha/homelab-apps/commit/9a79cc4da9cdb343560533a588f1cb4a2a64d2f1) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Requests with a malformed MongoDB `:id` now return 404 instead of an unhandled `CastError`.
+
+- [#151](https://github.com/radoslavirha/homelab-apps/pull/151) [`f936e82`](https://github.com/radoslavirha/homelab-apps/commit/f936e821de13adc0de927d21f9cb735d209dd07f) Thanks [@radoslavirha](https://github.com/radoslavirha)! - PNG QR images now default to 512 px wide when no `size` is given, instead of a tiny ~108 px image.
+
+- [#163](https://github.com/radoslavirha/homelab-apps/pull/163) [`87b6321`](https://github.com/radoslavirha/homelab-apps/commit/87b63216ee4de68dd3fb03451e12ea84f376e525) Thanks [@radoslavirha](https://github.com/radoslavirha)! - GET /r/:slug now answers 503 when the Mongo lookup circuit is open and 504 when the lookup times out, instead of a generic 500.
+
+- [`824756b`](https://github.com/radoslavirha/homelab-apps/commit/824756b4d472000c8654370be46e29dba41be49c) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update dependencies
+- Updated dependencies [[`1be7a0d`](https://github.com/radoslavirha/homelab-apps/commit/1be7a0d96854461f62c726e3de31c63d579341ae), [`cec1af1`](https://github.com/radoslavirha/homelab-apps/commit/cec1af19636fb4fcf5bb70b4e82a03a4cfb94f8d), [`ca195ac`](https://github.com/radoslavirha/homelab-apps/commit/ca195ac644665ef17a5051bcb660f0f533cd3ba0), [`0a461a0`](https://github.com/radoslavirha/homelab-apps/commit/0a461a071568a6dec7294e4b8d99c1737909c35e), [`fb91de6`](https://github.com/radoslavirha/homelab-apps/commit/fb91de63e3153ea82048e1f3c2e0499163db3455), [`b63acb5`](https://github.com/radoslavirha/homelab-apps/commit/b63acb5585ae94c5b6bcdf09fe9477c9aef5e9e9), [`5b0afe3`](https://github.com/radoslavirha/homelab-apps/commit/5b0afe3c441136965e85847e5489a31d01459765), [`51ead60`](https://github.com/radoslavirha/homelab-apps/commit/51ead60f15ae873246c83aafe464fb46a3269945), [`d62060c`](https://github.com/radoslavirha/homelab-apps/commit/d62060cd2a3f4c4f6da4a02c0625772467560730), [`824756b`](https://github.com/radoslavirha/homelab-apps/commit/824756b4d472000c8654370be46e29dba41be49c)]:
+  - @radoslavirha/otel@0.6.3
+  - @radoslavirha/tsed-health@0.3.1
+  - @radoslavirha/tsed-resilience@0.2.2
+  - @radoslavirha/auth@0.2.1
+  - @radoslavirha/resilience@0.2.2
+  - @radoslavirha/tsed-auth@0.2.1
+
 ## 0.10.0
 
 ### Minor Changes

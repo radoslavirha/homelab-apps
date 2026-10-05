@@ -1,5 +1,13 @@
 # @radoslavirha/tsed-resilience
 
+## 0.2.2
+
+### Patch Changes
+
+- [#165](https://github.com/radoslavirha/homelab-apps/pull/165) [`ca195ac`](https://github.com/radoslavirha/homelab-apps/commit/ca195ac644665ef17a5051bcb660f0f533cd3ba0) Thanks [@radoslavirha](https://github.com/radoslavirha)! - `@RequestSignal()` no longer aborts early on POST/PUT/PATCH requests once the body has been read; it aborts only when the client actually disconnects.
+
+- [`824756b`](https://github.com/radoslavirha/homelab-apps/commit/824756b4d472000c8654370be46e29dba41be49c) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update dependencies
+
 ## 0.2.1
 
 ### Patch Changes

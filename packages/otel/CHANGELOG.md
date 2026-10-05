@@ -1,5 +1,17 @@
 # @radoslavirha/otel
 
+## 0.6.3
+
+### Patch Changes
+
+- [#148](https://github.com/radoslavirha/homelab-apps/pull/148) [`1be7a0d`](https://github.com/radoslavirha/homelab-apps/commit/1be7a0d96854461f62c726e3de31c63d579341ae) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Export logs when only the logs signal is enabled (Winston instrumentation no longer depends on traces).
+
+- [#210](https://github.com/radoslavirha/homelab-apps/pull/210) [`5b0afe3`](https://github.com/radoslavirha/homelab-apps/commit/5b0afe3c441136965e85847e5489a31d01459765) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Omitting the traces or metrics section now really disables that signal instead of falling back to NodeSDK's env-based OTLP defaults.
+
+- [#211](https://github.com/radoslavirha/homelab-apps/pull/211) [`51ead60`](https://github.com/radoslavirha/homelab-apps/commit/51ead60f15ae873246c83aafe464fb46a3269945) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - `shutdown()` no longer leaves its timeout timer pending, so the process exits as soon as the flush completes.
+
+- [`824756b`](https://github.com/radoslavirha/homelab-apps/commit/824756b4d472000c8654370be46e29dba41be49c) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update dependencies
+
 ## 0.6.2
 
 ### Patch Changes

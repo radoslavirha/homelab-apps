@@ -1,5 +1,23 @@
 # interactive-map-feeder
 
+## 0.16.1
+
+### Patch Changes
+
+- [#126](https://github.com/radoslavirha/homelab-apps/pull/126) [`e4e3900`](https://github.com/radoslavirha/homelab-apps/commit/e4e3900198ee38ae77bc1b56c344e3b224e0cf4a) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Reject a negative or oversized `radius` query parameter with 400 instead of returning NaN (null) city colours.
+
+- [#207](https://github.com/radoslavirha/homelab-apps/pull/207) [`95cdd81`](https://github.com/radoslavirha/homelab-apps/commit/95cdd81df00b17932a69f39d38162698402b2f65) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Radar city colours and city dots are now sampled at the correct position (Mercator projection and correct bottom latitude).
+
+- [#214](https://github.com/radoslavirha/homelab-apps/pull/214) [`e276783`](https://github.com/radoslavirha/homelab-apps/commit/e2767833d9dd3d355a3f8008a863ae69da2619a4) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Radar routes fall back to the previous published composite instead of returning 502 while the current 5-minute slot is not yet published.
+
+- [`824756b`](https://github.com/radoslavirha/homelab-apps/commit/824756b4d472000c8654370be46e29dba41be49c) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update dependencies
+- Updated dependencies [[`1be7a0d`](https://github.com/radoslavirha/homelab-apps/commit/1be7a0d96854461f62c726e3de31c63d579341ae), [`cec1af1`](https://github.com/radoslavirha/homelab-apps/commit/cec1af19636fb4fcf5bb70b4e82a03a4cfb94f8d), [`37c509a`](https://github.com/radoslavirha/homelab-apps/commit/37c509af829b91561f12e8f9977155db8e9f2178), [`0a461a0`](https://github.com/radoslavirha/homelab-apps/commit/0a461a071568a6dec7294e4b8d99c1737909c35e), [`fb91de6`](https://github.com/radoslavirha/homelab-apps/commit/fb91de63e3153ea82048e1f3c2e0499163db3455), [`b63acb5`](https://github.com/radoslavirha/homelab-apps/commit/b63acb5585ae94c5b6bcdf09fe9477c9aef5e9e9), [`5b0afe3`](https://github.com/radoslavirha/homelab-apps/commit/5b0afe3c441136965e85847e5489a31d01459765), [`51ead60`](https://github.com/radoslavirha/homelab-apps/commit/51ead60f15ae873246c83aafe464fb46a3269945), [`d62060c`](https://github.com/radoslavirha/homelab-apps/commit/d62060cd2a3f4c4f6da4a02c0625772467560730), [`824756b`](https://github.com/radoslavirha/homelab-apps/commit/824756b4d472000c8654370be46e29dba41be49c)]:
+  - @radoslavirha/otel@0.6.3
+  - @radoslavirha/tsed-health@0.3.1
+  - @radoslavirha/tsed-http-provider@0.2.7
+  - @radoslavirha/auth@0.2.1
+  - @radoslavirha/tsed-auth@0.2.1
+
 ## 0.16.0
 
 ### Minor Changes

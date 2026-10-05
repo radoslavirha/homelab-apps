@@ -1,5 +1,17 @@
 # @radoslavirha/miot-device
 
+## 0.7.1
+
+### Patch Changes
+
+- [#158](https://github.com/radoslavirha/homelab-apps/pull/158) [`e296f11`](https://github.com/radoslavirha/homelab-apps/commit/e296f1179475e78ed692c932e4b63fd2ac9bea39) Thanks [@radoslavirha](https://github.com/radoslavirha)! - A failing stamp store write no longer causes an already successful device command to be sent a second time.
+
+- [#144](https://github.com/radoslavirha/homelab-apps/pull/144) [`1ef4693`](https://github.com/radoslavirha/homelab-apps/commit/1ef4693ab5d0ce5c0e4ff95082372e2cb9f36dd8) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Concurrent commands on one MiotDevice no longer reuse the same stamp; they are now run one after another.
+
+- [#204](https://github.com/radoslavirha/homelab-apps/pull/204) [`53a1549`](https://github.com/radoslavirha/homelab-apps/commit/53a1549541a1a47ef91f4978b12ffed5d6b22871) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - callAction now rejects with a device_error when the device refuses the action (non-zero result code) instead of reporting success
+
+- [`824756b`](https://github.com/radoslavirha/homelab-apps/commit/824756b4d472000c8654370be46e29dba41be49c) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update dependencies
+
 ## 0.7.0
 
 ### Minor Changes

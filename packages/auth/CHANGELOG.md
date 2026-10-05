@@ -1,5 +1,19 @@
 # @radoslavirha/auth
 
+## 0.2.1
+
+### Patch Changes
+
+- [#185](https://github.com/radoslavirha/homelab-apps/pull/185) [`0a461a0`](https://github.com/radoslavirha/homelab-apps/commit/0a461a071568a6dec7294e4b8d99c1737909c35e) Thanks [@radoslavirha](https://github.com/radoslavirha)! - JwtVerifier now rejects bearer tokens that carry no `exp` claim instead of accepting them as never-expiring.
+
+- [#189](https://github.com/radoslavirha/homelab-apps/pull/189) [`fb91de6`](https://github.com/radoslavirha/homelab-apps/commit/fb91de63e3153ea82048e1f3c2e0499163db3455) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Reject a bearer-jwt entry that lists the same trusted issuer twice at boot, instead of silently letting the later row replace the earlier one.
+
+- [#186](https://github.com/radoslavirha/homelab-apps/pull/186) [`b63acb5`](https://github.com/radoslavirha/homelab-apps/commit/b63acb5585ae94c5b6bcdf09fe9477c9aef5e9e9) Thanks [@radoslavirha](https://github.com/radoslavirha)! - A malformed inline PEM key is now rejected as an invalid credential instead of being reported as an indeterminate (503) key-source outage.
+
+- [#217](https://github.com/radoslavirha/homelab-apps/pull/217) [`d62060c`](https://github.com/radoslavirha/homelab-apps/commit/d62060cd2a3f4c4f6da4a02c0625772467560730) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - A token whose algorithm is not allowed for its issuer (HS256, `none`) is now reported as invalid (401) instead of indeterminate (503) on JWKS-backed issuers.
+
+- [`824756b`](https://github.com/radoslavirha/homelab-apps/commit/824756b4d472000c8654370be46e29dba41be49c) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update dependencies
+
 ## 0.2.0
 
 ### Minor Changes

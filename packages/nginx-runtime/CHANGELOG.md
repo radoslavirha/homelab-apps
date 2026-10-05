@@ -1,5 +1,11 @@
 # @radoslavirha/nginx-runtime
 
+## 0.2.2
+
+### Patch Changes
+
+- [`824756b`](https://github.com/radoslavirha/homelab-apps/commit/824756b4d472000c8654370be46e29dba41be49c) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update dependencies
+
 ## 0.2.1
 
 ### Patch Changes

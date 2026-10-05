@@ -1,5 +1,23 @@
 # qr-manager-ui
 
+## 0.13.2
+
+### Patch Changes
+
+- [#145](https://github.com/radoslavirha/homelab-apps/pull/145) [`758f97f`](https://github.com/radoslavirha/homelab-apps/commit/758f97fa95628837efc8e4db0fad776e09f02202) Thanks [@radoslavirha](https://github.com/radoslavirha)! - The QR code list page shows an error instead of a blank screen when the API returns a 200 response without an items array.
+
+- [#174](https://github.com/radoslavirha/homelab-apps/pull/174) [`0da3877`](https://github.com/radoslavirha/homelab-apps/commit/0da38779081e3e40394cbce6e15182c3e44874bd) Thanks [@radoslavirha](https://github.com/radoslavirha)! - The QR code list no longer shows rows from the previous filter when a filtered request fails.
+
+- [#191](https://github.com/radoslavirha/homelab-apps/pull/191) [`d06a119`](https://github.com/radoslavirha/homelab-apps/commit/d06a119c8b4890dae1e52186fad2fff920213d68) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Unsaved edits on the QR code detail page are no longer lost when the access token is silently renewed.
+
+- [#230](https://github.com/radoslavirha/homelab-apps/pull/230) [`29fe07f`](https://github.com/radoslavirha/homelab-apps/commit/29fe07ff079dab05aa8762c444dc5f97a3ccb9a8) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - The image now serves a working app with its default `NGINX_BASE_PATH=/` (trailing slash is normalised before nginx config is rendered).
+
+- [`824756b`](https://github.com/radoslavirha/homelab-apps/commit/824756b4d472000c8654370be46e29dba41be49c) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update dependencies
+- Updated dependencies [[`b00ffb9`](https://github.com/radoslavirha/homelab-apps/commit/b00ffb98c552cc7aa773556005049b2769fa5f18), [`824756b`](https://github.com/radoslavirha/homelab-apps/commit/824756b4d472000c8654370be46e29dba41be49c)]:
+  - @radoslavirha/ui-runtime@0.3.1
+  - @radoslavirha/ui-auth@0.2.1
+  - @radoslavirha/ui-kit@1.1.1
+
 ## 0.13.1
 
 ### Patch Changes
