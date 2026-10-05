@@ -207,7 +207,9 @@ ui/<ui-name>/
 ## Testing
 
 - Framework: **Vitest**
-- Unit test files: `*.spec.ts` co-located with source files
+- Unit test files: `*.spec.ts` co-located with source files — **one spec file per source file**. Add new
+  tests to the existing `Foo.spec.ts` (new `describe` block if needed); never create `Foo.<topic>.spec.ts`
+  or any second spec file for the same source file.
 - Integration tests: `*.integration.spec.ts` using `PlatformTest` from `@tsed/platform-http/testing`
 - Run tests: `pnpm test` inside the API directory
 
