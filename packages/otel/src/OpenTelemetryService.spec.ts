@@ -101,7 +101,7 @@ describe('OpenTelemetryService', () => {
 
             const options = sdkOptions();
 
-            expect(options.traceExporter).toBeDefined();
+            expect(options.spanProcessors).toHaveLength(1);
             expect(options.logRecordProcessors).toHaveLength(1);
             // Metrics were left out of the config, so the reader list must be explicitly
             // empty — NodeSDK treats an absent list as "fall back to env" and starts OTLP.
