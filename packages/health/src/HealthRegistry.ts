@@ -52,7 +52,8 @@ export class HealthRegistry {
      * available. An empty registry is legal and reports `pass`.
      */
     public async evaluate(): Promise<HealthEvaluation> {
-        const now = Date.now();
+        // Monotonic: the wall clock can step backwards (NTP), which would pin a stale cache.
+        const now = performance.now();
 
         if (this.cached && now - this.cached.at < this.config.cacheTtlMs) {
             return this.cached.value;
@@ -61,7 +62,7 @@ export class HealthRegistry {
         // Single-flight: three probes plus a human on /health would otherwise each start
         // their own pass over the same checks.
         this.inFlight ??= this.runAll().then((value) => {
-            this.cached = { at: Date.now(), value };
+            this.cached = { at: performance.now(), value };
             this.inFlight = undefined;
             return value;
         });

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { HealthRegistry } from './HealthRegistry.js';
 import type { HealthCheck, HealthCheckResult } from './HealthCheck.js';
 import { HealthStatus } from './HealthStatus.enum.js';
@@ -295,6 +295,29 @@ describe('HealthRegistry', () => {
             const report = await registry.report();
 
             expect(report.checks?.leaky).toEqual({ status: HealthStatus.Pass });
+        });
+    });
+
+    describe('Cache clock', () => {
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        it('Should re-evaluate after the wall clock steps backwards', async () => {
+            const spy = vi.fn().mockReturnValue({ status: HealthStatus.Pass });
+            const registry = new HealthRegistry([{ name: 'counted', critical: true, check: spy }], { cacheTtlMs: 1000 });
+            const wall = vi.spyOn(Date, 'now');
+            const mono = vi.spyOn(performance, 'now');
+
+            wall.mockReturnValue(1_000_000);
+            mono.mockReturnValue(10_000);
+            await registry.evaluate();
+            // NTP steps the wall clock back one minute; five real seconds then pass.
+            wall.mockReturnValue(1_000_000 - 60_000 + 5_000);
+            mono.mockReturnValue(15_000);
+            await registry.evaluate();
+
+            expect(spy).toHaveBeenCalledTimes(2);
         });
     });
 
