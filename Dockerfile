@@ -191,7 +191,9 @@ COPY packages/nginx-runtime/docker-entrypoint.d/05-validate-runtime-config.sh /d
 # envsubst entrypoint. Set NGINX_BASE_PATH env var in the deployment
 # (e.g. /qr-manager or /) to configure the sub-path at runtime.
 COPY ui/qr-manager-ui/nginx.conf.template /etc/nginx/templates/default.conf.template
-RUN chmod +x /docker-entrypoint.d/05-validate-runtime-config.sh
+# Strips a trailing slash from NGINX_BASE_PATH before envsubst, so "/" means root.
+COPY ui/qr-manager-ui/docker-entrypoint.d/10-normalize-base-path.envsh /docker-entrypoint.d/
+RUN chmod +x /docker-entrypoint.d/05-validate-runtime-config.sh /docker-entrypoint.d/10-normalize-base-path.envsh
 USER 101
 EXPOSE 8080
 ENV NGINX_BASE_PATH=/

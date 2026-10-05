@@ -74,7 +74,7 @@ DOCKER_BUILDKIT=1 docker build \
   --secret id=npmrc,src=$HOME/.npmrc \
   -t qr-manager-ui:dev \
   .
-docker run --rm -p 8080:80 qr-manager-ui:dev
+docker run --rm -p 8080:8080 qr-manager-ui:dev
 ```
 
 To verify the runtime config flow:
