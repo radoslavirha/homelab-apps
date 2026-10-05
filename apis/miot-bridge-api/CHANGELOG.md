@@ -1,5 +1,44 @@
 # miot-bridge
 
+## 0.28.0
+
+### Minor Changes
+
+- [#200](https://github.com/radoslavirha/homelab-apps/pull/200) [`65df6eb`](https://github.com/radoslavirha/homelab-apps/commit/65df6eb04ccc3334bfe339fa3d9a2e21d8c73405) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Removed `GET /command` and `GET /command/raw`. Use `POST /command` and `POST /command/raw` with a JSON body, which keeps numeric and boolean values typed.
+
+- [#161](https://github.com/radoslavirha/homelab-apps/pull/161) [`c902a21`](https://github.com/radoslavirha/homelab-apps/commit/c902a2105a268a7effb47bb1e1fe1865c6b1067a) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Remove the outbound HTTP notification transport. Property-change notifications are now published over MQTT only, and controllers talk to the bridge over REST and MQTT. UDP is used solely for the MIoT protocol to the devices.
+  
+  The `http.notifications` config key is no longer read. A config that still carries it keeps booting — the key is ignored — so the ConfigMap can be cleaned up after the rollout.
+
+### Patch Changes
+
+- [#133](https://github.com/radoslavirha/homelab-apps/pull/133) [`be42db9`](https://github.com/radoslavirha/homelab-apps/commit/be42db96da55c7329188745ff4db447a56565c89) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Deleting a device now drops its pooled MiotDevice, so re-registering it with a new address or token no longer keeps talking to the old one.
+
+- [#146](https://github.com/radoslavirha/homelab-apps/pull/146) [`a72cd59`](https://github.com/radoslavirha/homelab-apps/commit/a72cd59856d88d33dab3ff09d5cd91f2febd9a41) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Re-subscribing to the same device property no longer creates duplicate notification rows, and deleting one row no longer stops polling while another remains.
+
+- [#193](https://github.com/radoslavirha/homelab-apps/pull/193) [`9a79cc4`](https://github.com/radoslavirha/homelab-apps/commit/9a79cc4da9cdb343560533a588f1cb4a2a64d2f1) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Requests with a malformed MongoDB `:id` now return 404 instead of an unhandled `CastError`.
+
+- [#159](https://github.com/radoslavirha/homelab-apps/pull/159) [`d0b1731`](https://github.com/radoslavirha/homelab-apps/commit/d0b17310bf96face16ca107cabe158ace807c632) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Abort outbound HTTP notification POSTs after 10 seconds so an unresponsive sink no longer leaks pending requests.
+
+- [#170](https://github.com/radoslavirha/homelab-apps/pull/170) [`d68747a`](https://github.com/radoslavirha/homelab-apps/commit/d68747af8585fd81f59eac5101d0bb3c150eff81) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Redact device `token` and `stamp` from the request logger's request/response bodies so MIoT device tokens no longer reach the logs.
+
+- [#187](https://github.com/radoslavirha/homelab-apps/pull/187) [`8d8b477`](https://github.com/radoslavirha/homelab-apps/commit/8d8b4779c13b7ff3fab2b66402692a1d70aadc3d) Thanks [@radoslavirha](https://github.com/radoslavirha)! - SetProperty now works for bool and ranged-number properties instead of being rejected with an empty allowed-values list.
+
+- [#201](https://github.com/radoslavirha/homelab-apps/pull/201) [`27eddb9`](https://github.com/radoslavirha/homelab-apps/commit/27eddb99854e1ac03047bd4bf8934bb2085d98ca) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Refuse subscribing to write-only properties (400) instead of accepting them and warning on every poll tick.
+
+- [#224](https://github.com/radoslavirha/homelab-apps/pull/224) [`31296cd`](https://github.com/radoslavirha/homelab-apps/commit/31296cd56718f1552c03cbfce82f193b4bb12ac1) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Retained MQTT command messages are no longer re-executed on every startup and broker reconnect.
+
+- [`824756b`](https://github.com/radoslavirha/homelab-apps/commit/824756b4d472000c8654370be46e29dba41be49c) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update dependencies
+
+- [#193](https://github.com/radoslavirha/homelab-apps/pull/193) [`58c1b77`](https://github.com/radoslavirha/homelab-apps/commit/58c1b7767ac0c07a9535ee40abdf57a6872da255) Thanks [@radoslavirha](https://github.com/radoslavirha)! - MQTT command payloads are validated with a Zod schema instead of the Ts.ED `JSONSchemaValidator`. Accepted payloads are unchanged; the `error: Validation failed.` response now lists Zod issues instead of AJV errors.
+- Updated dependencies [[`e296f11`](https://github.com/radoslavirha/homelab-apps/commit/e296f1179475e78ed692c932e4b63fd2ac9bea39), [`1ef4693`](https://github.com/radoslavirha/homelab-apps/commit/1ef4693ab5d0ce5c0e4ff95082372e2cb9f36dd8), [`1be7a0d`](https://github.com/radoslavirha/homelab-apps/commit/1be7a0d96854461f62c726e3de31c63d579341ae), [`cec1af1`](https://github.com/radoslavirha/homelab-apps/commit/cec1af19636fb4fcf5bb70b4e82a03a4cfb94f8d), [`37c509a`](https://github.com/radoslavirha/homelab-apps/commit/37c509af829b91561f12e8f9977155db8e9f2178), [`0a461a0`](https://github.com/radoslavirha/homelab-apps/commit/0a461a071568a6dec7294e4b8d99c1737909c35e), [`fb91de6`](https://github.com/radoslavirha/homelab-apps/commit/fb91de63e3153ea82048e1f3c2e0499163db3455), [`b63acb5`](https://github.com/radoslavirha/homelab-apps/commit/b63acb5585ae94c5b6bcdf09fe9477c9aef5e9e9), [`53a1549`](https://github.com/radoslavirha/homelab-apps/commit/53a1549541a1a47ef91f4978b12ffed5d6b22871), [`5b0afe3`](https://github.com/radoslavirha/homelab-apps/commit/5b0afe3c441136965e85847e5489a31d01459765), [`51ead60`](https://github.com/radoslavirha/homelab-apps/commit/51ead60f15ae873246c83aafe464fb46a3269945), [`d62060c`](https://github.com/radoslavirha/homelab-apps/commit/d62060cd2a3f4c4f6da4a02c0625772467560730), [`824756b`](https://github.com/radoslavirha/homelab-apps/commit/824756b4d472000c8654370be46e29dba41be49c)]:
+  - @radoslavirha/miot-device@0.7.1
+  - @radoslavirha/otel@0.6.3
+  - @radoslavirha/tsed-health@0.3.1
+  - @radoslavirha/tsed-http-provider@0.2.7
+  - @radoslavirha/auth@0.2.1
+  - @radoslavirha/tsed-auth@0.2.1
+
 ## 0.27.0
 
 ### Minor Changes

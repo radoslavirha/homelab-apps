@@ -1,5 +1,16 @@
 # @radoslavirha/tsed-http-provider
 
+## 0.2.7
+
+### Patch Changes
+
+- [#162](https://github.com/radoslavirha/homelab-apps/pull/162) [`37c509a`](https://github.com/radoslavirha/homelab-apps/commit/37c509af829b91561f12e8f9977155db8e9f2178) Thanks [@radoslavirha](https://github.com/radoslavirha)! - A failed 401 auth replay is no longer translated twice, so the error keeps its status message and original Axios `origin`.
+
+- [`824756b`](https://github.com/radoslavirha/homelab-apps/commit/824756b4d472000c8654370be46e29dba41be49c) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update dependencies
+- Updated dependencies [[`37c69e7`](https://github.com/radoslavirha/homelab-apps/commit/37c69e7a79b1d4d634d4717902b1835bf143cd10), [`afe7359`](https://github.com/radoslavirha/homelab-apps/commit/afe735959395836e67efb5d259b1ccaf1d2aab14), [`824756b`](https://github.com/radoslavirha/homelab-apps/commit/824756b4d472000c8654370be46e29dba41be49c)]:
+  - @radoslavirha/http-provider@0.3.1
+  - @radoslavirha/resilience@0.2.2
+
 ## 0.2.6
 
 ### Patch Changes

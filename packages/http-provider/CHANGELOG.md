@@ -1,5 +1,17 @@
 # @radoslavirha/http-provider
 
+## 0.3.1
+
+### Patch Changes
+
+- [#172](https://github.com/radoslavirha/homelab-apps/pull/172) [`37c69e7`](https://github.com/radoslavirha/homelab-apps/commit/37c69e7a79b1d4d634d4717902b1835bf143cd10) Thanks [@radoslavirha](https://github.com/radoslavirha)! - A blank token from a token endpoint no longer leaves the provider failing until restart; credentials are re-fetched on the next request.
+
+- [#203](https://github.com/radoslavirha/homelab-apps/pull/203) [`afe7359`](https://github.com/radoslavirha/homelab-apps/commit/afe735959395836e67efb5d259b1ccaf1d2aab14) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Concurrent 401s for the same expired token now share one credential refresh instead of each starting their own.
+
+- [`824756b`](https://github.com/radoslavirha/homelab-apps/commit/824756b4d472000c8654370be46e29dba41be49c) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update dependencies
+- Updated dependencies [[`824756b`](https://github.com/radoslavirha/homelab-apps/commit/824756b4d472000c8654370be46e29dba41be49c)]:
+  - @radoslavirha/resilience@0.2.2
+
 ## 0.3.0
 
 ### Minor Changes

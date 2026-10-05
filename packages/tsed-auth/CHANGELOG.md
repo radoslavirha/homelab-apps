@@ -1,5 +1,13 @@
 # @radoslavirha/tsed-auth
 
+## 0.2.1
+
+### Patch Changes
+
+- [`824756b`](https://github.com/radoslavirha/homelab-apps/commit/824756b4d472000c8654370be46e29dba41be49c) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update dependencies
+- Updated dependencies [[`0a461a0`](https://github.com/radoslavirha/homelab-apps/commit/0a461a071568a6dec7294e4b8d99c1737909c35e), [`fb91de6`](https://github.com/radoslavirha/homelab-apps/commit/fb91de63e3153ea82048e1f3c2e0499163db3455), [`b63acb5`](https://github.com/radoslavirha/homelab-apps/commit/b63acb5585ae94c5b6bcdf09fe9477c9aef5e9e9), [`d62060c`](https://github.com/radoslavirha/homelab-apps/commit/d62060cd2a3f4c4f6da4a02c0625772467560730), [`824756b`](https://github.com/radoslavirha/homelab-apps/commit/824756b4d472000c8654370be46e29dba41be49c)]:
+  - @radoslavirha/auth@0.2.1
+
 ## 0.2.0
 
 ### Minor Changes

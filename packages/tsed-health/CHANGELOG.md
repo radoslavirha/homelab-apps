@@ -1,5 +1,15 @@
 # @radoslavirha/tsed-health
 
+## 0.3.1
+
+### Patch Changes
+
+- [#179](https://github.com/radoslavirha/homelab-apps/pull/179) [`cec1af1`](https://github.com/radoslavirha/homelab-apps/commit/cec1af19636fb4fcf5bb70b4e82a03a4cfb94f8d) Thanks [@radoslavirha](https://github.com/radoslavirha)! - `/health/ready` now runs each health check once per request (not twice) when `cacheTtlMs` is 0, so the status code and body can no longer disagree.
+
+- [`824756b`](https://github.com/radoslavirha/homelab-apps/commit/824756b4d472000c8654370be46e29dba41be49c) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update dependencies
+- Updated dependencies [[`042c72c`](https://github.com/radoslavirha/homelab-apps/commit/042c72c36f8e1e1bebff82a3c201eb828fe6dea3), [`1746391`](https://github.com/radoslavirha/homelab-apps/commit/1746391b5e6af6f10a1f8b98f173ad73ababd4e2), [`824756b`](https://github.com/radoslavirha/homelab-apps/commit/824756b4d472000c8654370be46e29dba41be49c)]:
+  - @radoslavirha/health@0.1.2
+
 ## 0.3.0
 
 ### Minor Changes

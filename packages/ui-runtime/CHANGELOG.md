@@ -1,5 +1,13 @@
 # @radoslavirha/ui-runtime
 
+## 0.3.1
+
+### Patch Changes
+
+- [#178](https://github.com/radoslavirha/homelab-apps/pull/178) [`b00ffb9`](https://github.com/radoslavirha/homelab-apps/commit/b00ffb98c552cc7aa773556005049b2769fa5f18) Thanks [@radoslavirha](https://github.com/radoslavirha)! - useApiStatus no longer resets a degraded or unauthenticated status to ok when the browser fires an `online` event.
+
+- [`824756b`](https://github.com/radoslavirha/homelab-apps/commit/824756b4d472000c8654370be46e29dba41be49c) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update dependencies
+
 ## 0.3.0
 
 ### Minor Changes
