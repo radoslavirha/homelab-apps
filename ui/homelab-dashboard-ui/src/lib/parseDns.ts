@@ -96,13 +96,13 @@ export function parseDnsRecords(records: DnsRecord[], cfg: AppConfig): Cluster[]
     }
 
     const clusterMap = assignServices(records, anchors, pattern, scheme, excluded, cfg.paths);
-    const ipByIndex = new Map(anchors.map(a => [a.index, a.ip]));
+    const anchorByIndex = new Map(anchors.map(a => [a.index, a]));
 
     return [...clusterMap.entries()]
         .map(([idx, services]) => ({
             index: idx,
-            label: `server${idx}`,
-            ip: ipByIndex.get(idx)!,
+            label: anchorByIndex.get(idx)!.hostname.split('.')[0],
+            ip: anchorByIndex.get(idx)!.ip,
             color: accentColor(idx),
             services: services.sort((a, b) => a.name.localeCompare(b.name))
         }))
