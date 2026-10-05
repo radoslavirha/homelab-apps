@@ -103,7 +103,10 @@ export class OpenTelemetryService {
                 [ATTR_SERVICE_NAME]: serviceName,
                 [ATTR_SERVICE_VERSION]: serviceVersion
             }),
-            traceExporter: this.getTraceExporter(config.traces),
+            // NodeSDK reads `undefined` as "not configured, fall back to env" and would start
+            // an OTLP pipeline to a default endpoint. An explicit empty list is what disables
+            // the signal.
+            ...(tracesEnabled ? { traceExporter: this.getTraceExporter(config.traces) } : { spanProcessors: [] }),
             metricReaders: this.getMetricReaders(config.metrics),
             logRecordProcessors: this.getLoggerProcessors(config.logs),
             instrumentations: [
@@ -133,9 +136,9 @@ export class OpenTelemetryService {
         this.sdk = sdk;
     }
 
-    private getMetricReaders(config?: OTELMetricsConfig): PeriodicExportingMetricReader[] | undefined {
+    private getMetricReaders(config?: OTELMetricsConfig): PeriodicExportingMetricReader[] {
         if (!ObjectUtils.isEnabled(config)) {
-            return undefined;
+            return [];
         }
 
         return [
