@@ -1,5 +1,5 @@
 import { createSocket } from 'dgram';
-import { ArrayUtils, CommonUtils } from '@radoslavirha/utils';
+import { ArrayUtils, CommonUtils, NumberUtils, ObjectUtils } from '@radoslavirha/utils';
 import { MIOT_DEFAULT_PORT } from './Constants.js';
 import {
     MiotError,
@@ -252,10 +252,18 @@ export class MiotTransport {
         }
 
         this.logger.debug(`action`, { deviceId, siid, aiid, stamp });
-        await this.sendCommand(deviceId, stamp, {
+        const response = await this.sendCommand(deviceId, stamp, {
             method: MIOT_METHOD_ACTION,
             params: { did, siid, aiid, in: inArgs }
         });
+
+        // A refused action answers with a result object carrying a non-zero `code`; some firmware
+        // answers a plain string (e.g. 'ok'), which stays a success.
+        const result = response.result as string | Record<string, unknown> | null | undefined;
+        if (ObjectUtils.isPlainObject(result) && NumberUtils.isNumber(result.code) && result.code !== 0) {
+            this.logger.error(`action failed`, { deviceId, siid, aiid, code: result.code });
+            throw propertyError(MIOT_METHOD_ACTION, result.code);
+        }
     }
 
     private async sendCommand(deviceId: number, stamp: number, payload: MiotRequestPayload): Promise<MiotResponse> {

@@ -354,6 +354,33 @@ describe('MiotTransport', () => {
             await expect(transport.callAction(DEVICE_ID, STAMP, 2, 1)).resolves.toBeUndefined();
         });
 
+        it('rejects with device_error when the action result carries a non-zero code', async () => {
+            const response = buildCommandResponse({
+                id: 1,
+                result: { did: String(DEVICE_ID), siid: 2, aiid: 1, code: -4004, out: [] }
+            });
+            createSocketMock.mockReturnValue(createMockSocket(response));
+
+            const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
+            const error = await transport.callAction(DEVICE_ID, STAMP, 2, 1).catch((err: unknown) => err);
+
+            expect(MiotError.is(error)).toBe(true);
+            expect((error as MiotError).kind).toBe(MIOT_ERROR_DEVICE_ERROR);
+            expect((error as MiotError).method).toBe(MIOT_METHOD_ACTION);
+            expect((error as MiotError).code).toBe(-4004);
+        });
+
+        it('resolves when the action result carries code 0', async () => {
+            const response = buildCommandResponse({
+                id: 1,
+                result: { did: String(DEVICE_ID), siid: 2, aiid: 1, code: 0, out: [] }
+            });
+            createSocketMock.mockReturnValue(createMockSocket(response));
+
+            const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
+            await expect(transport.callAction(DEVICE_ID, STAMP, 2, 1)).resolves.toBeUndefined();
+        });
+
         it('wraps scalar arg in an array', async () => {
             const response = buildCommandResponse({ id: 1, result: 'ok' });
             const socket = createMockSocket(response);
