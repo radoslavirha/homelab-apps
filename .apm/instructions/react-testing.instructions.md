@@ -183,6 +183,8 @@ describe('createQrCodesClient', () => {
 
 - Test files co-located with source: `QrImage.spec.tsx` next to `QrImage.tsx`
 - Naming: `<ComponentName>.spec.tsx` for components, `<module>.spec.ts` for non-JSX modules
+- One spec per source file: new tests go into the existing spec, inside the matching `describe`.
+  Never add a second spec for the same source file (`QrImage.bug.spec.tsx`, ...)
 - `pages/**` are excluded from coverage — exercise via `App.spec.tsx` or e2e
 
 ## Coverage thresholds

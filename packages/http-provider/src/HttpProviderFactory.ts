@@ -23,6 +23,7 @@ import { applyTransport } from './utils/applyTransport.js';
 
 interface RetriableRequestConfig extends InternalAxiosRequestConfig {
     _retried?: boolean;
+    _authGeneration?: number;
 }
 
 interface PolicyRequestConfig extends InternalAxiosRequestConfig {
@@ -252,7 +253,12 @@ export class HttpProviderFactory<K extends string> {
         strategy: IAuthStrategy,
         transport: TransportConfig
     ): void {
+        // Bumped on every 401-driven invalidation. A 401 only invalidates when the request was sent
+        // under the current generation; a stale one joins the refresh a sibling already started.
+        let generation = 0;
+
         instance.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
+            (config as RetriableRequestConfig)._authGeneration = generation;
             const credentials = await strategy.getCredentials();
             try {
                 applyTransport(config, transport, credentials);
@@ -271,7 +277,10 @@ export class HttpProviderFactory<K extends string> {
                 const axiosError = error as { response?: { status?: number }; config?: RetriableRequestConfig };
                 if (axiosError.response?.status === 401 && axiosError.config && !axiosError.config._retried) {
                     axiosError.config._retried = true;
-                    strategy.invalidate();
+                    if (axiosError.config._authGeneration === generation) {
+                        generation += 1;
+                        strategy.invalidate();
+                    }
                     return instance.request(axiosError.config);
                 }
                 return Promise.reject(error);

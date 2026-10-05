@@ -2,7 +2,8 @@
 # Source: nginx.conf.template → /etc/nginx/conf.d/default.conf
 #
 # Required env var:
-#   NGINX_BASE_PATH   Sub-path the app is served at, e.g. /qr-manager or /
+#   NGINX_BASE_PATH   Sub-path the app is served at, e.g. /qr-manager or / (root).
+#                     A trailing slash is stripped by docker-entrypoint.d/10-normalize-base-path.envsh
 #
 # nginx alias strips the NGINX_BASE_PATH prefix before looking up files in
 # /usr/share/nginx/html/. SPA fallback uses a named @spa location because

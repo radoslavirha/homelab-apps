@@ -6,7 +6,7 @@ import { MongoHealthCheck } from '@radoslavirha/tsed-health/mongoose';
 import { Server } from '../Server.js';
 import { HealthStatus } from '@radoslavirha/tsed-health';
 
-describe('Health endpoints (integration)', () => {
+describe('HealthController (integration)', () => {
     let request: SuperTest.Agent;
     let mongoCheck: MongoHealthCheck;
 

@@ -101,11 +101,18 @@ describe('OpenTelemetryService', () => {
 
             const options = sdkOptions();
 
-            expect(options.traceExporter).toBeDefined();
+            expect(options.spanProcessors).toHaveLength(1);
             expect(options.logRecordProcessors).toHaveLength(1);
-            // Metrics were left out of the config, so the reader list must be absent
-            // rather than empty — NodeSDK treats the two differently.
-            expect(options.metricReaders).toBeUndefined();
+            // Metrics were left out of the config, so the reader list must be explicitly
+            // empty — NodeSDK treats an absent list as "fall back to env" and starts OTLP.
+            expect(options.metricReaders).toEqual([]);
+        });
+
+        it('Should explicitly disable spans when traces are omitted', () => {
+            new OpenTelemetryService().init(OPTIONS);
+
+            // An absent list would make NodeSDK fall back to env and start OTLP.
+            expect(sdkOptions().spanProcessors).toEqual([]);
         });
 
         // The long comment on `ignoreIncomingRequestHook` explains why probes are dropped;
@@ -188,6 +195,19 @@ describe('OpenTelemetryService', () => {
             service.init(OPTIONS);
 
             await expect(service.shutdown()).resolves.toBeUndefined();
+        });
+
+        it('Should not leave the timeout timer pending once the flush has finished', async () => {
+            const timers = (): number => process.getActiveResourcesInfo().filter((r) => r === 'Timeout').length;
+            const before = timers();
+            const service = new OpenTelemetryService();
+            service.init(OPTIONS);
+
+            await service.shutdown();
+
+            // A pending, ref'd 3s timer keeps the event loop alive after a fast flush, so a
+            // process that exits by draining its loop lingers for the whole budget.
+            expect(timers()).toBe(before);
         });
 
         it('Should default the flush timeout to three seconds', () => {

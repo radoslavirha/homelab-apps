@@ -54,7 +54,7 @@
     "compression": "catalog:express",
     "cookie-parser": "catalog:express",
     "express": "catalog:express",
-    "sharp": "^0.35.4",
+    "sharp": "^0.35.5",
     "zod": "catalog:"
   },
   "devDependencies": {

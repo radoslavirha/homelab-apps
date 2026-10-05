@@ -38,8 +38,8 @@ export class NotificationPostHandler {
             if (CommonUtils.isNil(prop)) {
                 throw new BadRequest(`Property '${propertyKey}' not found in spec for device ${deviceId}.`);
             }
-            if (!prop.access.includes(PropertyAccess.Read) && !prop.access.includes(PropertyAccess.Write)) {
-                throw new BadRequest(`Property '${propertyKey}' does not have READ or WRITE access and cannot be subscribed.`);
+            if (!prop.access.includes(PropertyAccess.Read) && !prop.access.includes(PropertyAccess.Notify)) {
+                throw new BadRequest(`Property '${propertyKey}' does not have READ or NOTIFY access and cannot be subscribed.`);
             }
         }
 

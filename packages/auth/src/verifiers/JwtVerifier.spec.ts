@@ -226,6 +226,14 @@ describe('JwtVerifier — key source failures', () => {
 
         expect(outcome).toEqual({ reason: 'indeterminate', detail: 'boom' });
     });
+
+    it('does not report a malformed static PEM, a configuration fault, as indeterminate (503)', async () => {
+        const row = issuerRow({ key: { source: 'value', algorithm: 'RS256', value: 'not a pem' } });
+        const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString('base64url');
+        const token = `${b64({ alg: 'RS256' })}.${b64({ iss: ISSUER })}.c2ln`;
+
+        expect((await verifierFor(row).verify(token)).reason).not.toBe('indeterminate');
+    });
 });
 
 describe('JwtVerifier — several trust sources', () => {

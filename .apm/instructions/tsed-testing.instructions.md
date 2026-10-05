@@ -192,6 +192,8 @@ Never add tests for framework decorators (`@MinLength`, `@Required`, `@Enum`, ..
 
 - Unit test: `<ClassName>.spec.ts` — co-located with source file
 - Integration test: `<ClassName>.integration.spec.ts` — co-located with the controller or `Server.ts`
+- One spec per source file: new tests go into the existing `<ClassName>.spec.ts`, inside the matching
+  `describe`. Never add a second spec for the same source file (`<ClassName>.bug.spec.ts`, ...)
 
 ## Coverage exclusions
 

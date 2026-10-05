@@ -70,6 +70,14 @@ Add the failing test from the issue (or write one if it has none), following
 .apm/instructions/react-testing.instructions.md (React code, including
 packages/ui-*). Run `pnpm --filter ./<member-path> test` and confirm it fails for
 the reason the issue claims.
+
+Put the test in the source file's spec, even if the issue's test names another
+file: a test for `<File>.ts` goes in `<File>.spec.ts` next to it
+(`<File>.spec.tsx` for a component, `<File>.integration.spec.ts` for an
+integration test). If that spec exists, add the test to it, inside the matching
+`describe`; create the spec only if it doesn't exist. Never create a second spec
+for the same source file (`<File>.bug.spec.ts`, `<File>.alg.spec.ts`, ...).
+
 If it passes, or fails for a different reason: comment on the issue with what you
 ran and saw, replace `agent-in-progress` with `agent-cannot-reproduce`, and stop.
 For a feature request, write a test for the requested behavior instead and
@@ -80,6 +88,7 @@ test, handle it like the stop case in step 4.
 Make the smallest change that makes the test pass. Fix the root cause, not the
 symptom. No unrelated refactors, renames or formatting changes. A feature must
 stay additive. Never edit .github/claude/ or .github/workflows/.
+Don't edit AGENTS.md unless the owner explicitly asks for it.
 - Configuration changes must stay backward compatible (AGENTS.md → "Configuration
   backward compatibility"): additive only, no removed or renamed keys.
 - Area `apis`: if the fix changes what the app exposes or connects to (controllers,
