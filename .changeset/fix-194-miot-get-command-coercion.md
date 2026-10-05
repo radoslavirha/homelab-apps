@@ -1,5 +1,5 @@
 ---
-"miot-bridge-api": patch
+"miot-bridge-api": minor
 ---
 
-GET /command and GET /command/raw now accept numeric and boolean values from the query string instead of rejecting them with 400.
+Removed `GET /command` and `GET /command/raw`. Use `POST /command` and `POST /command/raw` with a JSON body, which keeps numeric and boolean values typed.

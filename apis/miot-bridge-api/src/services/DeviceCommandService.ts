@@ -1,7 +1,7 @@
 import { Service, Scope, ProviderScope } from '@tsed/di';
 import { BadRequest, NotFound } from '@tsed/exceptions';
 import type { Attributes, Span } from '@opentelemetry/api';
-import { BooleanUtils, CommonUtils, NumberUtils, StringUtils } from '@radoslavirha/utils';
+import { BooleanUtils, CommonUtils, NumberUtils } from '@radoslavirha/utils';
 import { DeviceCommandOperation } from '../models/DeviceCommandOperation.enum.js';
 import { DeviceCommandRequest } from '../models/DeviceCommandRequest.js';
 import { RawCommandRequest } from '../models/RawCommandRequest.js';
@@ -58,54 +58,6 @@ type ResolvedCommand =
     | { operation: DeviceCommandOperation.GetProperty; property: MiotProperty }
     | { operation: DeviceCommandOperation.SetProperty; property: MiotProperty }
     | { operation: DeviceCommandOperation.Action; action: MiotAction };
-
-/** Where a command came from, when that changes how its `value` must be read. */
-export type CommandSourceOptions = {
-    /**
-     * The value arrived in a URL query string, so a number or boolean is a string until the spec
-     * says otherwise. JSON bodies and MQTT carry real types and stay strictly compared.
-     */
-    fromQuery?: boolean;
-};
-
-/**
- * Turns a query-string `value` into the type the property's spec expects.
- * Anything it cannot place confidently is left as the string it arrived as.
- */
-function coerceQueryValue(value: DeviceCommandRequest['value'], property: MiotProperty): DeviceCommandRequest['value'] {
-    if (!StringUtils.isString(value)) return value;
-
-    if (property.values.length > 0) {
-        const num = parseNumber(value);
-        return CommonUtils.notUndefined(num) ? num : value;
-    }
-    if (CommonUtils.notNil(property.valueRange) && property.valueRange.length >= 2) {
-        return parseNumber(value) ?? value;
-    }
-    if (property.format?.toUpperCase() === 'BOOL') {
-        return parseBoolean(value) ?? value;
-    }
-    return value;
-}
-
-/** Raw commands have no spec to consult, so numeric- and boolean-looking strings are converted. */
-function coerceRawQueryValue(value: RawCommandRequest['value']): RawCommandRequest['value'] {
-    if (!StringUtils.isString(value)) return value;
-    return parseNumber(value) ?? parseBoolean(value) ?? value;
-}
-
-function parseNumber(value: string): number | undefined {
-    if (value.trim() === '') return undefined;
-    const num = Number(value);
-    return Number.isFinite(num) ? num : undefined;
-}
-
-function parseBoolean(value: string): boolean | undefined {
-    const lower = value.toLowerCase();
-    if (lower === 'true') return true;
-    if (lower === 'false') return false;
-    return undefined;
-}
 
 /**
  * Validates and dispatches MIoT commands against registered devices.
@@ -287,7 +239,7 @@ export class DeviceCommandService {
     /**
      * Executes a raw IID command against a registered device, bypassing spec lookup.
      */
-    async executeRaw(request: RawCommandRequest, options: CommandSourceOptions = {}): Promise<CommandResponseModel> {
+    async executeRaw(request: RawCommandRequest): Promise<CommandResponseModel> {
         const device = await this.deviceStorageService.getByDeviceId(request.deviceId);
         if (CommonUtils.isNil(device)) {
             throw new NotFound(`Device ${request.deviceId} not found in cache. Register the device first.`);
@@ -302,10 +254,6 @@ export class DeviceCommandService {
 
         if (request.operation === DeviceCommandOperation.Action && CommonUtils.isNil(request.aiid)) {
             throw new BadRequest(`aiid is required for ${DeviceCommandOperation.Action} operations.`);
-        }
-
-        if (options.fromQuery && request.operation === DeviceCommandOperation.SetProperty) {
-            request = { ...request, value: coerceRawQueryValue(request.value) };
         }
 
         const miotDevice = this.registry.getOrCreate(device);
@@ -350,7 +298,7 @@ export class DeviceCommandService {
         });
     }
 
-    async execute(request: DeviceCommandRequest, options: CommandSourceOptions = {}): Promise<CommandResponseModel> {
+    async execute(request: DeviceCommandRequest): Promise<CommandResponseModel> {
         const device = await this.deviceStorageService.getByDeviceId(request.deviceId);
         if (CommonUtils.isNil(device)) {
             throw new NotFound(`Device ${request.deviceId} not found in cache. Register the device first.`);
@@ -358,12 +306,6 @@ export class DeviceCommandService {
 
         const overrides = await this.modelPropertyOverrideService.getByModel(device.model);
         const spec = await this.simplifiedMiotSpecMapper.map(device.rawSpec, overrides);
-        if (options.fromQuery && request.operation === DeviceCommandOperation.SetProperty) {
-            const property = spec.properties.get(request.command);
-            if (CommonUtils.notNil(property)) {
-                request = { ...request, value: coerceQueryValue(request.value, property) };
-            }
-        }
         const resolved = this.resolveOrRecordRejection(request, device.deviceId, spec);
 
         const miotDevice = this.registry.getOrCreate(device);

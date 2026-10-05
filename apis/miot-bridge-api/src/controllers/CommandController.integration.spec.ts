@@ -34,9 +34,7 @@ describe('CommandController (integration)', () => {
 
     describe('Authentication', () => {
         const routes: ReadonlyArray<readonly [string, string]> = [
-            ['get', '/command'],
             ['post', '/command'],
-            ['get', '/command/raw'],
             ['post', '/command/raw']
         ];
 
@@ -67,7 +65,7 @@ describe('CommandController (integration)', () => {
         describe('authorization, on top of authentication', () => {
             // `call` above is scoped to the per-route table; these assertions
             // hold for the controller as a whole, so they use one route.
-            const probe = (agent: SuperTest.Agent) => agent.get('/command');
+            const probe = (agent: SuperTest.Agent) => agent.post('/command');
 
             it('refuses a verified caller who lacks the admin role', async () => {
                 // 403, not 401: the token is good. Sending this caller back to
@@ -101,7 +99,7 @@ describe('CommandController (integration)', () => {
         });
 
         describe('the refusals that separate a token from a token for us', () => {
-            const probe = () => request.get('/command');
+            const probe = () => request.post('/command');
 
             it('refuses a valid token minted for another audience', async () => {
                 const elsewhere = await mintTestToken({ audience: 'some-other-api' });

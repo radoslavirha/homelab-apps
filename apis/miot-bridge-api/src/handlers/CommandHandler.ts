@@ -5,14 +5,14 @@ import { DeviceCommandOperation } from '../models/DeviceCommandOperation.enum.js
 import { DeviceCommandRequest } from '../models/DeviceCommandRequest.js';
 import { CommandRequestModel } from '../models/CommandRequestModel.js';
 import { CommandValueResponse } from '../models/CommandValueResponse.js';
-import { DeviceCommandService, type CommandSourceOptions } from '../services/DeviceCommandService.js';
+import { DeviceCommandService } from '../services/DeviceCommandService.js';
 
 @Injectable()
 @Scope(ProviderScope.SINGLETON)
 export class CommandHandler {
     constructor(private readonly deviceCommandService: DeviceCommandService) {}
 
-    public async execute(request: CommandRequestModel, ctx: PlatformContext, options: CommandSourceOptions = {}): Promise<CommandValueResponse | void> {
+    public async execute(request: CommandRequestModel, ctx: PlatformContext): Promise<CommandValueResponse | void> {
         const commandRequest = CommonUtils.buildModelStrict(DeviceCommandRequest, {
             deviceId: request.deviceId,
             command: request.command,
@@ -20,7 +20,7 @@ export class CommandHandler {
             value: request.value
         });
 
-        const response = await this.deviceCommandService.execute(commandRequest, options);
+        const response = await this.deviceCommandService.execute(commandRequest);
 
         if (response.operation === DeviceCommandOperation.Action) {
             ctx.response.status(204);
