@@ -27,7 +27,7 @@
     "@actions/core": "^3.0.1",
     "@actions/github": "^9.1.1",
     "@changesets/changelog-github": "^1.0.1",
-    "@changesets/cli": "^3.0.2",
+    "@changesets/cli": "^3.0.3",
     "handlebars": "^4.7.9"
   },
   "engines": {
