@@ -53,16 +53,23 @@ not `gh issue list`. Skip a candidate if an open issue or PR covers it, or a clo
 issue covers it with reason "not planned" (it was rejected).
 
 # 4. Prove it
-For each candidate, write a failing Vitest spec next to the source file, following
+For each candidate, write a failing Vitest test, following
 .apm/instructions/tsed-testing.instructions.md (Ts.ED code) or
 .apm/instructions/react-testing.instructions.md (React code, including
 packages/ui-*). Run it with `pnpm --filter ./<member-path> test`. It must fail for
 the reason you claim.
+One spec per source file: a test for `<File>.ts` goes in `<File>.spec.ts` next
+to it (`<File>.spec.tsx` for a component, `<File>.integration.spec.ts` for an
+integration test). If that spec exists, add the test to it, inside the matching
+`describe`; create the spec only if it doesn't exist. Never create a second spec
+for the same source file (`<File>.bug.spec.ts`, `<File>.alg.spec.ts`, ...).
 Mongo-backed tests start MongoDB through Docker, which the runner provides. If
 Docker fails anyway, treat Mongo connection failures as environment problems,
 not bugs.
 If you can't write a failing test, file only if the argument is airtight, with
-confidence low or med. Drop everything else. Delete the spec file after running it.
+confidence low or med. Drop everything else.
+When done, restore the working tree: `git checkout -- <spec>` for a spec that
+existed, delete one you created.
 
 # 5. File issues
 At most 4 issues, highest severity first. Zero issues is a fine outcome.
@@ -97,7 +104,7 @@ high | med | low — one sentence why.
 
 ## Failing test
 ```ts
-// path/to/file.spec.ts
+// path/to/File.spec.ts — the spec this test belongs in, inside describe('...')
 ...
 ```
 
