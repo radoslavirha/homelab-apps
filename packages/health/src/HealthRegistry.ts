@@ -60,11 +60,14 @@ export class HealthRegistry {
 
         // Single-flight: three probes plus a human on /health would otherwise each start
         // their own pass over the same checks.
-        this.inFlight ??= this.runAll().then((value) => {
-            this.cached = { at: Date.now(), value };
-            this.inFlight = undefined;
-            return value;
-        });
+        this.inFlight ??= this.runAll()
+            .then((value) => {
+                this.cached = { at: Date.now(), value };
+                return value;
+            })
+            .finally(() => {
+                this.inFlight = undefined;
+            });
 
         return this.inFlight;
     }
@@ -93,7 +96,7 @@ export class HealthRegistry {
             return { check, result: sanitise(result) };
         } catch (error) {
             // Name only — a message may carry a connection URI or credentials.
-            const name = error instanceof Error ? error.name : 'Error';
+            const name = error instanceof Error && typeof error.name === 'string' && error.name !== '' ? error.name : 'Error';
             return { check, result: { status: HealthStatus.Fail, detail: truncate(name) } };
         } finally {
             clearTimeout(timer);
