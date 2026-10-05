@@ -156,6 +156,24 @@ describe('parseDnsRecords', () => {
         expect(clusters.map(c => c.label)).toEqual(['10.0.2.x']);
         expect(clusters[0].index).toBe(1);
     });
+
+    it('gives server0 a different accent color than server1', () => {
+        const cfg = AppConfigSchema.parse({
+            unifi: { host: 'https://192.168.1.1', apiKey: 'key' },
+            serverPattern: '^server(\\d+)\\.lan$'
+        });
+        const clusters = parseDnsRecords(
+            [
+                aRecord('server0.lan', '10.0.0.1'),
+                aRecord('server1.lan', '10.0.0.2'),
+                aRecord('a.lan', '10.0.0.1'),
+                aRecord('b.lan', '10.0.0.2')
+            ],
+            cfg
+        );
+        expect(clusters).toHaveLength(2);
+        expect(clusters[0].color).not.toBe(clusters[1].color);
+    });
 });
 
 describe('parseDnsRecords paths config', () => {

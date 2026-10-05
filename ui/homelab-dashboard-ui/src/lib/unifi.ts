@@ -16,7 +16,8 @@ export class UnifiAuthError extends Error {}
 export const ACCENT_COLORS = ['#5b8dd9', '#c97e3a', '#7a55c4', '#3a8a5a', '#d95b8d', '#5bc4c9'];
 
 export function accentColor(index: number): string {
-    return ACCENT_COLORS[(index - 1) % ACCENT_COLORS.length] ?? '#5b8dd9';
+    const n = ACCENT_COLORS.length;
+    return ACCENT_COLORS[(((index - 1) % n) + n) % n] ?? '#5b8dd9';
 }
 
 export async function fetchDnsRecords(
