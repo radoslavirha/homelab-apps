@@ -18,6 +18,21 @@ const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout
 
 describe('HealthRegistry', () => {
     describe('Roll-up and readiness', () => {
+        it('Should not hide a failing check behind a duplicate name', async () => {
+            const registry = new HealthRegistry([
+                check('upstream', true, HealthStatus.Fail),
+                check('upstream', true, HealthStatus.Pass)
+            ]);
+
+            const report = await registry.report();
+
+            expect(report.status).toBe(HealthStatus.Fail);
+            expect(Object.values(report.checks ?? {}).map((c) => c.status).sort()).toEqual([
+                HealthStatus.Fail,
+                HealthStatus.Pass
+            ]);
+        });
+
         it('Should report pass and ready for an empty registry', async () => {
             const registry = new HealthRegistry();
 

@@ -56,9 +56,18 @@ export const buildReport = (
         return { status };
     }
 
+    // Checks from separate providers can share a name; suffix later ones (`name#2`) so none
+    // is overwritten and a failing check is never hidden behind a passing namesake.
     const checks: Record<string, HealthCheckResult> = {};
+    const seen = new Map<string, number>();
     for (const { check, result } of evaluated) {
-        checks[check.name] = result;
+        const count = (seen.get(check.name) ?? 0) + 1;
+        seen.set(check.name, count);
+        let key = count === 1 ? check.name : `${check.name}#${count}`;
+        while (key in checks) {
+            key = `${key}_`;
+        }
+        checks[key] = result;
     }
 
     return { status, checks };
