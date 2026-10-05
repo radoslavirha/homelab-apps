@@ -79,14 +79,19 @@ export class RasterService {
 
     private getPositionOnImage(latitude: number, longitude: number, bbox: BBox, imageHeight: number, imageWidth: number): Position {
         const longitudeDiff = bbox.bottomRight.longitude - bbox.topLeft.longitude,
-            latitudeDiff = bbox.topLeft.latitude - bbox.bottomRight.latitude,
+            // The radar image is Web Mercator (EPSG:3857): longitude is linear, latitude is not.
+            latitudeDiff = this.toMercatorY(bbox.topLeft.latitude) - this.toMercatorY(bbox.bottomRight.latitude),
             fromLeft = NumberUtils.getPercentFromValue(longitudeDiff, longitude - bbox.topLeft.longitude),
-            fromTop = NumberUtils.getPercentFromValue(latitudeDiff, bbox.topLeft.latitude - latitude);
+            fromTop = NumberUtils.getPercentFromValue(latitudeDiff, this.toMercatorY(bbox.topLeft.latitude) - this.toMercatorY(latitude));
 
         return CommonUtils.buildModelStrict(Position, {
             x: NumberUtils.round(NumberUtils.getValueFromPercent(imageWidth, fromLeft)),
             y: NumberUtils.round(NumberUtils.getValueFromPercent(imageHeight, fromTop))
         });
+    }
+
+    private toMercatorY(latitude: number): number {
+        return Math.log(Math.tan(Math.PI / 4 + (latitude * Math.PI) / 360));
     }
 
     private async getPixelsWithRadius(position: Position, image: Sharp, radius = 0): Promise<RGBA[]> {

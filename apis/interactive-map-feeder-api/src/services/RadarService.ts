@@ -14,8 +14,7 @@ export class RadarService {
             longitude: 11.267
         }),
         bottomRight: CommonUtils.buildModelStrict(Coordinates, {
-            latitude: 48.1,
-            // latitude: 48.047,
+            latitude: 48.047,
             longitude: 20.770
         })
     });
