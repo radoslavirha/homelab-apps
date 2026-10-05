@@ -108,6 +108,13 @@ describe('OpenTelemetryService', () => {
             expect(options.metricReaders).toEqual([]);
         });
 
+        it('Should explicitly disable spans when traces are omitted', () => {
+            new OpenTelemetryService().init(OPTIONS);
+
+            // An absent list would make NodeSDK fall back to env and start OTLP.
+            expect(sdkOptions().spanProcessors).toEqual([]);
+        });
+
         // The long comment on `ignoreIncomingRequestHook` explains why probes are dropped;
         // this is the assertion that the wiring actually does it.
         it('Should ignore probe paths but not application routes', () => {
