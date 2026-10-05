@@ -86,7 +86,13 @@ export class OpenTelemetryService {
         // second `sdk.shutdown()` over a half-flushed pipeline.
         this.sdk = undefined;
 
-        await Promise.race([sdk.shutdown(), delay(timeoutMs)]).catch(() => undefined);
+        // The timer is aborted once the race settles: a ref'd timer left pending after a
+        // fast flush would keep the event loop alive for the whole timeout.
+        const timer = new AbortController();
+
+        await Promise.race([sdk.shutdown(), delay(timeoutMs, undefined, { signal: timer.signal })])
+            .catch(() => undefined)
+            .finally(() => timer.abort());
     }
 
     private initSDK(
