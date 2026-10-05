@@ -77,6 +77,13 @@ export class MqttListenerService implements OnInit {
                 return;
             }
 
+            // Brokers that ignore `rh` still replay retained commands; running one would actuate
+            // the device again on every start and reconnect.
+            if (packet.retain === true) {
+                this.logger.warn(`Ignoring retained command on ${topic}: commands must not be published with retain.`);
+                return;
+            }
+
             void this.onMessage(topic, deviceId, payload, packet);
         });
     }
@@ -85,7 +92,8 @@ export class MqttListenerService implements OnInit {
     private subscribe(client: MqttClient): void {
         const pattern = this.mqttTopicService.getCommandSubscriptionPattern();
 
-        client.subscribe(pattern, { qos: QOS }, (err) => {
+        // rh: 2 — never send retained messages on SUBSCRIBE; a command is an event, not state.
+        client.subscribe(pattern, { qos: QOS, rh: 2 }, (err) => {
             if (CommonUtils.notNil(err)) {
                 this.logger.error(`Failed to subscribe to MQTT topic ${pattern}: ${err.message}`);
             } else {

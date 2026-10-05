@@ -133,6 +133,8 @@ Hidden from Swagger, excluded from traces and request logs. See
 | `[prefix/]miot-bridge/device/{deviceId}/response` | outbound | Command response |
 | `[prefix/]miot-bridge/device/{deviceId}/notifications` | outbound | Property change event (`mqtt.notifications.enabled`) |
 
+Retained command messages are ignored (subscribed with `rh: 2`, and dropped if the broker replays them anyway).
+
 Command payload: `{ deviceId: number, command: "service:property", operation: "GetProperty|SetProperty|Action", [value] }`
 
 ## Notification Payload

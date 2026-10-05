@@ -97,7 +97,7 @@ describe('MqttListenerService', () => {
         it('Should subscribe to the command pattern', () => {
             expect(client.subscribe).toHaveBeenCalledWith(
                 'miot-bridge/device/+/command',
-                { qos: 1 },
+                { qos: 1, rh: 2 },
                 expect.any(Function)
             );
         });
