@@ -4,13 +4,15 @@ name: Agent bug resolver
 # yamllint disable-line rule:truthy
 on:
   schedule:
-    - cron: '30 * * * *'
+    # Nightly, after the finders, so PRs are ready in the morning:
+    # 02:30-06:30 CEST / 01:30-05:30 CET.
+    - cron: '30 0-4 * * *'
   workflow_dispatch:
   # The owner labeling an issue `agent-todo` starts a run right away.
   issues:
     types: [labeled]
 
-# A run that outlasts the hour queues the next one instead of overlapping it.
+# A run that outlasts its slot queues the next one instead of overlapping it.
 concurrency:
   group: agent-bug-resolver
 
@@ -34,12 +36,31 @@ jobs:
           client-id: ${{ vars.AGENT_APP_CLIENT_ID }}
           private-key: ${{ secrets.AGENT_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
+      # At most 3 agent PRs a night, up to 5 when the extra ones are tiny.
+      # Runs the owner starts (agent-todo label, manual dispatch) aren't capped.
+      - name: Check daily PR budget
+        id: budget
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          opened=$(gh pr list -R "$GITHUB_REPOSITORY" --label agent-pr --state all \
+            --search "created:>=$(date -u -d '12 hours ago' +%FT%TZ)" --json number --jq length)
+          if [ "$EVENT" != schedule ]; then mode=owner
+          elif [ "$opened" -ge 5 ]; then mode=skip
+          elif [ "$opened" -ge 3 ]; then mode=tiny
+          else mode=normal; fi
+          echo "Agent PRs opened in the last 12 h: $opened -> $mode"
+          echo "opened=$opened" >> "$GITHUB_OUTPUT"
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
       - name: Checkout repository
+        if: steps.budget.outputs.mode != 'skip'
         uses: actions/checkout@v7
         with:
           token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
       - name: Agent setup
+        if: steps.budget.outputs.mode != 'skip'
         id: setup
         uses: ./.github/actions/agent-setup
         with:
@@ -48,6 +69,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.TOOLKIT_HUB_PACKAGES }}
           prompt: bug-resolver.md
       - name: Run Claude
+        if: steps.budget.outputs.mode != 'skip'
         uses: anthropics/claude-code-action@v1
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
@@ -57,7 +79,12 @@ jobs:
           bot_id: ${{ steps.setup.outputs.bot-id }}
           bot_name: ${{ steps.setup.outputs.bot-name }}
           display_report: true
-          prompt: ${{ steps.setup.outputs.prompt }}
+          prompt: |
+            ${{ steps.setup.outputs.prompt }}
+
+            # Budget
+            - Agent PRs opened tonight: ${{ steps.budget.outputs.opened }}
+            - Mode: ${{ steps.budget.outputs.mode }}
           settings: '{"env":{"BASH_DEFAULT_TIMEOUT_MS":"600000"}}'
           claude_args: |
             --model claude-sonnet-5-5

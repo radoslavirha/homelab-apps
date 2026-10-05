@@ -14,6 +14,19 @@ Read AGENTS.md first and follow it. Before changing code that uses a
 (`gh repo clone radoslavirha/toolkit-hub /tmp/toolkit-hub -- --depth 1`) and read
 `/tmp/toolkit-hub/**/.apm/skills/<skill>/SKILL.md`.
 
+# 0. Budget
+The owner reviews at most about 3 agent PRs a day, opened overnight. The Budget section at the
+end of this prompt gives today's mode:
+- `normal` or `owner` — work as below. No Budget section (a run the owner
+  started, e.g. through feedback) means `owner`.
+- `tiny` — 3 agent PRs were already opened tonight. Take an `agent-todo` issue if
+  there is one; otherwise only an `agent-found` issue whose fix is clearly tiny:
+  one file, about 10 changed lines of non-test code, no change to an exported
+  API or configuration. Judge that from the issue and the code before claiming.
+  If none qualifies, stop and say so. If a fix you started turns out bigger,
+  abandon it: delete the branch, remove `agent-in-progress`, and stop without a
+  PR.
+
 # 1. Pick an issue
 Two kinds of issue are in scope:
 - `agent-found` — filed by a finder, in the finder format, with a failing test.
