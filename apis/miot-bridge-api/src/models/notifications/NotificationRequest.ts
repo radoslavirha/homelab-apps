@@ -5,7 +5,7 @@ import { AdditionalProperties, CollectionOf, Description, Example, Required } fr
 export class NotificationRequest {
     @Required()
     @CollectionOf(String)
-    @Description('List of Miot spec property command keys to subscribe to (e.g. vacuum:mode). Must have READ or WRITE access.')
+    @Description('List of Miot spec property command keys to subscribe to (e.g. vacuum:mode). Must have READ or NOTIFY access.')
     @Example(['vacuum:mode', 'vacuum:status'])
     public properties: string[];
 }
