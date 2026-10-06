@@ -36,7 +36,13 @@ export function App({ config }: Props) {
                     // The probe discards the records, so reload them for real.
                     setReloadKey(k => k + 1);
                     return true;
-                } catch {
+                } catch (err) {
+                    // A rejected API key means the controller answered: reload so the
+                    // real load reports the config fault instead of an outage.
+                    if (err instanceof UnifiAuthError) {
+                        setReloadKey(k => k + 1);
+                        return true;
+                    }
                     return false;
                 }
             }
