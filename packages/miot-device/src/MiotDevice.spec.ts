@@ -210,6 +210,33 @@ describe('MiotDevice', () => {
             expect((error as MiotError).stampRefreshed).toBe(true);
         });
 
+        it('does not mark a first-attempt failure as retried when there was no cached stamp', async () => {
+            mockGetProperty.mockRejectedValue(new MiotError('get_properties failed: code -4004', {
+                kind: MIOT_ERROR_DEVICE_ERROR,
+                method: MIOT_METHOD_GET_PROPERTIES,
+                code: -4004
+            }));
+
+            // No stamp state: the call goes straight to the fresh-handshake path and is sent once.
+            const device = new MiotDevice({ address: '1.2.3.4', token: TOKEN, deviceId: DEVICE_ID });
+
+            const error = await device.getProperty(2, 1).catch((err: unknown) => err);
+
+            expect(mockGetProperty).toHaveBeenCalledTimes(1);
+            expect((error as MiotError).stampRefreshed).toBe(false);
+        });
+
+        it('classifies a non-MiotError first-attempt failure as an unretried transport error', async () => {
+            mockGetProperty.mockRejectedValue(new Error('Still failing'));
+
+            const device = new MiotDevice({ address: '1.2.3.4', token: TOKEN, deviceId: DEVICE_ID });
+
+            const error = await device.getProperty(2, 1).catch((err: unknown) => err);
+
+            expect((error as MiotError).kind).toBe(MIOT_ERROR_TRANSPORT_ERROR);
+            expect((error as MiotError).stampRefreshed).toBe(false);
+        });
+
         it('classifies a non-MiotError from the retry as a transport error', async () => {
             mockGetProperty.mockRejectedValue(new Error('Still failing'));
 
