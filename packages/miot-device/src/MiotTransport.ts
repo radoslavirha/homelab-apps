@@ -12,7 +12,7 @@ import {
     MIOT_METHOD_SET_PROPERTIES,
     type MiotMethod
 } from './MiotError.js';
-import { CONSOLE_LOGGER } from './consoleLogger.js';
+import { NOOP_LOGGER } from './noopLogger.js';
 import { IncomingPacket, OutgoingPacket } from './packet/index.js';
 import type { DiscoverResult, GetPropertiesResult, ILogger } from './types.js';
 
@@ -84,7 +84,7 @@ export class MiotTransport {
         private readonly address: string,
         private readonly token: string,
         port?: number,
-        private readonly logger: ILogger = CONSOLE_LOGGER
+        private readonly logger: ILogger = NOOP_LOGGER
     ) {
         this.port = port ?? MIOT_DEFAULT_PORT;
     }

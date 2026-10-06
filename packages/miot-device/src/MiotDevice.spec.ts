@@ -481,4 +481,15 @@ describe('MiotDevice', () => {
             expect(device.deviceId).toBe(DEVICE_ID);
         });
     });
+
+    describe('default logger', () => {
+        it('is a no-op when options.logger is omitted', async () => {
+            const debug = vi.spyOn(console, 'debug').mockImplementation(() => undefined);
+
+            const device = new MiotDevice({ address: '1.2.3.4', token: TOKEN });
+            await device.discover();
+
+            expect(debug).not.toHaveBeenCalled();
+        });
+    });
 });

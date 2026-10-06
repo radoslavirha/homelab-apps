@@ -1,6 +1,5 @@
 export { MiotDevice } from './MiotDevice.js';
 export { MIOT_DEFAULT_PORT } from './Constants.js';
-export { CONSOLE_LOGGER } from './consoleLogger.js';
 export {
     MiotError,
     MIOT_ERROR_DEVICE_ERROR,
