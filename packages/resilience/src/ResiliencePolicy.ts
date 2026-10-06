@@ -11,7 +11,7 @@ import {
     type IPolicy,
     type TimeoutPolicy
 } from 'cockatiel';
-import { TaskCancelledError } from './errors.js';
+import { TaskCancelledError, isTaskCancelledError } from './errors.js';
 import { ResilienceConfigSchema, type ResilienceConfig } from './schemas/resilience.schema.js';
 import { combineSignals } from './signals.js';
 
@@ -158,6 +158,10 @@ export function createResiliencePolicy(
         if (isParentCancellationError(error)) {
             // Cockatiel treats excluded half-open errors as success; cancellation cannot prove recovery.
             return breaker?.state === CircuitState.HalfOpen;
+        }
+        if (isTaskCancelledError(error) && breaker?.state === CircuitState.HalfOpen) {
+            // A trial that timed out proves nothing about recovery, whatever shouldHandle says.
+            return true;
         }
         return shouldHandle(error);
     });
