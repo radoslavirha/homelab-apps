@@ -321,6 +321,30 @@ describe('createResiliencePolicy', () => {
             await expect(probe).rejects.toSatisfy(isTaskCancelledError);
             expect(policy.breaker?.state).toBe(CircuitState.Open);
         });
+
+        it('keeps a half-open breaker open when the trial times out and shouldHandle ignores timeouts', async () => {
+            const policy = createResiliencePolicy(
+                {
+                    timeout: { ms: 20 },
+                    circuitBreaker: {
+                        halfOpenAfterMs: 0,
+                        minimumThroughput: 1,
+                        samplingDurationMs: 1000,
+                        threshold: 0.5
+                    }
+                },
+                { shouldHandle: (error) => !isTaskCancelledError(error) }
+            );
+
+            await expect(policy.execute(async () => {
+                throw new Error('dependency failed');
+            })).rejects.toThrow('dependency failed');
+            expect(policy.breaker?.state).toBe(CircuitState.Open);
+
+            await expect(policy.execute(() => new Promise<never>(() => {}))).rejects.toSatisfy(isTaskCancelledError);
+
+            expect(policy.breaker?.state).toBe(CircuitState.Open);
+        });
     });
 
     it('composes retry, breaker and timeout together', async () => {
