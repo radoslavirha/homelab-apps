@@ -8,7 +8,7 @@ import {
     MIOT_METHOD_SET_PROPERTIES,
     type MiotMethod
 } from './MiotError.js';
-import { CONSOLE_LOGGER } from './consoleLogger.js';
+import { NOOP_LOGGER } from './noopLogger.js';
 import type { DiscoverResult, GetPropertiesResult, ILogger, MiotDeviceOptions, StampState } from './types.js';
 
 /**
@@ -42,7 +42,7 @@ export class MiotDevice {
     constructor(options: MiotDeviceOptions) {
         this.options = options;
         this._deviceId = options.deviceId;
-        this.logger = options.logger ?? CONSOLE_LOGGER;
+        this.logger = options.logger ?? NOOP_LOGGER;
         this.transport = new MiotTransport(options.address, options.token, options.port, this.logger);
     }
 
