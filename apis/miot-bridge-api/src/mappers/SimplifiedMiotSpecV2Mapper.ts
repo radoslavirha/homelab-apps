@@ -26,9 +26,10 @@ export class SimplifiedMiotSpecV2Mapper extends MappingUtils {
         const actions = new Map<string, MiotAction>();
 
         const validServices = data.services;
+        const serviceKeyOf = this.buildServiceKeyResolver(data);
 
         await this.mapArray(validServices, async (svc) => {
-            const serviceKey = svc.type.split(':')[3];
+            const serviceKey = serviceKeyOf(svc);
 
             await this.mapOptionalArray(
                 svc.properties,
@@ -73,7 +74,7 @@ export class SimplifiedMiotSpecV2Mapper extends MappingUtils {
             if (CommonUtils.isNil(svc)) {
                 continue;
             }
-            const serviceKey = svc.type.split(':')[3];
+            const serviceKey = serviceKeyOf(svc);
             // `set`, not a merge: an override that reuses a published key wins outright, and from
             // here on the entry is ours — which is exactly what a refusal of it would be blaming.
             properties.set(`${serviceKey}:${override.key}`, CommonUtils.buildModelStrict(MiotProperty, {
@@ -93,5 +94,22 @@ export class SimplifiedMiotSpecV2Mapper extends MappingUtils {
             properties,
             actions
         });
+    }
+
+    /**
+     * The service type alone is not unique: a multi-gang switch publishes several `switch` services,
+     * and keying on the type would let the last one overwrite the others. Only repeated types get the
+     * siid appended (`switch-2`), so keys of devices with unique service types are unchanged.
+     */
+    private buildServiceKeyResolver(data: MiotSpecV2): (svc: MiotSpecV2['services'][number]) => string {
+        const counts = new Map<string, number>();
+        for (const svc of data.services) {
+            const type = svc.type.split(':')[3];
+            counts.set(type, (counts.get(type) ?? 0) + 1);
+        }
+        return (svc) => {
+            const type = svc.type.split(':')[3];
+            return (counts.get(type) ?? 0) > 1 ? `${type}-${svc.iid}` : type;
+        };
     }
 }
