@@ -1,59 +1,38 @@
 # Instructions
 
-- Stick to root [AGENTS.md](../../AGENTS.md) instructions.
-- API end-user documentation lives in [.README.md](./.README.md). Keep it up to date when adding or changing endpoints, config keys, or protocols. Swagger UI is mounted at `/`.
+- API end-user documentation lives in [README.md](./README.md). Keep it up to date when adding or changing endpoints, config keys, or protocols — the `updating-docs` skill owns its format. Swagger UI is mounted at `/`.
 - Technical architecture reference lives in [DEVELOPMENT.md](./DEVELOPMENT.md).
 
-## Source structure
+## Source layout beyond the root conventions
 
-```
-src/
-├── controllers/        # Ts.ED HTTP controllers — one file per resource
-├── endpoints/
-│   └── miot-spec-v2/   # External MIoT spec v2 API wrapper + DTOs
-├── handlers/           # Business logic per route action
-│   └── notifications/  # Notification subscription CRUD handlers
-├── mappers/            # Bi-directional DTO ↔ model transforms
-├── miot/
-│   └── packet/         # MIoT binary protocol packet encoding/decoding
-├── models/             # Ts.ED schema models, enums, request/response types
-│   ├── config/         # Zod config schemas
-│   ├── miot-spec-v2/   # Raw MIoT spec v2 shape models
-│   ├── notifications/  # Notification request/response models
-│   └── simplified-miot-spec/  # Internal simplified property/action map
-├── providers/          # Custom Ts.ED providers (MqttClientProvider)
-├── services/           # Core services (poller, dispatch, storage facades, command execution, listeners)
-└── storage/            # Repositories + DTOs, one subfolder per backend+entity
-    ├── device-local-storage/
-    ├── device-mongo/
-    ├── notification-local-storage/
-    └── notification-mongo/
-```
-
-All controllers are mounted at `/` — there is no API version prefix in routes.
+- `filters/` — Ts.ED response filters (`CommandResponseFilter`).
+- `providers/MqttClientProvider.ts` — the MQTT client as a DI token; tests replace it with `{ token: MqttClientProvider, use: null }`.
+- `models/simplified-miot-spec/` — the internal property/action map built from the raw spec in `models/miot-spec-v2/`.
+- `storage/` — one subfolder per backend + entity (`device-*`, `notification-*`, `model-property-override*`), each with its own `dto/`.
+- The miIO binary protocol (packets, `Stamp`, handshake) lives in `packages/miot-device`, not here. That package has **no** OpenTelemetry dependency; the app instruments it from `src/otel/miotTracing.ts`.
 
 ## Miot protocol
 
 Communication between API and device uses [Xiaomi Mi Home Binary Protocol (miot)](https://github.com/OpenMiHome/mihome-binary-protocol/blob/master/doc/PROTOCOL.md).
 
-There is one tricky part, it's `Stamp` in packet. This is counter increased on the device after every call to the device. API must cache it and send increased value on every call, otherwise device will refuse communication. Current `Stamp` version can be determined from handshake call. API should have possibility to automatically call handshake packet to get `Stamp` when data packet fails and repeat data packet again.
+The tricky part is the packet `Stamp`: a counter the device increments after every call. The client must cache it and send the increased value on every call, or the device refuses. The current `Stamp` comes from a handshake; `MiotDevice` caches it and re-handshakes reactively when a command fails, then retries (`miot.stamp.refreshed` on the span).
 
 ## Miot spec
 
-API guards possible commands for device using [Miot spec](https://miot-spec.org/miot-spec-v2).
-Responsible service is parsing raw JSON and creating structure where properties/actions are Map where:
+API guards possible commands for a device using [Miot spec](https://miot-spec.org/miot-spec-v2).
+The spec service parses the raw JSON into Maps of properties and actions where:
 
-- key is part of service `type` string (vacuum, battery, etc.) and part of action/property `type` string (status, start-sweep, etc.)
-- value is similar to raw spec, with modified `iid` where `siid` is `service.iid`
+- key is part of the service `type` string (vacuum, battery, …) plus part of the action/property `type` string (status, start-sweep, …)
+- value is similar to the raw spec, with modified `iid` where `siid` is `service.iid`
   - `piid` is `property.iid` for properties
   - `aiid` is `action.iid` for actions
 
 ## Communication
 
-API - device is UDP (MIoT protocol). This is the only UDP in the service.
-client (Loxone) - API is REST/MQTT inbound, MQTT outbound. No inbound UDP, no HTTP or UDP notifications.
+API ↔ device is UDP (miIO). This is the only UDP in the service.
+Client (Loxone) ↔ API is REST and MQTT inbound, MQTT outbound. No inbound UDP, no HTTP or UDP notifications.
 
-All possible communication protocols must have same payload required/returned from/to client.
+Every protocol must accept and return the same payload.
 
 ## Coding rules
 

@@ -10,7 +10,7 @@ This document is the other half: what is left, and the design decisions a new ca
 
 *Trimmed 2026-09-07. The P1.F/P1.0–P1.6 unit plans, the mode-vs-no-mode argument and the frontend
 postmortems were deleted once shipped; their lessons live in `AGENTS.md`, the two package READMEs and
-the `verify-auth-in-browser` skill. `git log -p -- <this file>` has the originals.*
+the `verifying-auth-in-browser` skill. `git log -p -- <this file>` has the originals.*
 
 ## Where the work stands
 
@@ -117,7 +117,7 @@ released.
 
 | | Result |
 | --- | --- |
-| `qr-manager-ui` in Chromium, all six checks of `verify-auth-in-browser` | 15/15 — anonymous prompt, one callback hop, no sub-frames, no token in `localStorage`, renewal at +29:10 with no iframe, logout leaving `error=login_required` |
+| `qr-manager-ui` in Chromium, all six checks of `verifying-auth-in-browser` | 15/15 — anonymous prompt, one callback hop, no sub-frames, no token in `localStorage`, renewal at +29:10 with no iframe, logout leaving `error=login_required` |
 | `qr-manager-api` | `401` unauthenticated, `200` with a real token, **`401` for a `miot-bridge` token** — the shared `kid` means `aud`/`iss` are the only separator, and they hold |
 | `miot-bridge-api` | `401` / `200` on `/devices`; `/command` `400` with the admin role, `403` without the `roles` scope, and the `403` names no role |
 | `interactive-map-feeder-api` | `401` / `200` on the person routes; **`401` on the map's route with a person's token** — the method-replaces-class design, proven against the IdP rather than against `Store.fromMethod` |
@@ -178,9 +178,9 @@ What `d1c02b8` did, in order. Each is small; the thinking is all in the second s
 5. Integration tests for the paths that only ever fail: forged signature, wrong audience, expired
    token, non-bearer scheme, and a refusal that leaks nothing about why.
 
-**Before calling any auth change done, run the `verify-auth-in-browser` skill.** Six bugs in this area
+**Before calling any auth change done, run the `verifying-auth-in-browser` skill.** Six bugs in this area
 have passed a green test suite. If it is not in your skill list, `apm install` has not been run since it
-was added — the source is `.apm/skills/verify-auth-in-browser/`.
+was added — the source is `.apm/skills/verifying-auth-in-browser/`.
 
 ---
 

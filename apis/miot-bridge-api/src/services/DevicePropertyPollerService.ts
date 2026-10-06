@@ -92,7 +92,7 @@ interface PollTarget {
  *   `job.skip.reason=overrun` is recorded here; a fixed-rate `setInterval` job would need it.
  * - The effective period is `intervalMs + tick duration`, so a slow tick makes the job run *late*
  *   rather than skipping. That drift is already observable — see `job.run.duration` above and the
- *   run-rate query in `.apm/skills/instrument-entry-point/SKILL.md` — so it gets no metric of its
+ *   run-rate query in `.apm/skills/instrumenting-entry-points/SKILL.md` — so it gets no metric of its
  *   own.
  */
 @Service()

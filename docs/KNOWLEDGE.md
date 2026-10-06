@@ -1,6 +1,6 @@
 # Homelab Apps — Knowledge Base
 
-> Maintained by `/update-docs` skill. Last updated: 2026-09-07.
+> Maintained by `/updating-docs` skill. Last updated: 2026-09-07.
 
 pnpm monorepo of small independent Node.js APIs and UIs (Ts.ED, TypeScript ESM).
 
@@ -103,7 +103,7 @@ Four facts that are load-bearing and easy to get wrong:
   point server2 at server1's application.
 
 `http://localhost:5173/callback` is registered on **sandbox applications only**, so `pnpm dev` performs
-a real login against the real IdP. Use the **`verify-auth-in-browser`** skill before calling any auth
+a real login against the real IdP. Use the **`verifying-auth-in-browser`** skill before calling any auth
 change done: six bugs in this area passed a green test suite, and the skill carries the checklist plus
 the Playwright traps (Authentik's shadow DOM, `ak-loading-overlay`, and counting redirect hops with
 `request` rather than `framenavigated`).
@@ -130,7 +130,7 @@ A log line without a `trace_id` is a missing span, not a logging fault: `Winston
 | Poll tick, startup task, any scheduled work | `runJob` (`packages/otel/src/jobTelemetry.ts`) — span **and** `job.*` metrics |
 | miot device UDP call, other uninstrumented outbound calls | `withClientSpan`, wrapped for miot by `apis/miot-bridge-api/src/otel/miotTracing.ts` |
 
-Span names, tracer scopes, `job.name` values and `miot.*` attribute keys are constants in `apis/<api>/src/otel/telemetry.ts`. Adding a background job or listener: `.apm/skills/instrument-entry-point`.
+Span names, tracer scopes, `job.name` values and `miot.*` attribute keys are constants in `apis/<api>/src/otel/telemetry.ts`. Adding a background job or listener: `.apm/skills/instrumenting-entry-points`.
 
 **The poll tick is head-sampled.** At a 5s interval an always-on tick span is ~17k identical traces a day, which is what made a 6h Tempo search return nothing else. `DevicePropertyPollerService` traces at most one tick per `polling.traceIntervalMs` (default 60s) plus every tick that polls a device already failing; the rest run with tracing *suppressed*, so their Mongo and UDP calls are dropped instead of becoming orphan traces. The cost: a property change detected in a suppressed tick publishes its notification untraced. Set `polling.traceIntervalMs: 0` to trace every tick.
 

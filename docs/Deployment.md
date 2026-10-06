@@ -1,6 +1,6 @@
 # App Section Template
 
-The `onboard-to-homelab` skill reads this to discover deployment metadata without parsing code.
+The `onboarding-to-homelab` skill reads this to discover deployment metadata without parsing code.
 
 ## Configuration Compatibility Rule
 

@@ -55,5 +55,5 @@ registered redirect URI there, so local development performs a real login agains
 registered on sandbox only: a loopback redirect URI on a production client would let anything running
 on a developer's machine complete a production login.
 
-Before calling any auth change done, verify it in a browser with the **`verify-auth-in-browser`**
+Before calling any auth change done, verify it in a browser with the **`verifying-auth-in-browser`**
 skill. Six bugs in this area passed a green test suite.

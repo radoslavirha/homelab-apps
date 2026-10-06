@@ -9,7 +9,8 @@ RUN npm install -g pnpm@12
 
 # Runtime base for the API images: the Node runtime and nothing else. Deliberately
 # NOT built from `base`, which carries a global pnpm install that has no business in
-# a running pod. The rules these stages encode are in AGENTS.md § Adding a New API.
+# a running pod. The rules these stages encode, and why, are in
+# .apm/skills/adding-a-workspace-member/reference/dockerfile.md.
 #
 # Google distroless, NOT node:24-trixie-slim: no shell, no package manager, no libc
 # tooling — 10 dpkg packages instead of 79 (measured, 2026-09-13). Everything the app

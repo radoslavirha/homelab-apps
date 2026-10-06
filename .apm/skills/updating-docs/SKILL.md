@@ -1,6 +1,6 @@
 ---
-name: update-docs
-description: Regenerate agent-consumable README.md for apps and rebuild docs/KNOWLEDGE.md. Use when: new app added, controller/service/config changed, or onboard-to-homelab completed.
+name: updating-docs
+description: Regenerate agent-consumable README.md for apps and rebuild docs/KNOWLEDGE.md. Use when: new app added, controller/service/config changed, or onboarding-to-homelab completed.
 ---
 
 # Update Docs
@@ -10,7 +10,7 @@ Focus: **what each app does, what it connects to, what it exposes**. No ports, n
 
 ## Trigger
 
-`/update-docs [app-name?]`
+`/updating-docs [app-name?]`
 
 - No arg → all apps + KNOWLEDGE.md
 - `app-name` → that app only, then refresh KNOWLEDGE.md

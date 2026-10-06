@@ -1,17 +1,14 @@
 # AGENTS.md — AI Agent Instructions
 
-All agentic tools (skill, instruction, agents,..) authored **in this repository** must be added to the `.apm` folder. Example Structure:
+All agentic tools (skills, instructions, agents, …) authored **in this repository** live in `.apm/`:
+
 ```
 repository/
 +-- apm.yml            // APM manifest - edit only via the `apm` CLI
 +-- apm.lock.yaml      // resolved commits - generated, committed
 +-- .apm/              // repo-authored sources - tracked in git
-|   +-- skills/
-|   |   +-- example-skill/
-|   |       +-- SKILL.md
-|   +-- agents/
-|   |   +-- example.agent.md
-|   +-- instructions/
+|   +-- skills/<name>/SKILL.md (+ reference/, scripts/, evals/)
+|   +-- instructions/<name>.instructions.md   // path-scoped via `applyTo`
 ```
 
 `apm install` deploys those sources, plus every installed toolkit-hub plugin, into
@@ -21,19 +18,38 @@ so the edit is lost on the next `apm install`/`apm update` and never reaches any
 Change the source under `.apm/` (or the upstream toolkit-hub plugin) and redeploy instead.
 Run `apm install` after cloning to materialise them.
 
+Each `CLAUDE.md` in this repo is one line, `@AGENTS.md`, so Claude Code loads the `AGENTS.md`
+beside it. A new app gets both files (`adding-a-workspace-member` skill).
+
 ## Repository Overview
 
-This is a **pnpm monorepo** containing small independent Node.js APIs built with **Ts.ED** framework.
+This is a **pnpm monorepo** of small independent Node.js APIs built with **Ts.ED**, React UIs, and
+the shared packages they use.
 
 ## Tech Stack
 
 - **Runtime**: Node.js 24+
-- **Package manager**: pnpm 12+ (workspaces)
+- **Package manager**: pnpm 11 (`engines.pnpm` is `>= 11.26`; CI pins 11)
 - **Language**: TypeScript with `@radoslavirha/config-typescript` (ESM, `.js` extensions in imports)
-- **Framework**: Ts.ED with `@radoslavirha/tsed-*`
+- **Framework**: Ts.ED with `@radoslavirha/tsed-*`; React 19 + Vite for UIs
 - **Testing**: Vitest with `@radoslavirha/config-vitest`
 - **Linting**: ESLint with `@radoslavirha/config-eslint`
 - **Versioning**: Changesets
+
+## Prerequisites
+
+CLI tools the workflows here assume. Check before starting work that needs them:
+
+| Tool | Needed for | Check |
+| --- | --- | --- |
+| `pnpm` 11 + Node 24 | everything | `pnpm -v && node -v` |
+| `NODE_AUTH_TOKEN` | `pnpm install` (GitHub Packages) — it is in `.env` | `grep -q '^NODE_AUTH_TOKEN=.' .env` |
+| Docker, running | Mongo-backed tests (testcontainers) | `docker info >/dev/null` |
+| `apm` | deploying skills and rules after clone / after editing `.apm/` | `apm --version` |
+| `gh`, authenticated | anything touching GitHub (issues, PRs, the `homelab` repo) | `gh auth status` |
+
+npm dependencies come from `pnpm install`; skills do not list them. A skill names any extra CLI
+tool it needs in its own *Prerequisites*.
 
 ## Package Registry
 
@@ -61,27 +77,23 @@ Two things there are load-bearing and easy to break:
 Local `packages/*` are also named `@radoslavirha/*`, but they are consumed as `workspace:*`
 and Renovate skips them.
 
-## Toolkit-hub Agent Skills
+## Skills
 
-Every toolkit package this repo depends on ships its own skill, installed from the
-`toolkit-hub` APM marketplace. **Read the skill before writing code against a package** —
-they document the current API, including renames the old shapes leave traps behind for.
+**Toolkit-hub skills.** Every `@radoslavirha/*` toolkit package this repo depends on ships its own
+skill (`using-*`, `building-a-tsed-service`, `adopting-toolkit-hub`), installed from the
+`toolkit-hub` APM marketplace. **Invoke the matching skill before writing code against a
+package** — they document the current API, including renames the old shapes leave traps behind
+for. Their descriptions in the skill list say when each applies.
 
-| Skill | Read it when |
+**Repo-local skills** (sources in `.apm/skills/`):
+
+| Task | Skill |
 | --- | --- |
-| `adopting-toolkit-hub` | adding/updating/removing a `@radoslavirha/*` dependency, or an install returns 401/404 from GitHub Packages |
-| `building-a-tsed-service` | starting a new service — which packages a shape needs, layer order, bootstrap sequence |
-| `using-utils` | any null/undefined/empty guard, `buildModel*`, `MappingUtils` |
-| `using-tsed-platform` | `Server` class, `Platform.bootstrap`, middleware, `BaseHandler` |
-| `using-tsed-configuration` | config schema, adding a config value, `ConfigProvider` |
-| `using-tsed-common` | `BaseModel`, `Serializer`, `JSONSchemaValidator` / `ZodValidator` |
-| `using-tsed-mongoose` | documents, mappers, repositories, refs and populated fields |
-| `using-tsed-swagger` | OpenAPI versions, security schemes, `SwaggerProvider` |
-| `using-tsed-logger` | injecting `Logger`, `child()` scopes, subclassing the toolkit logger |
-| `using-redaction` | logging anything that may carry secrets |
-| `using-config-eslint` / `-typescript` / `-vitest` / `-tsdown` | adding or changing a package's `eslint.config.mjs`, `tsconfig.json`, `vitest.config.ts`, `tsdown.config.ts` |
-
-Repo-local skills live in `.apm/skills/`.
+| Adding an API, UI or shared package; editing the root `Dockerfile` | `adding-a-workspace-member` |
+| Deploying a new app to the homelab cluster | `onboarding-to-homelab` |
+| Regenerating an app `README.md` or `docs/KNOWLEDGE.md` | `updating-docs` |
+| Adding a timer, poller, listener, startup task or outbound device call | `instrumenting-entry-points` |
+| Any change to auth in a UI, `packages/ui-auth` or an Authentik blueprint | `verifying-auth-in-browser` |
 
 Managing them:
 
@@ -128,14 +140,18 @@ ui/<ui-name>/
     api/                  # Typed REST clients consumed by pages/components.
     components/           # Presentational React components.
     pages/                # Route components — orchestrate api/ clients and components/.
-    runtime/              # Runtime config bootstrap (loaded from `public/config.json`, replaced by ConfigMap in k8s).
+    runtime/
+      RuntimeConfig.ts    # Zod schema for config.json + loadConfig() via @radoslavirha/ui-runtime.
+      validate-config.ts  # Same schema bundled (esbuild) into the <ui>-config-validator image.
     App.tsx               # Root component with router definitions.
-    main.tsx              # Awaits runtime config, mounts <App />.
+    main.tsx              # Awaits loadConfig(), then mounts <App />.
     styles.css
   public/
-    config.json           # Dev defaults; production replaced by mounted ConfigMap.
-  index.html              # Bootstrap script that fetches /config.json before any JS.
-  nginx.conf              # Production nginx config — SPA fallback + no-cache for /config.json.
+    config.json           # Dev config only — never copied to dist/ (copyPublicDir: false).
+  docker-entrypoint.d/    # nginx entrypoint hooks (base-path normalisation, required env).
+  nginx.conf              # nginx main config.
+  nginx.conf.template     # Server block, rendered by envsubst at start (NGINX_BASE_PATH).
+  deploy.json             # Helm values file + yamlPath of the image tag per env (release.yaml needs it).
 ```
 
 ## Coding Conventions
@@ -206,235 +222,67 @@ ui/<ui-name>/
 
 ## Testing
 
-- Framework: **Vitest**
-- Unit test files: `*.spec.ts` co-located with source files
-- Integration tests: `*.integration.spec.ts` using `PlatformTest` from `@tsed/platform-http/testing`
-- Run tests: `pnpm test` inside the API directory
+- Framework: **Vitest**. Unit specs `*.spec.ts` co-located with source; integration specs `*.integration.spec.ts` with `PlatformTest` from `@tsed/platform-http/testing`.
+- Run: `pnpm --filter ./<member-path> test` (or `pnpm test` inside the member).
+- Conventions are path-scoped rules in `.apm/instructions/` (`testing`, `tsed-testing`, `react-testing`); they load when you open a spec. A bug fix's test must fail without the fix — prove it with `bash scripts/check-regression-test.sh`.
 
-## Adding a New API
+## Adding a workspace member
 
-1. Create `apis/<api-name>/` with the following required files — all must be present or the API will not start:
-
-   | File | Notes |
-   |---|---|
-   | `package.json` | Set `name`, `description`; keep all `@radoslavirha/*` and `@tsed/*` at the same versions as other APIs; |
-   | `tsconfig.json` | Extends `@radoslavirha/config-typescript/tsconfig.json`; set `composite: false` |
-   | `eslint.config.mjs` | Usually identical across all APIs |
-   | `nodemon.json` | Usually identical across all APIs |
-   | `.swcrc` | Usually identical across all APIs |
-   | `vitest.config.ts` | Usually identical across all APIs |
-   | `config/localhost.json` | Set `server.httpPort` |
-   | `config/test.json` | Set `server.httpPort` |
-   | `src/models/config/ConfigModel.ts` | Extends `BaseConfig`; add API-specific config fields here |
-   | `src/services/ConfigService.ts` | Standard `ConfigProvider<ConfigModel>` — identical across APIs |
-   | `src/Server.ts` | Mount `SwaggerController` and `HealthController` at `/` plus controllers from `controllers/index.ts` |
-   | `src/index.ts` | Bootstrap entrypoint — identical across APIs |
-   | `src/health/index.ts` | Health checks — see [Health checks](#health-checks) |
-   | `src/models/config/AuthMethod.enum.ts` | Trust domains the API accepts — see [Authentication](#authentication) |
-   | `src/providers/AuthProvider.ts` | Supplies `config.auth` to `AuthenticationService` — see [Authentication](#authentication) |
-   | `src/otel/instrument.ts` | OTel SDK preload (loaded via `node --import` in `start:prod`) |
-
-2. New workspace members are auto-discovered via `apis/*` glob in `pnpm-workspace.yaml` — no changes needed there.
-3. Run `pnpm install` from the repo root (requires `NODE_AUTH_TOKEN` in env).
-4. Add a `.README.md`.
-5. Add a `Dockerfile` stage in the root `Dockerfile` following the `qr-manager-api` pattern
-   (deps → build → final image).
-
-   Copy the `qr-manager-api` stages verbatim and change the name. The rules they encode,
-   because a copied stage is only as good as the reasons behind it:
-
-   | Rule | Why it is not cosmetic |
-   | --- | --- |
-   | Final stage is `FROM runtime-base`, never `FROM base` | `base` carries a global pnpm install. A package manager in a running pod is attacker tooling, and it is 40MB of it. `runtime-base` is distroless — no shell, no package manager, 10 OS packages. |
-   | `CMD` carries node's **arguments**, not a command line | The distroless ENTRYPOINT is already the node binary. Repeating the `node` word fails instantly with `Cannot find module '/home/app/node'`. |
-   | Debugging is `kubectl exec <pod> -- /nodejs/bin/node -e '…'` | There is no shell and `node` is not on `PATH`. `fs.readdirSync` / `fs.readFileSync` / `fetch` replace `ls` / `cat` / `curl`; `kubectl debug --image=busybox --target=<container>` gives a real shell without changing the image. |
-   | Never add `USER`, `WORKDIR` or `ENV NODE_ENV` to an app stage | `runtime-base` sets all three (`USER 65532`, `/home/app`, production). Re-declaring them is how they drift apart. |
-   | `COPY --from=build-<app> --chown=65532:65532` | Without the chown the files land as root. 65532 is distroless's `nonroot` user; the homelab values pin the same UID. |
-   | `CMD` keeps `--import /home/app/dist/otel/instrument.js` | Dropping it silently removes every trace and every `trace_id` from logs. Nothing fails; the data just stops. |
-   | Build-only packages (`typescript`, `@swc/cli`, `@swc-node/register`) go in `devDependencies` | `pnpm deploy --prod` copies `dependencies` into the image. A compiler there is shipped, not used. |
-   | **`@swc/helpers` stays in `dependencies`** | `.swcrc` sets `externalHelpers: true`, so compiled output imports it at runtime. Moving it breaks the image at first import. |
-   | `.swcrc` keeps `sourceMaps: false`, build keeps `--ignore '**/*.spec.ts'` | Otherwise `dist/` ships source maps and compiled tests — 72 files per app before this was fixed. |
-   | The npm token arrives only as `--mount=type=secret,id=npmrc` | An `ARG` or `ENV` token is readable forever in `docker history`. |
-
-   **None of this is enforced by CI, deliberately** — one Dockerfile, few hands, and a gate
-   that can fail for its own reasons on every PR is not worth it. Do not add one without
-   asking. The backstop is the cluster: pods run with `runAsNonRoot` and a read-only root
-   filesystem (`homelab:gitops/helm-values/server1/apps/<app>/values.yaml`), so an image that regains
-   root fails admission instead of running.
-
-   Spot-check a built image by hand when you touch any of the above:
-
-   ```sh
-   docker inspect <ref> --format '{{.Config.User}}'                     # 65532
-   docker run --rm --entrypoint sh <ref> -c 'command -v pnpm; ls node_modules/typescript'
-   docker run --rm --entrypoint sh <ref> -c 'find dist -name "*.map" -o -name "*.spec.js"'
-   ```
+New `apis/*`, `ui/*` and `packages/*` members are auto-discovered by `pnpm-workspace.yaml`, but
+each needs Dockerfile stages, a CI paths filter entry, `deploy.json` and docs. Use the
+`adding-a-workspace-member` skill; it also carries the Dockerfile rules (distroless runtime,
+UID 65532, the `--import` preload, build-only deps) and why each one matters.
 
 ## Authentication
 
 Inbound auth is `@radoslavirha/auth` (decides) plus `@radoslavirha/tsed-auth` (guards the request).
-Full guidance is in [`packages/tsed-auth/README.md`](./packages/tsed-auth/README.md); live status and
-which APIs are still open is in
-[`docs/superpowers/specs/2026-09-05-auth-design.md`](./docs/superpowers/specs/2026-09-05-auth-design.md).
-The rules that matter when adding or onboarding an API:
+Full guidance: [`packages/tsed-auth/README.md`](./packages/tsed-auth/README.md). The rules that
+matter in every change:
 
-- **`@Authenticate` goes on the controller class, not on each method.** Ts.ED's `UseAuth` decorates
-  every method of the class it sits on, so a route added tomorrow is protected the moment it is
-  written. Per-method application is the arrangement where the next route is one forgotten decorator
-  away from being public. `@Anonymous()` is the per-route opt-out, and **every use of it needs a
-  reason in a comment next to it.**
-- **Declare `AuthMethod` in the app**, beside `ExternalApi`, and feed it to the config schema:
-
-  ```ts
-  auth: createAuthConfigSchema(Object.values(AuthMethod))
-  ```
-
-  It names *trust domains* — where a caller's credential comes from — not caller classes and not
-  mechanisms. `IDP` covers a signed-in person and a device holding a PAT from the same provider
-  alike; a cluster's ServiceAccount tokens are a separate entry, so a route can admit one without
-  admitting the other. The mechanism is the entry's `type` in configuration.
-- **There is no way to switch it off**, deliberately: no mode, no `enabled` flag, no permissive
-  verifier type. Every such state is one where a forgotten key in a values file leaves a service up,
-  healthy and unauthenticated. Local development uses the sandbox IdP's real JWKS
-  (`config/localhost.json`); tests use an inline HS256 key (`config/test.json`) and verify real
-  signatures with no network.
-- **A misconfiguration must fail at boot.** That is what `createAuthConfigSchema` buys: a missing
-  entry, a verifier trusting no issuers, or a mistyped key are all parse errors naming the path,
-  rather than a 500 on the first guarded request.
-- **Test the paths that only ever fail.** A forged signature, another audience, an expired token, a
-  non-bearer scheme, and a refusal that leaks nothing about why. `authenticateBearerJwt` from
-  `@radoslavirha/tsed-auth` gives an integration suite a pre-authenticated agent; build it with
-  `SuperTest.agent(app)`, and keep a second bare agent for the anonymous cases.
+- **`@Authenticate` goes on the controller class, not on each method**, so a route added later is
+  protected the moment it is written. `@Anonymous()` is the per-route opt-out, and **every use of
+  it needs a reason in a comment next to it.**
+- **Declare `AuthMethod` in the app** and feed it to the config schema:
+  `auth: createAuthConfigSchema(Object.values(AuthMethod))`. It names *trust domains* (where a
+  caller's credential comes from), not caller classes or mechanisms.
+- **There is no way to switch auth off** — no mode, no `enabled` flag, no permissive verifier.
+  Local development uses the sandbox IdP's real JWKS (`config/localhost.json`); tests use an
+  inline HS256 key (`config/test.json`).
+- **A misconfiguration must fail at boot** (`createAuthConfigSchema` makes it a parse error).
 
 ## Health checks
 
 Every API exposes `/health/live`, `/health/ready` and `/health` via `HealthController` from
-`@radoslavirha/tsed-health`. Full guidance is in that package's
-[README](./packages/tsed-health/README.md); the rules that matter when adding an API:
+`@radoslavirha/tsed-health`. Full guidance: [its README](./packages/tsed-health/README.md) —
+start at *Quick Reference for AI Agents*. The rules that bite:
 
-- **Do not write your own MongoDB check.** `@radoslavirha/tsed-health/mongoose` ships one —
-  re-export it from the app's health barrel, which is what registers it:
+- **Do not write your own MongoDB check** — re-export `MongoHealthCheck` from
+  `@radoslavirha/tsed-health/mongoose` in the app's `src/health/index.ts`.
+- **Tag every app-local check `@Injectable({ type: HEALTH_CHECKS })`** and import the
+  `src/health/index.ts` barrel from `Server.ts`. A bare `@Injectable()` check is silently skipped;
+  assert the expected check names in an integration test.
+- **Mount `HealthController` at `/`**, and **never mount a single-segment catch-all at the root**
+  (`@Get('/:slug')` on `@Controller('/')` swallows `/health`). `qr-manager-api` puts its redirect
+  under `/r` for this reason.
+- **`critical: true` only for dependencies without which this pod can do nothing** (its own
+  database or broker); third-party APIs are always `false`. A dependency disabled by config
+  reports `pass`.
+- **Never put a URL, hostname, credential or stack trace in `detail`** — `/health` is readable by
+  anything that can reach the pod.
+- **Drain on SIGTERM** with `createShutdownHandler(platform)` in `index.ts`, not on `beforeExit`.
 
-  ```ts
-  export { MongoHealthCheck } from '@radoslavirha/tsed-health/mongoose';
-  ```
-
-  It sits behind a subpath because `mongoose` and `@tsed/mongoose` are *optional* peers, so
-  an app with no database never resolves them. Write a check in the app only when the
-  dependency is genuinely app-specific (`MqttHealthCheck` in `miot-bridge-api`); anything a
-  second app would duplicate belongs in the package.
-- **Tag every app-local check with `@Injectable({ type: HEALTH_CHECKS })`** and import the
-  `src/health/index.ts` barrel from `Server.ts` for its side effect. A check with a bare
-  `@Injectable()` resolves normally but is invisible to `injectMany` — the app then reports
-  healthy having checked nothing. Assert the expected check names in an integration test;
-  asserting that `/health` returns 200 does not catch it.
-- **Mount `HealthController` at `/`**, never under a version prefix — the probe path must be
-  identical across apps or the Helm chart's probe block stops being copy-paste.
-- **Never mount a single-segment catch-all at the root.** `@Controller('/')` with
-  `@Get('/:slug')` matches every literal top-level path, `/health` included, and Express
-  resolves in registration order — so the `mount` array becomes load-bearing and a reorder
-  leaves every probe green (`/health/live` and `/health/ready` are two segments) while
-  `/health` silently becomes a slug lookup. Mount the dynamic route one segment deeper
-  instead. `qr-manager-api` puts its redirect under `/r` and gets the short printed URL back
-  from a Traefik `addPrefix` middleware in `homelab`; `Server.integration.spec.ts` pins the
-  invariant by walking `Platform.getLayers()` rather than pinning one pair's order.
-- **Set `critical` deliberately.** `true` only for dependencies without which this pod can
-  do nothing (its own database, its own broker). `false` for anything you cannot fix by
-  restarting or rescheduling this pod — third-party APIs above all, since failing readiness
-  on their behalf turns someone else's outage into ours.
-- **A dependency disabled by config must report `pass`.** Returning `fail` leaves a
-  correctly-configured deployment permanently NotReady, silently, with no restart and no
-  error log — liveness is shallow by design and will not catch it.
-- **Never put a URL, hostname, credential or stack trace in `detail`** — `/health` is
-  readable by anything that can reach the pod.
-- **Drain on SIGTERM** with `createShutdownHandler(platform)` in `index.ts`. Do not register
-  it for `beforeExit`: that fires when the event loop empties, not on a signal.
-- Add `health: HealthConfigSchema.optional()` to `ConfigModel`, and a `HealthProvider`
-  overriding the `HealthCheckService` token to supply it.
-
-Probe traffic is excluded from traces in `packages/otel` and from request logs by
-`@radoslavirha/tsed-logger`'s `requests.ignorePaths` default — no per-API wiring needed.
-
-## Instrumenting Entry Points
+## Instrumenting entry points
 
 HTTP and MQTT already root their own traces. **Anything else that starts work must root one
-itself** — a timer, a poller, a socket listener, a queue consumer, a `$onInit` task. Skipping it
-breaks two things silently: every auto-instrumented call underneath becomes its own parentless
-trace, and every log line underneath loses `trace_id` — `WinstonInstrumentation` reads it off the
-active span, so a log with no trace context is a missing span, never a logger problem.
+itself** — a timer, poller, listener, queue consumer or `$onInit` task — or every call underneath
+becomes a parentless trace and every log line loses `trace_id`. Scheduled work uses `runJob`
+(span *and* `job.*` metrics); miot device calls use `withMiotCallSpan`. Identifier span attributes
+are strings, quantities are numbers. Details, metric design and test assertions: the
+`instrumenting-entry-points` skill.
 
-**Scheduled work — a timer, cron or startup task — uses `runJob`, which emits the span *and* the
-`job.*` metrics from one call:**
-
-```ts
-import { runJob, recordJobSkip, withEntryPointSpan, withClientSpan } from '@radoslavirha/otel';
-
-// scheduled work → span + metrics
-await runJob({ name: JOB_POLL_DEVICE_PROPERTIES, tracer: POLLER_TRACER_NAME, spanName: SPAN_POLL_TICK },
-    async ({ recordItem }) => { … });
-
-// inbound traffic (UDP datagram, queue message) → span only, it is not a job
-await withEntryPointSpan({ name: SPAN_UDP_COMMAND, tracer: UDP_TRACER_NAME, kind: SpanKind.CONSUMER }, (span) => …);
-
-// outbound call over an uninstrumented protocol (miot UDP, raw `dgram`, `fetch`)
-await withClientSpan({ name: SPAN_MIOT_GET_PROPERTIES, tracer: MIOT_TRACER_NAME }, () => …);
-```
-
-Metrics matter more than traces for a cron, because a cron is deterministic and an error that
-recurs every tick shows up in any of them. Three reusable instruments — `job.run.duration`
-(Histogram, `s`), `job.run.skips` and `job.run.items` (Counters) — all keyed by a **bounded,
-static** `job.name`. **Traces are head-sampled, metrics never are:** a run passed
-`suppressTrace: true` emits no span and still records its duration and outcome.
-
-**Outbound miot calls use `withMiotCallSpan`, which emits the CLIENT span *and*
-`miot.client.call.duration` from one call** — the same pairing as `runJob`, and for a stronger
-reason: the poller swallows device faults into back-off, so a device that has been refusing a
-property for a week produces no failing span and no failing job outcome. miIO is JSON-RPC over UDP,
-so it uses the RPC conventions as they are — `rpc.system.name`, `rpc.method`,
-`rpc.response.status_code` (a **string**), and `error.type` for the outcome
-(`timeout` / `device_error` / `transport_error` / `rejected_locally`, absent on success). A bulk
-read can succeed while refusing individual properties; those land on `miot.property.rejections`,
-keyed by the code and by `miot.property.source` = `spec` | `override`, which is what says whether a
-refused entry is the published spec's fault or ours.
-
-**Span attribute types are a repo-local rule: identifiers are strings, quantities are numbers.**
-Every identifier goes through `identifierAttribute()` from `src/otel/telemetry.ts` —
-`miot.device.id`, `miot.device.storage_id`, `miot.siid`/`piid`/`aiid` — while counts, intervals and
-ports stay numeric. A numeric identifier reaches Tempo as an `intValue` and crashes any Grafana
-table panel that `select()`s it, because the attribute is sparse across a trace's spans.
-
-**`packages/otel` takes no new dependencies.** Its dependency list is a budget, not a starting
-point — it is preloaded before app code via `node --import`, sits in every app's hot path, and
-conceals its own faults when it breaks (the traces and `trace_id`-bearing logs you would debug it
-with are the casualties). Using what it already declares is unrestricted. To instrument something
-it has no dependency on, pass the instrumentation in from the app via `init`'s
-`extraInstrumentations` and keep the dependency in the app's `package.json` — the way
-`MongooseInstrumentation` is wired. See [its README](./packages/otel/README.md#dependency-policy--do-not-add-dependencies-to-this-package).
-
-Full conventions — span kinds, naming, name constants in `src/otel/telemetry.ts`, attribute types,
-the metric set and its cardinality budget, why the namespace is `job.*` and not `faas.*`, which
-metrics a self-rescheduling vs fixed-rate scheduler can honestly emit, and the assertions a test
-must make — are in `.apm/skills/instrument-entry-point/SKILL.md`.
-
-## Adding a New UI
-
-1. Create `ui/<ui-name>/` with at minimum:
-
-   | File | Notes |
-   | --- | --- |
-   | `package.json` | React + Vite. Keep React/router versions consistent across UIs. |
-   | `tsconfig.json` | `module: ESNext`, `jsx: react-jsx`. |
-   | `vite.config.ts` | `base` reads from `process.env.VITE_BASE_PATH` for proxy mounts. |
-   | `vitest.config.ts` | jsdom environment, coverage thresholds. |
-   | `eslint.config.mjs` | Re-exports `@radoslavirha/config-eslint`. |
-   | `index.html` | Inline script that fetches `/config.json` BEFORE the bundle and exposes the promise as `window.__APP_CONFIG_PROMISE__`. |
-   | `public/config.json` | Dev defaults. In Kubernetes this file is replaced by a mounted ConfigMap. |
-   | `nginx.conf` | SPA fallback to `index.html`; serve `/config.json` with `Cache-Control: no-store`. |
-   | `src/runtime/RuntimeConfig.ts` | `loadRuntimeConfig()` + Zod-equivalent runtime validation. |
-   | `src/main.tsx` | Awaits `loadRuntimeConfig()` then renders `<App />`. |
-
-2. New workspaces are auto-discovered via `ui/*` glob in `pnpm-workspace.yaml`.
-3. Add a `Dockerfile` stage in the root `Dockerfile` following the `qr-manager-ui` pattern (build with Vite → copy `dist/` into nginx image).
+**`packages/otel` takes no new dependencies** — see
+[its README](./packages/otel/README.md#dependency-policy--do-not-add-dependencies-to-this-package).
+Pass extra instrumentations in from the app via `init`'s `extraInstrumentations`.
 
 ## Server configuration
 
@@ -456,10 +304,13 @@ must make — are in `.apm/skills/instrument-entry-point/SKILL.md`.
 
 ## Versioning & Changesets
 
-- Uses `@changesets/cli` for versioning
-- Create a changeset: `pnpm changeset`
-- Follows [Semantic Versioning](http://semver.org/)
+- Uses `@changesets/cli` for versioning; follows [Semantic Versioning](http://semver.org/).
+- Create a changeset with `pnpm changeset`. It is interactive — in a non-interactive session write
+  `.changeset/<slug>.md` by hand (frontmatter `"<package name>": patch|minor|major`, then one line).
 
 ## Deploy
 
-Follow [deployment guide](./docs/Deployment.md)
+A release (`.github/workflows/release.yaml`) builds every app that carries a changeset into
+`ghcr.io/radoslavirha/<name>` and bumps its image tag in the `homelab` repo at the path its
+`deploy.json` names. A new app is deployed with the `onboarding-to-homelab` skill. The
+`externalApis` ConfigMap shapes are in [docs/Deployment.md](./docs/Deployment.md).
