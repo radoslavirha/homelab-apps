@@ -155,6 +155,24 @@ describe('<App />', () => {
             expect(screen.getByText('app1')).toBeInTheDocument();
         });
 
+        it('reports a rejected API key once the controller answers again with 401', async () => {
+            vi.useFakeTimers();
+            const fetchMock = vi.fn()
+                .mockResolvedValueOnce(new Response('', { status: 502 }))
+                .mockImplementation(() => Promise.resolve(new Response('', { status: 401 })));
+            Object.assign(globalThis, { fetch: fetchMock });
+
+            render(<App config={config} />);
+            await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+            expect(screen.getByText(/HTTP 502/)).toBeInTheDocument();
+
+            await act(async () => { await vi.advanceTimersByTimeAsync(10 * 60_000); });
+
+            expect(fetchMock.mock.calls.length).toBeGreaterThan(1);
+            expect(screen.getByText(/API key rejected/i)).toBeInTheDocument();
+            expect(screen.queryByText(/HTTP 502/)).not.toBeInTheDocument();
+        });
+
         it('still recovers after an offline/online blip while the controller is down', async () => {
             vi.useFakeTimers();
             const fetchMock = vi.fn()
