@@ -174,6 +174,19 @@ describe('parseDnsRecords', () => {
         expect(clusters).toHaveLength(2);
         expect(clusters[0].color).not.toBe(clusters[1].color);
     });
+
+    it('does not merge servers when capture group 1 is not the numeric index', () => {
+        // Passes AppConfigSchema: the pattern compiles and has a capture group.
+        const config = AppConfigSchema.parse({ unifi: {}, serverPattern: '^(server|node)(\\d+)\\.home$' });
+        const records = [
+            aRecord('server1.home', '192.168.1.10'),
+            aRecord('server2.home', '192.168.1.20'),
+            aRecord('app1.home', '192.168.1.10'),
+            aRecord('app2.home', '192.168.1.20')
+        ];
+        const clusters = parseDnsRecords(records, config);
+        expect(clusters.map(c => c.ip)).toEqual(['192.168.1.10', '192.168.1.20']);
+    });
 });
 
 describe('parseDnsRecords paths config', () => {

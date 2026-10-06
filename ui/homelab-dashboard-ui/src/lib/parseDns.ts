@@ -32,8 +32,10 @@ function findAnchors(records: DnsRecord[], pattern: RegExp): Anchor[] {
     for (const r of records) {
         if (r.enabled === false || r.record_type !== 'A') continue;
         const m = pattern.exec(r.key ?? '');
-        if (m) {
-            anchors.push({ index: parseInt(m[1], 10), ip: r.value, hostname: (r.key ?? '').toLowerCase() });
+        // The documented index is group 1; take the first all-digit group so `^(server|node)(\d+)` still works.
+        const digits = m?.slice(1).find(g => g !== undefined && /^\d+$/.test(g));
+        if (m && digits !== undefined) {
+            anchors.push({ index: parseInt(digits, 10), ip: r.value, hostname: (r.key ?? '').toLowerCase() });
         }
     }
 
