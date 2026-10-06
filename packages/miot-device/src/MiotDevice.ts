@@ -2,6 +2,7 @@ import { CommonUtils } from '@radoslavirha/utils';
 import { MiotTransport } from './MiotTransport.js';
 import {
     MiotError,
+    MIOT_ERROR_TRANSPORT_ERROR,
     MIOT_METHOD_ACTION,
     MIOT_METHOD_GET_PROPERTIES,
     MIOT_METHOD_SET_PROPERTIES,
@@ -181,7 +182,7 @@ export class MiotDevice {
         }
 
         if (!this._stampState) {
-            return this.runWithFreshStamp(method, deviceId, fn);
+            return this.runWithFreshStamp(method, deviceId, fn, false);
         }
 
         try {
@@ -197,13 +198,14 @@ export class MiotDevice {
             this.logger.warn(`Sending command failed`, { deviceId, reason, retryingWithFreshStamp: true });
         }
 
-        return this.runWithFreshStamp(method, deviceId, fn);
+        return this.runWithFreshStamp(method, deviceId, fn, true);
     }
 
     private async runWithFreshStamp<T>(
         method: MiotMethod,
         deviceId: number,
-        fn: (stamp: number, deviceId: number) => Promise<{ result: T; finalStamp?: number }>
+        fn: (stamp: number, deviceId: number) => Promise<{ result: T; finalStamp?: number }>,
+        retried: boolean
     ): Promise<T> {
         this.logger.debug(`Performing fresh handshake`, { deviceId });
         const { stamp: freshStamp } = await this.transport.handshake();
@@ -213,17 +215,26 @@ export class MiotDevice {
             await this.updateStamp(finalStamp ?? stamp);
             return result;
         } catch (retryError) {
+            const reason = retryError instanceof Error ? retryError.message : String(retryError);
             // Re-thrown as a MiotError that keeps `kind` and `code`. The previous
             // `new Error(...)` here flattened a `-4004` refusal into prose, which is exactly the
             // information the app needs to tell "our override is wrong" from "the device is
             // asleep".
-            const failure = MiotError.afterStampRefresh(retryError, method, deviceId);
-            this.logger.error(`Operation failed after stamp refresh`, {
+            const failure = retried
+                ? MiotError.afterStampRefresh(retryError, method, deviceId)
+                : MiotError.is(retryError)
+                    ? retryError
+                    : new MiotError(reason, {
+                        kind: MIOT_ERROR_TRANSPORT_ERROR,
+                        method,
+                        cause: retryError
+                    });
+            this.logger.error(retried ? `Operation failed after stamp refresh` : `Operation failed`, {
                 deviceId,
                 method: failure.method,
                 kind: failure.kind,
                 code: failure.code,
-                reason: retryError instanceof Error ? retryError.message : String(retryError)
+                reason
             });
             throw failure;
         }
