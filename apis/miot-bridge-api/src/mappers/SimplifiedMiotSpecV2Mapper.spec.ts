@@ -81,6 +81,50 @@ describe('SimplifiedMiotSpecV2Mapper', () => {
         expect(property?.piid).toBe(9);
     });
 
+    describe('Services sharing a service type', () => {
+        const switchService = (iid: number) => ({
+            iid,
+            type: 'urn:miot-spec-v2:service:switch:0000780C:lumi-b2nacn02:1',
+            description: iid === 2 ? 'Left Switch' : 'Right Switch',
+            properties: [
+                {
+                    iid: 1,
+                    type: 'urn:miot-spec-v2:property:on:00000006:lumi-b2nacn02:1',
+                    description: 'Switch Status',
+                    format: 'bool',
+                    access: [MiotSpecV2PropertyAccess.Read, MiotSpecV2PropertyAccess.Write, MiotSpecV2PropertyAccess.Notify]
+                }
+            ]
+        });
+        const twoGang = {
+            type: 'urn:miot-spec-v2:device:switch:0000A003:lumi-b2nacn02:1',
+            description: 'Two-gang wall switch',
+            services: [switchService(2), switchService(3)]
+        } as MiotSpecV2;
+
+        it('Should keep properties of two services that share a service type addressable', async () => {
+            const spec = await mapper.map(twoGang);
+
+            const siids = [...spec.properties.values()].map(p => p.siid);
+            expect(siids).toEqual(expect.arrayContaining([2, 3]));
+        });
+
+        it('Should key repeated service types by siid and leave unique ones untouched', async () => {
+            const spec = await mapper.map(twoGang);
+
+            expect(spec.properties.get('switch-2:on')?.siid).toBe(2);
+            expect(spec.properties.get('switch-3:on')?.siid).toBe(3);
+            expect(spec.properties.has('switch:on')).toBe(false);
+        });
+
+        it('Should apply an override to the service it names', async () => {
+            const spec = await mapper.map(twoGang, [{ ...override(OVERRIDE_PROPERTY), siid: 2 } as ModelPropertyOverride]);
+
+            expect(spec.properties.get(`switch-2:${OVERRIDE_PROPERTY}`)?.source).toBe(MIOT_PROPERTY_SOURCE_VALUE_OVERRIDE);
+            expect(spec.properties.has(`switch-3:${OVERRIDE_PROPERTY}`)).toBe(false);
+        });
+    });
+
     it('Should skip an override whose service does not exist in the spec', async () => {
         const orphan = { ...override(OVERRIDE_PROPERTY), siid: 99 } as ModelPropertyOverride;
 
