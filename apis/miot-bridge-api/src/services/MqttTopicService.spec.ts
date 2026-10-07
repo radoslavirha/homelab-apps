@@ -46,6 +46,12 @@ describe('MqttTopicService', () => {
             expect(service.extractDeviceIdFromCommandTopic('other/device/442/command')).toBeNull();
             expect(service.extractDeviceIdFromCommandTopic('miot-bridge/device/abc/command')).toBeNull();
         });
+
+        it('Should return null for a device segment that is only partly numeric', () => {
+            expect(service.extractDeviceIdFromCommandTopic('miot-bridge/device/442abc/command')).toBeNull();
+            expect(service.extractDeviceIdFromCommandTopic('miot-bridge/device/442.9/command')).toBeNull();
+            expect(service.extractDeviceIdFromCommandTopic('miot-bridge/device/ 442/command')).toBeNull();
+        });
     });
 
     describe('With a topic prefix', () => {

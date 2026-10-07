@@ -94,8 +94,11 @@ export class MqttTopicService {
             return null;
         }
         const idStr = topic.slice(before.length, topic.length - after.length);
-        const id = parseInt(idStr);
-        return isNaN(id) ? null : id;
+        if (!/^\d+$/.test(idStr)) {
+            return null;
+        }
+        const id = Number(idStr);
+        return Number.isSafeInteger(id) ? id : null;
     }
 
     private getPrefix(): string {
