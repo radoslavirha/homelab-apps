@@ -1,4 +1,4 @@
-import { context, propagation, SpanKind, type Attributes, type Context, type Span } from '@opentelemetry/api';
+import { context, propagation, ROOT_CONTEXT, SpanKind, trace, type Attributes, type Context, type Span } from '@opentelemetry/api';
 import {
     ATTR_MESSAGING_CLIENT_ID,
     ATTR_MESSAGING_DESTINATION_NAME,
@@ -12,7 +12,7 @@ import {
 } from '@opentelemetry/semantic-conventions/incubating';
 import { ATTR_SERVER_ADDRESS, ATTR_SERVER_PORT } from '@opentelemetry/semantic-conventions';
 import { ArrayUtils, CommonUtils } from '@radoslavirha/utils';
-import { withSpan } from './spanTracing.js';
+import { withEntryPointSpan, withSpan } from './spanTracing.js';
 
 /**
  * Instrumentation scope for every MQTT span. Named after the wire protocol rather than the
@@ -105,13 +105,18 @@ export function withMqttPublishSpan<T>(
  * detached.
  */
 export function withMqttConsumeSpan<T>(options: MqttConsumeSpanOptions, fn: (span: Span) => T): T {
-    return withSpan(
+    // An inbound message is an entry point: the active context is incidental, so only a
+    // `traceparent` the sender actually sent may parent the span; otherwise it is a root.
+    const extracted = propagation.extract(ROOT_CONTEXT, toTextMap(options.userProperties ?? {}));
+    const parent = trace.getSpanContext(extracted) === undefined ? undefined : extracted;
+
+    return withEntryPointSpan(
         {
             name: `process ${options.topicTemplate}`,
             tracer: MQTT_TRACER_NAME,
             kind: SpanKind.CONSUMER,
             attributes: buildAttributes(options, 'process', MESSAGING_OPERATION_TYPE_VALUE_PROCESS),
-            parent: extractMqttContext(options.userProperties)
+            parent
         },
         fn
     );

@@ -193,6 +193,15 @@ describe('mqttTracing', () => {
             expect(spanNamed(`process ${TEMPLATE}`).parentSpanContext).toBeUndefined();
         });
 
+        it('Should start a new trace when the sender propagates nothing, even with a span active', async () => {
+            await trace.getTracer('test').startActiveSpan('outer', async (outer) => {
+                await withMqttConsumeSpan({ ...OPTIONS, userProperties: {} }, () => Promise.resolve());
+                outer.end();
+            });
+
+            expect(spanNamed(`process ${TEMPLATE}`).parentSpanContext).toBeUndefined();
+        });
+
         it('Should ignore a user property delivered as an empty array', async () => {
             await withMqttConsumeSpan({ ...OPTIONS, userProperties: { traceparent: [] } }, () => Promise.resolve());
 
