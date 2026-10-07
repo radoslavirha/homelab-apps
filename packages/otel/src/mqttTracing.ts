@@ -108,7 +108,7 @@ export function withMqttConsumeSpan<T>(options: MqttConsumeSpanOptions, fn: (spa
     // An inbound message is an entry point: the active context is incidental, so only a
     // `traceparent` the sender actually sent may parent the span; otherwise it is a root.
     const extracted = propagation.extract(ROOT_CONTEXT, toTextMap(options.userProperties ?? {}));
-    const parent = trace.getSpanContext(extracted) === undefined ? undefined : extracted;
+    const parent = CommonUtils.isUndefined(trace.getSpanContext(extracted)) ? undefined : extracted;
 
     return withEntryPointSpan(
         {
