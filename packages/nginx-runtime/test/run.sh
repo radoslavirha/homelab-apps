@@ -89,6 +89,24 @@ start -v "$CFG:/usr/share/nginx/html/config.json:ro" "$IMAGE"
 grep -q 'not valid JSON' <<<"$LOGS" && ok "log says not valid JSON" || bad "log should say not valid JSON"
 
 echo
+echo "case: jq-accepted but JSON.parse-rejected config"
+for INPUT in '{"a":1}{"b":2}' '{"a":1} 1' '{"a":NaN}' '{"a":Infinity}' '{"port":08080}'; do
+    CFG=$(config_at lenient.json "$INPUT")
+    start -v "$CFG:/usr/share/nginx/html/config.json:ro" "$IMAGE"
+    node -e 'try{JSON.parse(process.argv[1]);process.exit(1)}catch{}' "$INPUT" || { bad "precondition: $INPUT should be invalid for JSON.parse"; continue; }
+    [ "$RUNNING" = "true" ] && bad "container should NOT stay up for $INPUT" || ok "container exits for $INPUT"
+done
+
+echo
+echo "case: valid but unusual JSON config"
+for INPUT in 'null' 'false' '{"a":"NaN 08080 {}{}","b":1.5e-08,"c":-0.5}'; do
+    CFG=$(config_at unusual.json "$INPUT")
+    start -v "$CFG:/usr/share/nginx/html/config.json:ro" "$IMAGE"
+    node -e 'JSON.parse(process.argv[1])' "$INPUT" || { bad "precondition: $INPUT should be valid for JSON.parse"; continue; }
+    [ "$RUNNING" = "true" ] && ok "container stays up for $INPUT" || bad "container should stay up for $INPUT"
+done
+
+echo
 echo "case: /healthz is an exact match"
 CFG=$(config_at ok.json '{"ok":true}')
 docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
