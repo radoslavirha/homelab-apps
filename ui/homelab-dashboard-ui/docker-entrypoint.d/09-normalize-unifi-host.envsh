@@ -1,0 +1,8 @@
+# Sourced by the stock nginx entrypoint (*.envsh) before 10-require-unifi-env.sh.
+# The key-bearing proxy_pass sits in a regex location, where nginx rejects any
+# URI part — so "https://192.168.1.1/" would crash-loop nginx. Strip trailing
+# slashes; the guard then refuses a value that still carries a path.
+while [ "${UNIFI_HOST%/}" != "${UNIFI_HOST:-}" ]; do
+    UNIFI_HOST="${UNIFI_HOST%/}"
+done
+export UNIFI_HOST="${UNIFI_HOST:-}"

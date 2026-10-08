@@ -32,7 +32,7 @@ that fail-fast property lives.
 
 | Variable | Description |
 |----------|-------------|
-| `UNIFI_HOST` | Base URL of the UniFi controller (e.g. `https://192.168.1.1`). Used by `proxy_pass`. |
+| `UNIFI_HOST` | Base URL of the UniFi controller (e.g. `https://192.168.1.1`), `scheme://host[:port]` with no path; a trailing `/` is stripped. Used by `proxy_pass`. |
 | `SECRET_UNIFI_API_KEY` | UniFi API key. Attached by `proxy_set_header X-Api-Key`, which also overrides any client-supplied value. |
 
 > **`nginx -T` prints the rendered config, API key included.** Do not paste that output into an issue
