@@ -1,5 +1,15 @@
 # qr-manager-api
 
+## 0.10.2
+
+### Patch Changes
+
+- [#263](https://github.com/radoslavirha/homelab-apps/pull/263) [`8f7974e`](https://github.com/radoslavirha/homelab-apps/commit/8f7974e8547efb54f4710d891f01e385bd2a6941) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - `GET /qr-codes/:id/image` accepts `download=1` to send `Content-Disposition: attachment` so cross-origin download links save the file.
+- Updated dependencies [[`663d4c8`](https://github.com/radoslavirha/homelab-apps/commit/663d4c8d756157cf23296c89ac1820ce0cb10971), [`bc14ed5`](https://github.com/radoslavirha/homelab-apps/commit/bc14ed5c75e154089fd6ff05a5e84be73ca4da9e), [`b5893aa`](https://github.com/radoslavirha/homelab-apps/commit/b5893aa9e781fbd6d8dc89cb2bcaa12687462c47)]:
+  - @radoslavirha/resilience@0.2.3
+  - @radoslavirha/otel@0.6.4
+  - @radoslavirha/tsed-health@0.3.2
+
 ## 0.10.1
 
 ### Patch Changes

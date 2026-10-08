@@ -1,5 +1,14 @@
 # interactive-map-feeder
 
+## 0.16.2
+
+### Patch Changes
+
+- Updated dependencies [[`bc14ed5`](https://github.com/radoslavirha/homelab-apps/commit/bc14ed5c75e154089fd6ff05a5e84be73ca4da9e)]:
+  - @radoslavirha/otel@0.6.4
+  - @radoslavirha/tsed-health@0.3.2
+  - @radoslavirha/tsed-http-provider@0.2.8
+
 ## 0.16.1
 
 ### Patch Changes

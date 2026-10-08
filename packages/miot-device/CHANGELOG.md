@@ -1,5 +1,13 @@
 # @radoslavirha/miot-device
 
+## 0.7.2
+
+### Patch Changes
+
+- [#245](https://github.com/radoslavirha/homelab-apps/pull/245) [`baf24d8`](https://github.com/radoslavirha/homelab-apps/commit/baf24d81cb7d9b33bd15c6705592c39d5322e857) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - A call that fails on its first attempt (no cached stamp) is no longer reported with `stampRefreshed: true`.
+
+- [#247](https://github.com/radoslavirha/homelab-apps/pull/247) [`5279db2`](https://github.com/radoslavirha/homelab-apps/commit/5279db293debf77c521795a30e8ca5cb085990ec) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - MiotDevice and MiotTransport now default to a no-op logger when none is passed, as documented, instead of writing to the console. The unused `CONSOLE_LOGGER` export is removed; consumers relying on the old console output must pass their own `ILogger`.
+
 ## 0.7.1
 
 ### Patch Changes

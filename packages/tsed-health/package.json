@@ -1,6 +1,6 @@
 {
     "name": "@radoslavirha/tsed-health",
-    "version": "0.3.1",
+    "version": "0.3.2",
     "description": "Ts.ED health endpoints: /health, /health/live and /health/ready backed by a DI-registered check registry, plus a correct graceful-shutdown drain",
     "private": true,
     "type": "module",
