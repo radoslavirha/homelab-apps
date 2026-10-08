@@ -345,6 +345,58 @@ describe('createResiliencePolicy', () => {
 
             expect(policy.breaker?.state).toBe(CircuitState.Open);
         });
+
+        it('does not reopen a half-open breaker when a call started while closed is cancelled by its parent', async () => {
+            const onBreak = vi.fn();
+            const policy = createResiliencePolicy(
+                {
+                    circuitBreaker: {
+                        halfOpenAfterMs: 0,
+                        minimumThroughput: 1,
+                        samplingDurationMs: 1000,
+                        threshold: 0.5
+                    }
+                },
+                { hooks: { onBreak } }
+            );
+
+            // A: started while the breaker is closed; the dependency hangs.
+            const staleController = new AbortController();
+            let notifyStaleStarted: (() => void) | undefined;
+            const staleStarted = new Promise<void>((resolve) => {
+                notifyStaleStarted = resolve;
+            });
+            const stale = policy.execute(() => {
+                notifyStaleStarted?.();
+                return new Promise<never>(() => {});
+            }, staleController.signal);
+            await staleStarted;
+
+            await expect(policy.execute(async () => {
+                throw new Error('dependency failed');
+            })).rejects.toThrow('dependency failed');
+            expect(policy.breaker?.state).toBe(CircuitState.Open);
+            expect(onBreak).toHaveBeenCalledTimes(1);
+
+            // B: the half-open trial, which will succeed.
+            let finishProbe: ((value: string) => void) | undefined;
+            const probe = policy.execute(() => new Promise<string>((resolve) => {
+                finishProbe = resolve;
+            }));
+            await vi.waitFor(() => expect(finishProbe).toBeDefined());
+            expect(policy.breaker?.state).toBe(CircuitState.HalfOpen);
+
+            // The client behind A disconnects: request control flow, not a dependency failure.
+            staleController.abort();
+            await expect(stale).rejects.toSatisfy(isTaskCancelledError);
+
+            expect(onBreak).toHaveBeenCalledTimes(1);
+            expect(policy.breaker?.state).toBe(CircuitState.HalfOpen);
+
+            finishProbe?.('ok');
+            await expect(probe).resolves.toBe('ok');
+            expect(policy.breaker?.state).toBe(CircuitState.Closed);
+        });
     });
 
     it('composes retry, breaker and timeout together', async () => {
