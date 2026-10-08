@@ -14,6 +14,9 @@ set -eu
 fatal() { echo "[homelab-dashboard-ui] FATAL: $*" >&2; exit 1; }
 
 [ -n "${UNIFI_HOST:-}" ] || fatal "UNIFI_HOST is empty — set it in the app's env: block."
+case "${UNIFI_HOST#*://}" in
+    */*) fatal "UNIFI_HOST must be scheme://host[:port] with no path." ;;
+esac
 [ -n "${SECRET_UNIFI_API_KEY:-}" ] || fatal "SECRET_UNIFI_API_KEY is empty — check the secretRef and that ESO synced it."
 
 echo "[homelab-dashboard-ui] Unifi proxy configuration present"
