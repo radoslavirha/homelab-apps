@@ -1,5 +1,18 @@
 # miot-bridge
 
+## 0.28.1
+
+### Patch Changes
+
+- [#252](https://github.com/radoslavirha/homelab-apps/pull/252) [`bf559d4`](https://github.com/radoslavirha/homelab-apps/commit/bf559d45cd146fee988b8dc5f4d5927befda3c9e) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Devices with repeated service types (e.g. multi-gang switches) keep every channel addressable: repeated types are keyed with their siid (`switch-2:on`, `switch-3:on`); stored subscriptions using the old colliding key (`switch:on`) no longer resolve.
+
+- [#257](https://github.com/radoslavirha/homelab-apps/pull/257) [`d099497`](https://github.com/radoslavirha/homelab-apps/commit/d0994979156ad7720f4def173f8079581e2a453e) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Ignore MQTT command topics whose device id is only partly numeric instead of running the command against the numeric prefix.
+- Updated dependencies [[`baf24d8`](https://github.com/radoslavirha/homelab-apps/commit/baf24d81cb7d9b33bd15c6705592c39d5322e857), [`5279db2`](https://github.com/radoslavirha/homelab-apps/commit/5279db293debf77c521795a30e8ca5cb085990ec), [`bc14ed5`](https://github.com/radoslavirha/homelab-apps/commit/bc14ed5c75e154089fd6ff05a5e84be73ca4da9e)]:
+  - @radoslavirha/miot-device@0.7.2
+  - @radoslavirha/otel@0.6.4
+  - @radoslavirha/tsed-health@0.3.2
+  - @radoslavirha/tsed-http-provider@0.2.8
+
 ## 0.28.0
 
 ### Minor Changes

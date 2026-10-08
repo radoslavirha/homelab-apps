@@ -1,5 +1,11 @@
 # @radoslavirha/otel
 
+## 0.6.4
+
+### Patch Changes
+
+- [#258](https://github.com/radoslavirha/homelab-apps/pull/258) [`bc14ed5`](https://github.com/radoslavirha/homelab-apps/commit/bc14ed5c75e154089fd6ff05a5e84be73ca4da9e) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - `withMqttConsumeSpan` now starts a new trace for a message without a `traceparent` instead of joining the active span's trace.
+
 ## 0.6.3
 
 ### Patch Changes

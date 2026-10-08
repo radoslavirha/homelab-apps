@@ -1,5 +1,11 @@
 # @radoslavirha/nginx-runtime
 
+## 0.2.3
+
+### Patch Changes
+
+- [#256](https://github.com/radoslavirha/homelab-apps/pull/256) [`aa49525`](https://github.com/radoslavirha/homelab-apps/commit/aa495250a11b7c33f7a05c146bc39b3e38679fa4) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - The runtime-config guard now rejects configs that jq accepts but `JSON.parse` rejects (concatenated values, NaN/Infinity, leading zeros) and no longer misreports a top-level `null` or `false`.
+
 ## 0.2.2
 
 ### Patch Changes
