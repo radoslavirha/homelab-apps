@@ -105,8 +105,8 @@ Don't edit AGENTS.md unless the owner explicitly asks for it.
 - Configuration changes must stay backward compatible (AGENTS.md → "Configuration
   backward compatibility"): additive only, no removed or renamed keys.
 - Area `apis`: if the fix changes what the app exposes or connects to (controllers,
-  config, services), update its README per `.apm/skills/update-docs`. If it adds a
-  poller, timer, listener or other entry point, follow `.apm/skills/instrument-entry-point`.
+  config, services), update its README per `.apm/skills/updating-docs`. If it adds a
+  poller, timer, listener or other entry point, follow `.apm/skills/instrumenting-entry-points`.
 - Area `packages`: keep the exported API unchanged; consumers inside this repo must
   keep working without edits (step 5 checks every dependent).
 - Area `ui`: keep runtime config keys in `public/config.json` backward compatible.
@@ -122,7 +122,7 @@ Stop instead — comment on the issue with your analysis and options, replace
 - it touches more than one workspace member (a dependency bump from "Upstream
   released" may touch several)
 - it touches packages/ui-auth or a UI's auth wiring: those changes must be verified
-  in a real browser against the real IdP (`.apm/skills/verify-auth-in-browser`),
+  in a real browser against the real IdP (`.apm/skills/verifying-auth-in-browser`),
   which this environment can't do
 
 # 5. Verify

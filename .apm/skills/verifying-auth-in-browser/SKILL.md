@@ -1,5 +1,5 @@
 ---
-name: verify-auth-in-browser
+name: verifying-auth-in-browser
 description: Verify an OIDC login flow by actually running it in a browser against the real IdP, instead of reasoning about it. Use when changing anything in packages/ui-auth, a UI's auth wiring, an Authentik blueprint, or when a login, logout, silent-renew or redirect behaviour is claimed to work. Also use before writing "verified" about any auth change.
 ---
 

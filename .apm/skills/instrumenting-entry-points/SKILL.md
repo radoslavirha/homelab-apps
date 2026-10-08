@@ -1,5 +1,5 @@
 ---
-name: instrument-entry-point
+name: instrumenting-entry-points
 description: Instrument anything that starts work in an app — a poller, cron, timer, socket listener, queue consumer, startup task — with a root span and, when it is scheduled work, the reusable `job.*` metrics. Also covers outbound calls to a device or API. Use when adding a background job, a protocol listener, a `setInterval`/`setTimeout` loop, a Ts.ED `$onInit` task, or when spans show up in Tempo as parentless single-span traces, or when log lines have no `trace_id`, or when you need to answer "is this job healthy" without opening Tempo.
 ---
 

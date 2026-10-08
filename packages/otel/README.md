@@ -30,7 +30,7 @@ await withClientSpan({ name: SPAN_MIOT_GET, tracer: MIOT_TRACER }, () => …);
 ```
 
 Full guidance on *which* wrapper an entry point needs lives in the repo's
-`instrument-entry-point` skill and in [AGENTS.md](../../AGENTS.md#instrumenting-entry-points).
+`instrumenting-entry-points` skill and in [AGENTS.md](../../AGENTS.md#instrumenting-entry-points).
 
 ## Dependency policy — do not add dependencies to this package
 

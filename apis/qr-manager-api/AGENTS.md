@@ -1,43 +1,15 @@
 # Instructions
 
-- Stick to root [AGENTS.md](../../AGENTS.md) instructions.
-- API end-user documentation lives in [.README.md](./.README.md). Keep it up to date when adding or changing endpoints, config keys, or protocols. Swagger UI is mounted at `/`.
+- API end-user documentation lives in [README.md](./README.md). Keep it up to date when adding or changing endpoints, config keys, or protocols — the `updating-docs` skill owns its format. Swagger UI is mounted at `/`.
 - Technical architecture reference lives in [DEVELOPMENT.md](./DEVELOPMENT.md).
 
-## Source structure
+## Source layout beyond the root conventions
 
-```text
-src/
-├── controllers/        # Ts.ED HTTP controllers — one file per resource
-│   ├── QrCodeController.ts        # /qr-codes admin CRUD + image
-│   └── RedirectController.ts      # GET /r/:slug → 302
-├── handlers/
-│   ├── RedirectHandler.ts
-│   └── qr-codes/                   # one file per QrCodeController action
-├── mappers/
-│   ├── MongoQrCodeMapper.ts        # DTO ↔ domain model
-│   └── QrCodeResponseMapper.ts     # domain → public response (adds qrURL, imageURL)
-├── models/
-│   ├── config/                     # Zod config schemas
-│   ├── QrCode.ts                   # domain model
-│   ├── QrCode{Create,Update}Request.ts
-│   ├── QrCode{,List}Response.ts
-│   ├── QrType.enum.ts
-│   ├── QrImageFormat.enum.ts
-│   └── SwaggerDocs.enum.ts
-├── otel/                           # OpenTelemetry bootstrap
-├── services/
-│   ├── ConfigService.ts
-│   ├── QrCodeMongoService.ts       # repo + mapper + slug allocator orchestration
-│   ├── QrImageService.ts           # qrcode lib wrapper (PNG / SVG)
-│   └── ShortIdService.ts           # nanoid-based slug generator
-└── storage/
-    └── qr-mongo/
-        ├── dto/QrCodeMongoDTO.ts
-        └── QrCodeMongoRepository.ts
-```
-
-All controllers mount at `/`. There is no API version prefix — versioning is at the package level via Changesets.
+- `controllers/RedirectController.ts` — `GET /r/:slug` → 302. `controllers/QrCodeController.ts` — the `/qr-codes` admin CRUD + image.
+- `handlers/qr-codes/` — one handler per `QrCodeController` action.
+- `mappers/MongoQrCodeMapper.ts` (DTO ↔ domain) and `mappers/QrCodeResponseMapper.ts` (domain → public response, adds `qrURL` and `imageURL`).
+- `services/QrCodeService.ts` orchestrates repository + mapper + slug allocation; `ShortIdService` generates slugs; `QrImageService` wraps the `qrcode` library (PNG / SVG).
+- `src/constants.ts` — regex sources, retry counts, image bounds. Single source of truth shared by validators, services and tests; never inline these values.
 
 ## Slugs
 
@@ -49,7 +21,7 @@ All controllers mount at `/`. There is no API version prefix — versioning is a
 
 - `GET /r/:slug` → 302 to `target_url`. `@Pattern(SLUG_PATTERN)` rejects a malformed slug with 400 before the handler runs; an unknown or inactive slug returns 404. The `/r` segment keeps the catch-all off the root (see root AGENTS.md § Health checks); Traefik's `addPrefix` in `homelab` restores the short printed URL.
 - `GET /qr-codes`, `POST /qr-codes`, `GET/PUT/DELETE /qr-codes/:id`, `GET /qr-codes/:id/image` — admin REST surface, fully documented in Swagger.
-- Stable QR URLs come from the public domain (`qr.home`) and the 4-char slug, with no `/r` in the printed path. The path is constant for the lifetime of the printed QR; only DNS / proxy routing changes if the cluster moves.
+- Stable QR URLs come from the public domain and the 4-char slug, with no `/r` in the printed path. The path is constant for the lifetime of the printed QR; only DNS / proxy routing changes if the cluster moves.
 
 ## Coding rules
 
@@ -57,4 +29,3 @@ All controllers mount at `/`. There is no API version prefix — versioning is a
 - Repositories return `null` (not `undefined`) for missing single-document results. Services convert to `undefined` where callers expect it.
 - Use **constructor injection** for services that need to be stubbed in unit tests. `@Inject` property decorators are fine for thin singletons that don't need mocking.
 - Zod is used **only** for server config validation. REST schemas use Ts.ED decorators (`@Property`, `@Required`, `@Enum`, `@Pattern`, `@Minimum`, `@Maximum`, ...).
-- Constants (regex sources, retry counts, image bounds) live in [src/constants.ts](./src/constants.ts) — single source of truth shared by validators, services and tests.
