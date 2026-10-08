@@ -28,7 +28,7 @@ Use case: print a QR code once; change the target URL at any time without reprin
 | GET | `/qr-codes/:id` | **Yes** | Get record by MongoDB id |
 | PUT | `/qr-codes/:id` | **Yes** | Update `targetURL`, `label`, `type`, `active` |
 | DELETE | `/qr-codes/:id` | **Yes** | Delete record |
-| GET | `/qr-codes/:id/image` | — | Render QR image. Query: `format=svg\|png`, `size` (px, PNG only, default 512), `ecLevel=L\|M\|Q\|H` |
+| GET | `/qr-codes/:id/image` | — | Render QR image. Query: `format=svg\|png`, `size` (px, PNG only, default 512), `ecLevel=L\|M\|Q\|H`, `download=1` (send `Content-Disposition: attachment` named `<slug>.<format>`) |
 
 ## Authentication
 

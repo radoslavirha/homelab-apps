@@ -85,7 +85,7 @@ export class QrCodeController {
 
     @Get('/:id/image')
     @Anonymous()
-    @Description('Returns the rendered QR image.\n\n- `format`: `svg` (default, vector) or `png` (raster).\n- `size`: PNG width in px (ignored for SVG). Range 64–4096, default 512.\n- `ecLevel`: error correction. `M` default (~15% damage tolerance, smallest). `L`/`Q`/`H` for less/more redundancy. Lower level = fewer modules = smaller print.')
+    @Description('Returns the rendered QR image.\n\n- `format`: `svg` (default, vector) or `png` (raster).\n- `size`: PNG width in px (ignored for SVG). Range 64–4096, default 512.\n- `ecLevel`: error correction. `M` default (~15% damage tolerance, smallest). `L`/`Q`/`H` for less/more redundancy. Lower level = fewer modules = smaller print.\n- `download`: `1` or `true` sends `Content-Disposition: attachment; filename="<slug>.<format>"` so a cross-origin link saves the file instead of navigating to it. Omitted = inline.')
     @(Returns(200).ContentType('image/png'))
     @(Returns(200).ContentType('image/svg+xml'))
     public async image(
@@ -93,9 +93,13 @@ export class QrCodeController {
         @Context() ctx: PlatformContext,
         @QueryParams('format') @Enum(QrImageFormat) format: QrImageFormat = QrImageFormat.SVG,
         @QueryParams('size') @Minimum(MIN_PNG_SIZE) @Maximum(MAX_PNG_SIZE) size?: number,
-        @QueryParams('ecLevel') @Enum(QrErrorCorrection) ecLevel?: QrErrorCorrection
+        @QueryParams('ecLevel') @Enum(QrErrorCorrection) ecLevel?: QrErrorCorrection,
+        @QueryParams('download') download?: boolean
     ): Promise<void> {
         const image = await this.imageHandler.execute({ id, format, size, ecLevel });
+        if (download) {
+            ctx.response.setHeader('Content-Disposition', `attachment; filename="${image.filename}"`);
+        }
         ctx.response
             .status(200)
             .contentType(image.contentType)
