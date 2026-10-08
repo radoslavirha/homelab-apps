@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from 'node:async_hooks';
 import {
     CircuitState,
     SamplingBreaker,
@@ -49,6 +50,13 @@ export interface ResiliencePolicy {
     /** The underlying circuit breaker, when configured (for state inspection). */
     readonly breaker?: CircuitBreakerPolicy;
 }
+
+/** Per-call record of the breaker state the attempt started in (the filter is shared by all calls). */
+interface AttemptContext {
+    startState?: CircuitState;
+}
+
+const attemptContext = new AsyncLocalStorage<AttemptContext>();
 
 class ParentCancellationError extends TaskCancelledError {}
 
@@ -155,11 +163,14 @@ export function createResiliencePolicy(
 
     let breaker: CircuitBreakerPolicy | undefined;
     const filter = handleWhen((error: unknown): boolean => {
+        // Cockatiel routes a result by the state the call started in, so the half-open rules
+        // apply only to the trial itself, not to a stale call that started while closed.
+        const isTrial = attemptContext.getStore()?.startState === CircuitState.HalfOpen;
         if (isParentCancellationError(error)) {
             // Cockatiel treats excluded half-open errors as success; cancellation cannot prove recovery.
-            return breaker?.state === CircuitState.HalfOpen;
+            return isTrial;
         }
-        if (isTaskCancelledError(error) && breaker?.state === CircuitState.HalfOpen) {
+        if (isTaskCancelledError(error) && isTrial) {
             // A trial that timed out proves nothing about recovery, whatever shouldHandle says.
             return true;
         }
@@ -222,8 +233,12 @@ export function createResiliencePolicy(
                 }
 
                 try {
-                    return await attemptPolicy.execute((context) =>
-                        executeWithParentCancellation(fn, context.signal, parentSignal)
+                    const ctx: AttemptContext = {};
+                    return await attemptContext.run(ctx, () =>
+                        attemptPolicy.execute((context) => {
+                            ctx.startState = breaker?.state;
+                            return executeWithParentCancellation(fn, context.signal, parentSignal);
+                        })
                     );
                 } catch (error) {
                     if (isParentCancellationError(error) || parentSignal?.aborted) {
