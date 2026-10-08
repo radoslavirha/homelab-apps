@@ -178,6 +178,29 @@ describe('QrCodeController (integration)', () => {
             );
         });
 
+        it('sends no Content-Disposition by default so the preview stays inline', async () => {
+            expect.assertions(1);
+            vi.spyOn(qrCodeService, 'getById').mockResolvedValue(sampleModel());
+            vi.spyOn(qrImageService, 'render').mockResolvedValue({ contentType: 'image/svg+xml', body: '<svg></svg>' });
+
+            const response = await request.get('/qr-codes/671b00000000000000000001/image').expect(200);
+
+            expect(response.headers['content-disposition']).toBeUndefined();
+        });
+
+        it.each([
+            ['svg', 'image/svg+xml', '<svg></svg>', 'x7k2.svg'],
+            ['png', 'image/png', Buffer.from([0x89, 0x50, 0x4e, 0x47]), 'x7k2.png']
+        ])('sets an attachment Content-Disposition named after the slug when download=1 (%s)', async (format, contentType, body, filename) => {
+            expect.assertions(1);
+            vi.spyOn(qrCodeService, 'getById').mockResolvedValue(sampleModel());
+            vi.spyOn(qrImageService, 'render').mockResolvedValue({ contentType, body });
+
+            const response = await request.get(`/qr-codes/671b00000000000000000001/image?format=${format}&download=1`).expect(200);
+
+            expect(response.headers['content-disposition']).toBe(`attachment; filename="${filename}"`);
+        });
+
         it('encodes the slug URL without a double slash when the redirect base URL has a trailing slash', async () => {
             expect.assertions(1);
             const configService = PlatformTest.get<ConfigService>(ConfigService);
