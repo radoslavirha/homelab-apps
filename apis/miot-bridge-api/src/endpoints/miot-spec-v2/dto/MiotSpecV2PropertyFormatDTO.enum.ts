@@ -7,5 +7,6 @@ export enum MiotSpecV2PropertyFormatDTO {
     Int16 = 'int16',
     Int32 = 'int32',
     Int64 = 'int64',
-    Bool = 'bool'
+    Bool = 'bool',
+    Float = 'float'
 }
