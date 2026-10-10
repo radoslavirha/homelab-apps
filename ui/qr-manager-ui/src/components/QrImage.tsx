@@ -25,10 +25,10 @@ export const QrImage = ({ qrCode, apiBaseURL, displaySize = 320, downloadSize = 
                 <a href={qrCode.qrURL}>{qrCode.qrURL}</a>
             </figcaption>
             <div className="qr-image-downloads">
-                <a href={`${imageBase}?format=svg`} download={`${qrCode.slug}.svg`}>
+                <a href={`${imageBase}?format=svg&download=1`} download={`${qrCode.slug}.svg`}>
                     Download SVG (vector — best for print)
                 </a>
-                <a href={`${imageBase}?format=png&size=${downloadSize}`} download={`${qrCode.slug}.png`}>
+                <a href={`${imageBase}?format=png&size=${downloadSize}&download=1`} download={`${qrCode.slug}.png`}>
                     Download PNG ({downloadSize}px)
                 </a>
             </div>
