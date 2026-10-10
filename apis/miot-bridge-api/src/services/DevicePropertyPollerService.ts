@@ -381,6 +381,13 @@ export class DevicePropertyPollerService extends EventEmitter implements OnInit,
                     continue;
                 }
 
+                // Unsubscribed while this read was in flight: caching or emitting it now would
+                // publish a stray notification and leave a stale value that makes the next
+                // subscription's first read look unchanged.
+                if (!this._subscriptions.get(deviceId)?.has(key)) {
+                    continue;
+                }
+
                 const cacheKey = `${deviceId}:${key}`;
                 const oldValue = this._lastValues.get(cacheKey);
                 const hasChanged = oldValue !== newValue;
