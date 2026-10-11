@@ -222,6 +222,31 @@ describe('DevicePropertyPollerService', () => {
             expect(getProperties).not.toHaveBeenCalled();
             expect(spans()).toHaveLength(0);
         });
+
+        it('Should treat the first read after re-subscribing as a first observation, even if a read was in flight at unsubscribe', async () => {
+            let release!: () => void;
+            const inFlight = new Promise<GetPropertiesResponse>((resolve) => {
+                release = () => resolve(reading('sweeping'));
+            });
+            getProperties.mockReturnValueOnce(inFlight);
+            const changes: unknown[] = [];
+
+            await start();
+            poller.on(PROPERTY_CHANGED, (event) => changes.push(event));
+            await ticks(1);
+
+            poller.removeAllSubscriptions(STORAGE_ID);
+            release();
+            await inFlight;
+            await new Promise((resolve) => setTimeout(resolve, INTERVAL_MS));
+            changes.length = 0;
+
+            poller.addSubscriptions(STORAGE_ID, [PROPERTY]);
+            const before = getProperties.mock.calls.length;
+            await ticks(before + 2);
+
+            expect(changes).toHaveLength(1);
+        });
     });
 
     describe('Tracing', () => {
