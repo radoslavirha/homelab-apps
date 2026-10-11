@@ -3,6 +3,14 @@ import { z } from 'zod';
 import { HttpLogConfigSchema } from './logging.schema.js';
 
 /**
+ * Bracket-notation selector for a name taken from configuration. `fast-redact`
+ * rejects bare hyphenated paths, and the spelling must match what is sent.
+ */
+function toSelector(name: string): string {
+    return `[${JSON.stringify(name)}]`;
+}
+
+/**
  * A configured external API: everything `@radoslavirha/http-provider` needs
  * (base URL, auth, resilience, retriable statuses) plus the outbound logging
  * this package layers on top.
@@ -12,6 +20,25 @@ import { HttpLogConfigSchema } from './logging.schema.js';
  */
 export const ExternalApiEntrySchema = HttpProviderEntrySchema.extend({
     logging: HttpLogConfigSchema
+}).transform((entry) => {
+    const transport = entry.auth?.transport;
+    const headerPaths = (transport?.headers ?? []).map((header) => toSelector(header.name));
+    const queryPaths = (transport?.queryParams ?? []).map((param) => toSelector(param.name));
+
+    if (headerPaths.length === 0 && queryPaths.length === 0) {
+        return entry;
+    }
+
+    const { logging } = entry;
+
+    return {
+        ...entry,
+        logging: {
+            ...logging,
+            headers: { ...logging.headers, redactPaths: [...new Set([...logging.headers.redactPaths, ...headerPaths])] },
+            query: { ...logging.query, redactPaths: [...new Set([...logging.query.redactPaths, ...queryPaths])] }
+        }
+    };
 });
 
 /**

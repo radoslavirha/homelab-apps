@@ -47,6 +47,29 @@ function buildClient(entry: ExternalApiEntry, logger?: TestLogger): AxiosInstanc
 }
 
 describe('outbound request logging', () => {
+    it('redacts credentials the provider injects from its own transport config', async () => {
+        const logger = buildLogger();
+        const instance = buildClient({
+            baseURL: 'http://api.example.com',
+            auth: {
+                transport: {
+                    headers: [{ name: 'X-Api-Key', value: 'static-api-key' }],
+                    queryParams: [{ name: 'api_key', value: 'query-secret' }]
+                }
+            },
+            logging: { headers: { enabled: true }, query: { enabled: true } }
+        }, logger);
+        const mock = new MockAdapter(instance);
+        mock.onGet('/data').reply(200, {});
+
+        await instance.get('/data');
+
+        const [, meta] = logger.info.mock.calls[0] as [string, Record<string, unknown>];
+        expect(JSON.stringify(meta)).not.toContain('static-api-key');
+        expect(JSON.stringify(meta)).not.toContain('query-secret');
+        mock.restore();
+    });
+
     it('uses metadata-only defaults for successful requests', async () => {
         const logger = buildLogger();
         const instance = buildClient({ baseURL: 'http://api.example.com' }, logger);
