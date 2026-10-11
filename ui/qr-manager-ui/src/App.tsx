@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { BrowserRouter, Link, NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell, ApiStatusBanner } from '@radoslavirha/ui-kit';
@@ -9,6 +9,7 @@ import { QrCodeDetailPage } from './pages/QrCodeDetailPage.js';
 import { QrCodeCreatePage } from './pages/QrCodeCreatePage.js';
 import { CallbackPage } from './pages/CallbackPage.js';
 import { SignInPage } from './pages/SignInPage.js';
+import { createQrCodesClient } from './api/qrCodes.js';
 import { RuntimeConfigProvider } from './runtime/RuntimeConfigContext.js';
 import { ApiStatusProvider } from './runtime/ApiStatusContext.js';
 import type { RuntimeConfig } from './runtime/RuntimeConfig.js';
@@ -77,10 +78,39 @@ const HeaderNav = () => {
     );
 };
 
+/**
+ * `App` sits above `AuthProvider`, but the recovery probe needs the bearer
+ * token. This hands the provider's getter up through a ref; it renders nothing.
+ */
+const TokenBridge = ({ target }: { target: { current: () => string | undefined } }) => {
+    const { getAccessToken } = useAuth();
+
+    useEffect(() => {
+        target.current = getAccessToken;
+    }, [target, getAccessToken]);
+
+    return null;
+};
+
 export const App = ({ config }: Props) => {
-    // No recoveryProbe: this is a hands-on admin UI, so a human is present to
-    // retry. The unattended dashboard is where automatic recovery earns itself.
-    const { status, report } = useApiStatus();
+    const tokenRef = useRef<() => string | undefined>(() => undefined);
+    // The banner says "retrying" while the API is degraded, so something must
+    // actually retry. The probe is an authenticated list call: an anonymous one
+    // would answer 401 and never read as recovered.
+    const { status, report } = useApiStatus({
+        recoveryProbe: {
+            probe: async () => {
+                try {
+                    await createQrCodesClient(config.apiBaseURL, {
+                        getAccessToken: () => tokenRef.current()
+                    }).list({});
+                    return true;
+                } catch {
+                    return false;
+                }
+            }
+        }
+    });
     const authClient = useMemo(() => createAuthClient(config.auth), [config.auth]);
 
     return (
@@ -89,6 +119,7 @@ export const App = ({ config }: Props) => {
         <BrowserRouter basename={config.basePath}>
             {/* Inside BrowserRouter: CallbackPage navigates once the exchange lands. */}
             <AuthProvider client={authClient}>
+            <TokenBridge target={tokenRef} />
             <AppShell
                 headerLeft={
                     <Link to="/admin" className="app-logo">QR Manager</Link>
