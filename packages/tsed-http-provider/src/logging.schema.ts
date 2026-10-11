@@ -15,7 +15,8 @@ export const DEFAULT_HEADER_REDACT_PATHS = [
     'cookie',
     'Cookie',
     '["set-cookie"]',
-    '["proxy-authorization"]'
+    '["proxy-authorization"]',
+    '["x-api-key"]'
 ];
 
 /**
