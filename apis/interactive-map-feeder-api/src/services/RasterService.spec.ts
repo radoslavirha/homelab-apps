@@ -41,4 +41,54 @@ describe('RasterService.getRGBAOnCoordinates', () => {
 
         expect({ r: color.r, a: color.a }).toEqual({ r: 255, a: 255 });
     });
+
+    it('does not darken a city in rain by averaging in transparent (no-data) pixels', async () => {
+        expect.assertions(1);
+        const liberec = { latitude: 50.76638, longitude: 15.054439 };
+        const { x, y } = pixelOf(liberec.latitude, liberec.longitude);
+
+        // Heavy rain (opaque red) over the city and the 3 rows north of it; the rest of
+        // the default 2.5 km window (7x7 px) is transparent, i.e. no precipitation.
+        const data = Buffer.alloc(WIDTH * HEIGHT * 4, 0);
+        for (let row = y - 3; row <= y; row++) {
+            for (let col = x - 3; col <= x + 3; col++) {
+                const i = (row * WIDTH + col) * 4;
+                data[i] = 255; data[i + 3] = 255;
+            }
+        }
+        const image = sharp(data, { raw: { width: WIDTH, height: HEIGHT, channels: 4 } });
+
+        const color = await raster.getRGBAOnCoordinates(liberec.latitude, liberec.longitude, radar.bbox, image);
+
+        expect({ r: color.r, g: color.g, b: color.b }).toEqual({ r: 255, g: 0, b: 0 });
+    });
+
+    it('returns the most frequent radar colour, not a blend of palette entries', async () => {
+        expect.assertions(1);
+        const liberec = { latitude: 50.76638, longitude: 15.054439 };
+        const { x, y } = pixelOf(liberec.latitude, liberec.longitude);
+
+        const data = Buffer.alloc(WIDTH * HEIGHT * 4, 0);
+        for (let row = y - 3; row <= y + 3; row++) {
+            for (let col = x - 3; col <= x + 3; col++) {
+                const i = (row * WIDTH + col) * 4;
+                data[col <= x ? i : i + 2] = 255;
+                data[i + 3] = 255;
+            }
+        }
+        const image = sharp(data, { raw: { width: WIDTH, height: HEIGHT, channels: 4 } });
+
+        const color = await raster.getRGBAOnCoordinates(liberec.latitude, liberec.longitude, radar.bbox, image);
+
+        expect({ r: color.r, g: color.g, b: color.b }).toEqual({ r: 255, g: 0, b: 0 });
+    });
+
+    it('returns transparent black when no pixel in the window has precipitation', async () => {
+        expect.assertions(1);
+        const image = sharp(Buffer.alloc(WIDTH * HEIGHT * 4, 0), { raw: { width: WIDTH, height: HEIGHT, channels: 4 } });
+
+        const color = await raster.getRGBAOnCoordinates(50.76638, 15.054439, radar.bbox, image);
+
+        expect({ r: color.r, g: color.g, b: color.b, a: color.a }).toEqual({ r: 0, g: 0, b: 0, a: 0 });
+    });
 });

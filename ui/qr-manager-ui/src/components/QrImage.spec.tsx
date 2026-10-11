@@ -26,11 +26,11 @@ describe('<QrImage />', () => {
         expect(img).toHaveAttribute('width', '320');
 
         const svg = screen.getByText(/Download SVG/).closest('a');
-        expect(svg).toHaveAttribute('href', `${IMAGE_BASE}?format=svg`);
+        expect(svg).toHaveAttribute('href', `${IMAGE_BASE}?format=svg&download=1`);
         expect(svg).toHaveAttribute('download', 'x7k2.svg');
 
         const png = screen.getByText(/Download PNG/).closest('a');
-        expect(png).toHaveAttribute('href', `${IMAGE_BASE}?format=png&size=1024`);
+        expect(png).toHaveAttribute('href', `${IMAGE_BASE}?format=png&size=1024&download=1`);
         expect(png).toHaveAttribute('download', 'x7k2.png');
     });
 
@@ -39,6 +39,6 @@ describe('<QrImage />', () => {
         const img = screen.getByRole('img', { name: /Shelf 1/i });
         expect(img).toHaveAttribute('width', '512');
         const png = screen.getByText(/Download PNG/).closest('a');
-        expect(png).toHaveAttribute('href', `${IMAGE_BASE}?format=png&size=2048`);
+        expect(png).toHaveAttribute('href', `${IMAGE_BASE}?format=png&size=2048&download=1`);
     });
 });

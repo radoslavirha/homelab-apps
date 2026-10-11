@@ -25,13 +25,32 @@ export class RasterService {
             this.calculatePixelFromKilometers(radiusInKm, bbox, metadata.height!, metadata.width!)
         );
 
-        return new RGBA(
-            NumberUtils.round(NumberUtils.mean(pixels.map(p => p.r))),
-            NumberUtils.round(NumberUtils.mean(pixels.map(p => p.g))),
-            NumberUtils.round(NumberUtils.mean(pixels.map(p => p.b))),
-            NumberUtils.round(NumberUtils.mean(pixels.map(p => p.a)))
-        );
+        return this.mostFrequentPrecipitationColor(pixels);
     };
+
+    /**
+     * Transparent pixels mean "no precipitation" and are left out. Of the rest, the most frequent
+     * colour wins (first seen on a tie), so the result is always a colour of the radar scale.
+     */
+    private mostFrequentPrecipitationColor(pixels: RGBA[]): RGBA {
+        const counts = new Map<string, { color: RGBA; count: number }>();
+        let best: { color: RGBA; count: number } | undefined;
+
+        for (const pixel of pixels) {
+            if (pixel.a === 0) {
+                continue;
+            }
+            const key = `${pixel.r},${pixel.g},${pixel.b},${pixel.a}`;
+            const entry = counts.get(key) ?? { color: pixel, count: 0 };
+            entry.count++;
+            counts.set(key, entry);
+            if (!best || entry.count > best.count) {
+                best = entry;
+            }
+        }
+
+        return best ? new RGBA(best.color.r, best.color.g, best.color.b, best.color.a) : new RGBA(0, 0, 0, 0);
+    }
 
     public async createCitiesImage(height: number, width: number, bbox: BBox): Promise<Buffer> {
         const channels = 4; // RGBA format

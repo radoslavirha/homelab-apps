@@ -1,4 +1,4 @@
-import { createRedactionSchema } from '@radoslavirha/redaction';
+import { RedactionFieldOptionsSchema, RedactionSelectorSchema } from '@radoslavirha/redaction';
 import { z } from 'zod';
 
 /**
@@ -20,16 +20,21 @@ export const DEFAULT_HEADER_REDACT_PATHS = [
 ];
 
 /**
- * Redactable sections of an outbound exchange, with their default selectors.
- * Built on the shared `{ enabled, redactPaths }` vocabulary from
- * `@radoslavirha/redaction`, so outbound logging is configured exactly like the
- * inbound `logger.requests` section.
+ * One redactable section of an outbound exchange. Same `{ enabled, redactPaths }`
+ * vocabulary as `@radoslavirha/redaction`, but **disabled unless switched on** —
+ * `createRedactionSchema` defaults every field to enabled, which would turn on
+ * unredacted payload logging as soon as a `logging` block exists.
  */
-const HttpLogSectionsSchema = createRedactionSchema({
-    headers: DEFAULT_HEADER_REDACT_PATHS,
-    query: [],
-    request: [],
-    response: []
+const section = (redactPaths: string[]) => RedactionFieldOptionsSchema.extend({
+    enabled: z.boolean().default(false),
+    redactPaths: z.array(RedactionSelectorSchema).default(() => [...redactPaths])
+}).default(() => ({ enabled: false, redactPaths: [...redactPaths] }));
+
+const HttpLogSectionsSchema = z.object({
+    headers: section(DEFAULT_HEADER_REDACT_PATHS),
+    query: section([]),
+    request: section([]),
+    response: section([])
 });
 
 /**

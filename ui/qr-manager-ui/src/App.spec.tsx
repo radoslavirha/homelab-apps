@@ -130,6 +130,28 @@ describe('<App />', () => {
             expect(screen.getByText(/QR Manager API is having problems/)).toBeInTheDocument());
     });
 
+    it('actually retries when the server-error banner says "retrying"', async () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true });
+        const fetchMock = vi.fn()
+            .mockResolvedValueOnce(new Response('boom', { status: 503 }))
+            .mockResolvedValue(new Response(JSON.stringify({ items: [sample] }), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' }
+            }));
+        Object.assign(globalThis, { fetch: fetchMock });
+
+        window.history.replaceState(null, '', '/admin');
+        render(<App config={config()} />);
+
+        await waitFor(() => expect(screen.getByText(/having problems — retrying/)).toBeInTheDocument());
+        const callsAtBanner = fetchMock.mock.calls.length;
+
+        await vi.advanceTimersByTimeAsync(120_000);
+        vi.useRealTimers();
+
+        expect(fetchMock.mock.calls.length).toBeGreaterThan(callsAtBanner);
+    });
+
     it('shows no banner for a 4xx — the API answered, the request was wrong', async () => {
         Object.assign(globalThis, {
             fetch: vi.fn().mockResolvedValue(new Response('bad filter', { status: 422 }))

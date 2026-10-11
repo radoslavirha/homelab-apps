@@ -70,6 +70,32 @@ describe('outbound request logging', () => {
         mock.restore();
     });
 
+    it('does not log the token-exchange response when the logging block sets only enabled/stack', async () => {
+        const logger = buildLogger();
+        const globalMock = new MockAdapter(axios as unknown as AxiosInstance);
+        globalMock.onPost('https://auth.example.com/token').reply(200, { access_token: 'live-access-token' });
+
+        const instance = buildClient({
+            baseURL: 'http://api.example.com',
+            auth: {
+                strategy: AuthStrategy.TokenExchange,
+                request: { method: 'POST', url: 'https://auth.example.com/token' },
+                tokenExtractor: 'access_token',
+                transport: { headers: [{ name: 'Authorization', credential: 'value', prefix: 'Bearer ' }] }
+            },
+            logging: { enabled: true, stack: false }
+        }, logger);
+        const mock = new MockAdapter(instance);
+        mock.onGet('/data').reply(200, { ok: true });
+
+        await instance.get('/data');
+
+        expect(JSON.stringify(logger.info.mock.calls)).not.toContain('live-access-token');
+
+        mock.restore();
+        globalMock.restore();
+    });
+
     it('uses metadata-only defaults for successful requests', async () => {
         const logger = buildLogger();
         const instance = buildClient({ baseURL: 'http://api.example.com' }, logger);
