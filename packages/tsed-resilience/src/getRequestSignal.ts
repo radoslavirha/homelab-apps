@@ -12,6 +12,7 @@ interface RawRequest {
 interface RawResponse {
     once?: (event: string, listener: () => void) => void;
     writableEnded?: boolean;
+    destroyed?: boolean;
 }
 
 /**
@@ -69,6 +70,11 @@ export function getRequestSignal(ctx: PlatformContext): AbortSignal {
                 onDisconnect();
             }
         });
+        // The client may have left before the signal was first requested (slow
+        // middleware, auth); `close` has fired already and will not fire again.
+        if (res.destroyed && !res.writableEnded) {
+            onDisconnect();
+        }
     }
 
     return controller.signal;

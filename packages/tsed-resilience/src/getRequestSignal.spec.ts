@@ -131,4 +131,28 @@ describe('getRequestSignal with a real HTTP server', () => {
 
         expect(signal?.aborted).toBe(true);
     });
+
+    it('aborts when the client disconnected before the signal was first requested', async () => {
+        let signal: AbortSignal | undefined;
+        let done!: () => void;
+        const finished = new Promise<void>((r) => (done = r));
+        const server = http.createServer(async (req, res) => {
+            await drain(req);
+            // a slow middleware (e.g. JWKS fetch in auth) runs before the controller param is resolved
+            await new Promise((r) => setTimeout(r, 150));
+            signal = getRequestSignal(buildContext(req, res));
+            done();
+        });
+        await new Promise<void>((r) => server.listen(0, r));
+        const { port } = server.address() as AddressInfo;
+        const controller = new AbortController();
+        fetch(`http://localhost:${port}`, { method: 'POST', body: '{"a":1}', signal: controller.signal }).catch(() => undefined);
+        setTimeout(() => controller.abort(), 50);
+        await finished;
+        await new Promise((r) => setTimeout(r, 50));
+        server.closeAllConnections();
+        server.close();
+
+        expect(signal?.aborted).toBe(true);
+    });
 });
