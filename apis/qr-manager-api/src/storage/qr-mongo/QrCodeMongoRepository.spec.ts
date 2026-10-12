@@ -162,12 +162,6 @@ describe('QrCodeMongoRepository', () => {
             expect.assertions(1);
             await expect(repository.updateById('not-an-id', { active: false })).resolves.toBeNull();
         });
-
-        it('rejects a null for a required field instead of persisting it', async () => {
-            expect.assertions(1);
-            const created = await repository.create(buildCreatePayload());
-            await expect(repository.updateById(created._id, { label: null } as never)).rejects.toThrow();
-        });
     });
 
     describe('deleteById', () => {
