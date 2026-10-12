@@ -91,4 +91,51 @@ describe('RasterService.getRGBAOnCoordinates', () => {
 
         expect({ r: color.r, g: color.g, b: color.b, a: color.a }).toEqual({ r: 0, g: 0, b: 0, a: 0 });
     });
+
+    it('does not sample the header projection panel above the map at a large radius', async () => {
+        expect.assertions(1);
+        // Real png_masked layout: the geographic map is only x < 598, y >= 82. Rows 0-81
+        // hold a north-south max-Z projection drawn in the radar palette, separated by a
+        // black line at y = 81. Here: no rain on the map at all, rain in the header strip.
+        const data = Buffer.alloc(WIDTH * HEIGHT * 4, 0);
+        for (let col = 0; col < 598; col++) {
+            for (let row = 50; row <= 81; row++) {
+                const i = (row * WIDTH + col) * 4;
+                if (row === 81) {
+                    data[i + 3] = 255; // opaque black separator
+                } else {
+                    data[i + 2] = 252; data[i + 3] = 255; // radar scale 0,0,252
+                }
+            }
+        }
+        const image = sharp(data, { raw: { width: WIDTH, height: HEIGHT, channels: 4 } });
+        const decin = { latitude: 50.772656, longitude: 14.212861 };
+
+        const color = await raster.getRGBAOnCoordinates(decin.latitude, decin.longitude, radar.bbox, image, 100);
+
+        expect({ r: color.r, g: color.g, b: color.b, a: color.a }).toEqual({ r: 0, g: 0, b: 0, a: 0 });
+    });
+
+    it('ignores opaque black pixels (frame, label) when rain is in the window', async () => {
+        expect.assertions(1);
+        const liberec = { latitude: 50.76638, longitude: 15.054439 };
+        const { x, y } = pixelOf(liberec.latitude, liberec.longitude);
+
+        const data = Buffer.alloc(WIDTH * HEIGHT * 4, 0);
+        for (let row = y - 3; row <= y + 3; row++) {
+            for (let col = x - 3; col <= x + 3; col++) {
+                const i = (row * WIDTH + col) * 4;
+                if (col <= x + 2) {
+                    data[i + 3] = 255; // black, majority
+                } else {
+                    data[i] = 255; data[i + 3] = 255; // red
+                }
+            }
+        }
+        const image = sharp(data, { raw: { width: WIDTH, height: HEIGHT, channels: 4 } });
+
+        const color = await raster.getRGBAOnCoordinates(liberec.latitude, liberec.longitude, radar.bbox, image);
+
+        expect({ r: color.r, g: color.g, b: color.b, a: color.a }).toEqual({ r: 255, g: 0, b: 0, a: 255 });
+    });
 });
