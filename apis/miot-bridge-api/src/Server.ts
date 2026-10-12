@@ -15,6 +15,8 @@ import './services/MqttListenerService.js';
 
 @Configuration({
     ...getServerDefaultConfig(),
+    // Ajv coerces null/"442"/0 to the declared type otherwise; strict rejects them with 400.
+    requestValidation: { strict: true },
     mount: {
         // HealthController stays at '/' so the probe path is identical across every app —
         // the chart's probe block is copy-paste only while that holds.
