@@ -4,6 +4,12 @@ import sharp, { Sharp, SharpOptions } from 'sharp';
 import { BBox, Position, RGBA } from '../models/index.js';
 import { CITIES } from '../Cities.js';
 
+/**
+ * The geographic part of the ČHMÚ png_masked image (radar_popis_cz.pdf, section 23). The rest holds
+ * the max-Z projection strips and the legend, drawn in the radar palette, and must not be sampled.
+ */
+const MAP_PANEL = { west: 11.267, east: 19.624, north: 51.458, south: 48.047 };
+
 @Service()
 @Scope(ProviderScope.SINGLETON)
 export class RasterService {
@@ -19,17 +25,21 @@ export class RasterService {
         const metadata = await image.metadata();
         const position = this.getPositionOnImage(latitude, longitude, bbox, metadata.height!, metadata.width!);
         
+        const topLeft = this.getPositionOnImage(MAP_PANEL.north, MAP_PANEL.west, bbox, metadata.height!, metadata.width!);
+        const bottomRight = this.getPositionOnImage(MAP_PANEL.south, MAP_PANEL.east, bbox, metadata.height!, metadata.width!);
+
         const pixels = await this.getPixelsWithRadius(
             position,
             image,
-            this.calculatePixelFromKilometers(radiusInKm, bbox, metadata.height!, metadata.width!)
+            this.calculatePixelFromKilometers(radiusInKm, bbox, metadata.height!, metadata.width!),
+            { minX: topLeft.x, maxX: bottomRight.x - 1, minY: topLeft.y, maxY: bottomRight.y - 1 }
         );
 
         return this.mostFrequentPrecipitationColor(pixels);
     };
 
     /**
-     * Transparent pixels mean "no precipitation" and are left out. Of the rest, the most frequent
+     * Transparent and black pixels mean "no precipitation" and are left out. Of the rest, the most frequent
      * colour wins (first seen on a tie), so the result is always a colour of the radar scale.
      */
     private mostFrequentPrecipitationColor(pixels: RGBA[]): RGBA {
@@ -37,7 +47,8 @@ export class RasterService {
         let best: { color: RGBA; count: number } | undefined;
 
         for (const pixel of pixels) {
-            if (pixel.a === 0) {
+            // Opaque black is the frame, separators and the timestamp label, never rain.
+            if (pixel.a === 0 || (pixel.r === 0 && pixel.g === 0 && pixel.b === 0)) {
                 continue;
             }
             const key = `${pixel.r},${pixel.g},${pixel.b},${pixel.a}`;
@@ -113,7 +124,7 @@ export class RasterService {
         return Math.log(Math.tan(Math.PI / 4 + (latitude * Math.PI) / 360));
     }
 
-    private async getPixelsWithRadius(position: Position, image: Sharp, radius = 0): Promise<RGBA[]> {
+    private async getPixelsWithRadius(position: Position, image: Sharp, radius = 0, bounds?: { minX: number; maxX: number; minY: number; maxY: number }): Promise<RGBA[]> {
         const { data, info } = await image
             .raw()
             .toBuffer({ resolveWithObject: true });
@@ -121,10 +132,10 @@ export class RasterService {
         const { width, height, channels } = info;
         const { x, y } = position;
 
-        const startX = NumberUtils.max([0, x - radius]);
-        const endX = NumberUtils.min([width - 1, x + radius]);
-        const startY = NumberUtils.max([0, y - radius]);
-        const endY = NumberUtils.min([height - 1, y + radius]);
+        const startX = NumberUtils.max([bounds?.minX ?? 0, x - radius]);
+        const endX = NumberUtils.min([bounds?.maxX ?? width - 1, x + radius]);
+        const startY = NumberUtils.max([bounds?.minY ?? 0, y - radius]);
+        const endY = NumberUtils.min([bounds?.maxY ?? height - 1, y + radius]);
 
         const pixels: RGBA[] = [];
 
