@@ -13,6 +13,8 @@ import { ObjectUtils } from '@radoslavirha/utils';
 
 @Configuration({
     ...getServerDefaultConfig(),
+    // Ajv coerces null/"false"/0 to false otherwise (#232); strict rejects them with 400.
+    requestValidation: { strict: true },
     mount: {
         // HealthController stays at '/' so the probe path is identical across every app —
         // the chart's probe block is copy-paste only while that holds.

@@ -99,6 +99,24 @@ describe('QrCodeController (integration)', () => {
 
             expect(listSpy).toHaveBeenCalledWith({ type: QrType.IOT_DEVICE, active: true });
         });
+
+        it.each(['foo', 'null'])('returns 400 for active=%s', async (value) => {
+            expect.assertions(1);
+            const listSpy = vi.spyOn(qrCodeService, 'list').mockResolvedValue([]);
+
+            await api.get(`/qr-codes?active=${value}`).expect(400);
+
+            expect(listSpy).not.toHaveBeenCalled();
+        });
+
+        it('accepts active=1 as true', async () => {
+            expect.assertions(1);
+            const listSpy = vi.spyOn(qrCodeService, 'list').mockResolvedValue([]);
+
+            await api.get('/qr-codes?active=1').expect(200);
+
+            expect(listSpy).toHaveBeenCalledWith({ active: true });
+        });
     });
 
     describe('GET /qr-codes/:id', () => {
@@ -140,6 +158,21 @@ describe('QrCodeController (integration)', () => {
                 
                 .send({ active: false })
                 .expect(404);
+        });
+
+        it.each([
+            ['active null', { active: null }],
+            ['active "false"', { active: 'false' }],
+            ['active 0', { active: 0 }],
+            ['label null', { label: null }],
+            ['type null', { type: null }]
+        ])('returns 400 and does not update for %s', async (_name, body) => {
+            expect.assertions(1);
+            const updateSpy = vi.spyOn(qrCodeService, 'update').mockResolvedValue(sampleModel());
+
+            await api.put('/qr-codes/671b00000000000000000001').send(body).expect(400);
+
+            expect(updateSpy).not.toHaveBeenCalled();
         });
     });
 

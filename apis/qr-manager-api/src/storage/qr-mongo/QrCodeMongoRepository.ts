@@ -85,7 +85,7 @@ export class QrCodeMongoRepository extends MongoRepository<QrCodeMongoDTO> {
         const result = await this.model.findByIdAndUpdate(
             id,
             { $set: data },
-            { returnDocument: 'after' }
+            { returnDocument: 'after', runValidators: true }
         ).lean<QrCodeMongoDTO>();
         return this.deserialize(result);
     }
