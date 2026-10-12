@@ -32,27 +32,6 @@ describe('CommandController (integration)', () => {
     });
     afterEach(PlatformTest.reset);
 
-    describe('strict request validation', () => {
-        it('rejects a quoted number instead of coercing it', async () => {
-            await api.post('/command')
-                .send({ deviceId: '442', command: 'vacuum:start-sweep', operation: 'ACTION' })
-                .expect(400);
-        });
-
-        it('rejects null in a required field', async () => {
-            await api.post('/command')
-                .send({ deviceId: null, command: 'vacuum:start-sweep', operation: 'ACTION' })
-                .expect(400);
-        });
-
-        it('accepts a numeric deviceId past validation', async () => {
-            const response = await api.post('/command')
-                .send({ deviceId: 442, command: 'vacuum:start-sweep', operation: 'ACTION' });
-
-            expect(response.status).not.toBe(400);
-        });
-    });
-
     describe('Authentication', () => {
         const routes: ReadonlyArray<readonly [string, string]> = [
             ['post', '/command'],

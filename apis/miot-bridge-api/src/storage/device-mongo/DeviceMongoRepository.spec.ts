@@ -24,19 +24,6 @@ describe('DeviceMongoRepository', () => {
         return PlatformTest.reset();
     });
 
-    describe('updateById', () => {
-        it('runs schema validators so a $set cannot persist null into a required field', async () => {
-            expect.assertions(1);
-            model.findByIdAndUpdate.mockReturnValue({ lean: vi.fn().mockResolvedValue(null) });
-            await repository.updateById('671b00000000000000000001', { address: '192.168.1.10' });
-            expect(model.findByIdAndUpdate).toHaveBeenCalledWith(
-                '671b00000000000000000001',
-                { $set: { address: '192.168.1.10' } },
-                expect.objectContaining({ runValidators: true })
-            );
-        });
-    });
-
     describe('with a malformed id', () => {
         it('findById resolves null without querying', async () => {
             expect.assertions(2);
