@@ -44,7 +44,7 @@ export class DeviceMongoRepository extends MongoRepository<DeviceMongoDTO> {
         const result = await this.model.findByIdAndUpdate(
             id,
             { $set: data },
-            { returnDocument: 'after' }
+            { returnDocument: 'after', runValidators: true }
         ).lean<DeviceMongoDTO>();
         return this.deserialize(result);
     }

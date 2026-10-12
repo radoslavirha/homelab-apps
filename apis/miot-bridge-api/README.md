@@ -105,7 +105,7 @@ Apply ConfigMap changes before rolling application images.
 | GET | `/model-property-overrides` | List property override rules |
 | POST | `/model-property-overrides` | Add property override rule |
 | DELETE | `/model-property-overrides/:id` | Delete override rule |
-| POST | `/command` | Send command to device (HTTP transport) |
+| POST | `/command` | Send command to device (HTTP transport); `null` or wrong-typed fields (e.g. `"deviceId": "442"`) → 400 |
 
 > `deviceId` in path = app UUID (assigned on registration). `deviceId` in command body = numeric MIoT hardware ID.
 
