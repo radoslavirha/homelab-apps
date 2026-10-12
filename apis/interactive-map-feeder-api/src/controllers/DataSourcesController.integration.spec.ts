@@ -88,6 +88,16 @@ describe('DataSourcesController (integration)', () => {
         });
     });
 
+    describe('query validation', () => {
+        it('rejects ?radius=null with 400 instead of passing null to the handler', async () => {
+            const response = await request
+                .get('/data-sources/radar/cities?radius=null')
+                .set('Authorization', `Bearer ${await personToken()}`);
+
+            expect(response.status).toBe(400);
+        });
+    });
+
     describe('the refusals that separate a token from a token for us', () => {
         it('refuses a device token signed by somebody else', async () => {
             const forged = await mintTestToken({
