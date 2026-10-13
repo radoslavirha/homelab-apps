@@ -12,7 +12,7 @@ catalog:
   '@radoslavirha/tsed-common': ^0.7.0
   '@radoslavirha/tsed-configuration': ^0.9.3
   '@radoslavirha/tsed-logger': ^0.7.8
-  '@radoslavirha/tsed-platform': ^5.1.0
+  '@radoslavirha/tsed-platform': ^6.0.0
   '@radoslavirha/tsed-swagger': ^9.1.15
   '@radoslavirha/utils': ^0.10.0
   '@radoslavirha/tsed-mongoose': ^5.1.1
