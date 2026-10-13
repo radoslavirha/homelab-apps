@@ -1,5 +1,13 @@
 # @radoslavirha/resilience
 
+## 0.2.3
+
+### Patch Changes
+
+- [#246](https://github.com/radoslavirha/homelab-apps/pull/246) [`663d4c8`](https://github.com/radoslavirha/homelab-apps/commit/663d4c8d756157cf23296c89ac1820ce0cb10971) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - A half-open circuit breaker trial that times out now keeps the breaker open instead of closing it, even when `shouldHandle` ignores timeouts.
+
+- [#261](https://github.com/radoslavirha/homelab-apps/pull/261) [`b5893aa`](https://github.com/radoslavirha/homelab-apps/commit/b5893aa9e781fbd6d8dc89cb2bcaa12687462c47) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - A call that started before the circuit breaker opened no longer reopens a half-open breaker when its client cancels or it times out.
+
 ## 0.2.2
 
 ### Patch Changes

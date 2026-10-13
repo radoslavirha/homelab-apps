@@ -1,5 +1,13 @@
 # qr-manager-ui
 
+## 0.13.3
+
+### Patch Changes
+
+- [#274](https://github.com/radoslavirha/homelab-apps/pull/274) [`2b96c4f`](https://github.com/radoslavirha/homelab-apps/commit/2b96c4f81fd17ba7b190ae62efc5625a6aa78d92) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Download SVG/PNG links now request `?download=1` so the browser downloads the file instead of navigating to it.
+
+- [#281](https://github.com/radoslavirha/homelab-apps/pull/281) [`b16a766`](https://github.com/radoslavirha/homelab-apps/commit/b16a7669e3bc51388f75b2b2d451775fbd4884d6) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - The "having problems — retrying" banner now really retries, probing the API until it recovers.
+
 ## 0.13.2
 
 ### Patch Changes

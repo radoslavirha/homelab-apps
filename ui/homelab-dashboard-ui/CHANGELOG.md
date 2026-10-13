@@ -1,5 +1,15 @@
 # homelab-dashboard-ui
 
+## 0.8.3
+
+### Patch Changes
+
+- [#244](https://github.com/radoslavirha/homelab-apps/pull/244) [`b7735d3`](https://github.com/radoslavirha/homelab-apps/commit/b7735d37568c983a48cdea957340e039c3272a44) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Show the "API key rejected" message instead of a permanent outage banner when the controller comes back answering 401.
+
+- [#243](https://github.com/radoslavirha/homelab-apps/pull/243) [`7c249cd`](https://github.com/radoslavirha/homelab-apps/commit/7c249cdb9b639c8f146465de8e27aa57449e417b) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - A serverPattern whose first capture group is not numeric no longer merges all servers into one cluster.
+
+- [#262](https://github.com/radoslavirha/homelab-apps/pull/262) [`79c51ab`](https://github.com/radoslavirha/homelab-apps/commit/79c51abc557f26ee72c6b28b1c789732bf77ba2f) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - A trailing slash on `UNIFI_HOST` no longer crash-loops nginx; a `UNIFI_HOST` with a path is refused with a clear message.
+
 ## 0.8.2
 
 ### Patch Changes

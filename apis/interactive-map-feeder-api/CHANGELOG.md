@@ -1,5 +1,19 @@
 # interactive-map-feeder
 
+## 0.16.2
+
+### Patch Changes
+
+- [#289](https://github.com/radoslavirha/homelab-apps/pull/289) [`a217ecd`](https://github.com/radoslavirha/homelab-apps/commit/a217ecd51ae76b61ee6ae368a8a445bebfd63e3e) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Request validation is now strict: `?radius=null` and other wrongly typed query values are rejected with 400 instead of being coerced.
+
+- [#269](https://github.com/radoslavirha/homelab-apps/pull/269) [`e24a54e`](https://github.com/radoslavirha/homelab-apps/commit/e24a54ebfcd575dd466887a74ddcec897b1e9290) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - City LED colour from the radar is now an actual radar colour: transparent (no rain) pixels no longer darken it when rain only partly covers the sampling window.
+
+- [#285](https://github.com/radoslavirha/homelab-apps/pull/285) [`37b2e61`](https://github.com/radoslavirha/homelab-apps/commit/37b2e61fcd4bb3cdbf5a209b90d629d9a1c63008) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Radar city colours no longer pick up the projection strips, legend, frame or label at large radii.
+- Updated dependencies [[`bc14ed5`](https://github.com/radoslavirha/homelab-apps/commit/bc14ed5c75e154089fd6ff05a5e84be73ca4da9e), [`d67638d`](https://github.com/radoslavirha/homelab-apps/commit/d67638d551c197e7a380e65cca20c2d4e468626c), [`5ca23a4`](https://github.com/radoslavirha/homelab-apps/commit/5ca23a41bec2e6e382038ff332de3a5ac04e5bf7)]:
+  - @radoslavirha/otel@0.6.4
+  - @radoslavirha/tsed-http-provider@0.2.8
+  - @radoslavirha/tsed-health@0.3.2
+
 ## 0.16.1
 
 ### Patch Changes
