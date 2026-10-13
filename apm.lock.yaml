@@ -1,6 +1,6 @@
 lockfile_version: '1'
-generated_at: '2026-10-04T18:01:43.126127+00:00'
-apm_version: 0.28.0
+generated_at: '2026-10-13T20:13:38.192241+00:00'
+apm_version: 0.31.0
 dependencies:
 - repo_url: radoslavirha/toolkit-hub
   name: toolkit-adoption
@@ -213,96 +213,6 @@ dependencies:
   content_hash: sha256:8f247636063ab8fbeb9cb98e0d5e90a63fda06ef724c233878052fb58dc33a96
   declared_license: MIT
 deployments:
-- kind: project-relative
-  target: agents
-  value: .agents/skills/add-workspace-member
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-- kind: project-relative
-  target: agents
-  value: .agents/skills/add-workspace-member/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: sha256:0d8be337dc14c9daad150789ffa8854dafd72e64d927697b998f69c7017bc972
-- kind: project-relative
-  target: agents
-  value: .agents/skills/instrument-entry-point
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-- kind: project-relative
-  target: agents
-  value: .agents/skills/instrument-entry-point/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: sha256:dde43317847d390b4f6d3515d52e8d6ab6d99adce9533f3507f4e99597a80f79
-- kind: project-relative
-  target: agents
-  value: .agents/skills/onboard-to-homelab
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-- kind: project-relative
-  target: agents
-  value: .agents/skills/onboard-to-homelab/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: sha256:a63e5f55956b4be8111c7afe109b5f453a96ad662add3ccaaf9b2c31cdbe5a8e
-- kind: project-relative
-  target: agents
-  value: .agents/skills/update-docs
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-- kind: project-relative
-  target: agents
-  value: .agents/skills/update-docs/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: sha256:7a1d94bcdfecfdb6dbabde23c41994664a6a343ddc04ed755b847ec60cdcd43e
-- kind: project-relative
-  target: agents
-  value: .agents/skills/verify-auth-in-browser
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-- kind: project-relative
-  target: agents
-  value: .agents/skills/verify-auth-in-browser/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: sha256:d4f05055a8381ab1b04bad9d2fd19836269fc907a2d7fb97d07562b4b0b54f75
 - kind: project-relative
   target: claude
   value: .claude/rules/react-testing.md
@@ -716,7 +626,97 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:16d131ca00423d18ecf4869e8ccb5dd998e128b6ba7c57c450e2fcf122425da7
+  content_hash: sha256:72c00125734b3ec2f62285058155f030d86a0aa766a4f929358794897c4babbd
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/add-workspace-member
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/add-workspace-member/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:0d8be337dc14c9daad150789ffa8854dafd72e64d927697b998f69c7017bc972
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/instrument-entry-point
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/instrument-entry-point/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:dde43317847d390b4f6d3515d52e8d6ab6d99adce9533f3507f4e99597a80f79
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/onboard-to-homelab
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/onboard-to-homelab/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:a63e5f55956b4be8111c7afe109b5f453a96ad662add3ccaaf9b2c31cdbe5a8e
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/update-docs
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/update-docs/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:7a1d94bcdfecfdb6dbabde23c41994664a6a343ddc04ed755b847ec60cdcd43e
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/verify-auth-in-browser
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/verify-auth-in-browser/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:d4f05055a8381ab1b04bad9d2fd19836269fc907a2d7fb97d07562b4b0b54f75
 local_deployed_files:
 - .agents/skills/add-workspace-member
 - .agents/skills/add-workspace-member/SKILL.md
@@ -764,4 +764,4 @@ local_deployed_file_hashes:
   .claude/skills/onboarding-to-homelab/SKILL.md: sha256:f14ea985b412614c9ed8a6434faf4a557d041c6df839dcb680fac5412f06de72
   .claude/skills/onboarding-to-homelab/scripts/validate-app.sh: sha256:aebbc64a7bbb4861f6ed48a355b089a8ea47896d480b18a2c5d40314fc19ca55
   .claude/skills/updating-docs/SKILL.md: sha256:6b247d0ed9c24da452ae2d65294fbded95bc8638003a5e4f750ac2a7693585a8
-  .claude/skills/verifying-auth-in-browser/SKILL.md: sha256:16d131ca00423d18ecf4869e8ccb5dd998e128b6ba7c57c450e2fcf122425da7
+  .claude/skills/verifying-auth-in-browser/SKILL.md: sha256:72c00125734b3ec2f62285058155f030d86a0aa766a4f929358794897c4babbd
