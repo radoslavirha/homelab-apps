@@ -1,5 +1,13 @@
 # @radoslavirha/health
 
+## 0.1.3
+
+### Patch Changes
+
+- [#237](https://github.com/radoslavirha/homelab-apps/pull/237) [`d70f9b3`](https://github.com/radoslavirha/homelab-apps/commit/d70f9b3cfe3a59f1bad19bd0d7cc92837254df6b) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - The health report now lists every check even when two checks share a name; later duplicates appear as `name#2`, `name#3`, so a failing check is no longer hidden.
+- Updated dependencies [[`663d4c8`](https://github.com/radoslavirha/homelab-apps/commit/663d4c8d756157cf23296c89ac1820ce0cb10971), [`b5893aa`](https://github.com/radoslavirha/homelab-apps/commit/b5893aa9e781fbd6d8dc89cb2bcaa12687462c47)]:
+  - @radoslavirha/resilience@0.2.3
+
 ## 0.1.2
 
 ### Patch Changes

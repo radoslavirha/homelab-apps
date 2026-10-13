@@ -1,5 +1,26 @@
 # miot-bridge
 
+## 0.28.1
+
+### Patch Changes
+
+- [#252](https://github.com/radoslavirha/homelab-apps/pull/252) [`bf559d4`](https://github.com/radoslavirha/homelab-apps/commit/bf559d45cd146fee988b8dc5f4d5927befda3c9e) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Devices with repeated service types (e.g. multi-gang switches) keep every channel addressable: repeated types are keyed with their siid (`switch-2:on`, `switch-3:on`); stored subscriptions using the old colliding key (`switch:on`) no longer resolve.
+
+- [#257](https://github.com/radoslavirha/homelab-apps/pull/257) [`d099497`](https://github.com/radoslavirha/homelab-apps/commit/d0994979156ad7720f4def173f8079581e2a453e) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Ignore MQTT command topics whose device id is only partly numeric instead of running the command against the numeric prefix.
+
+- [#288](https://github.com/radoslavirha/homelab-apps/pull/288) [`cd0d460`](https://github.com/radoslavirha/homelab-apps/commit/cd0d46050515f875e49eade8440cb434f5696e87) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Request validation is now strict: `null` or wrongly typed values (e.g. `{"deviceId": "442"}`) are rejected with 400 instead of being coerced.
+
+- [#272](https://github.com/radoslavirha/homelab-apps/pull/272) [`bd5d598`](https://github.com/radoslavirha/homelab-apps/commit/bd5d598ad86518e574f50eb911a6a66fdb45d19f) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Devices whose MIoT spec has `float` properties (e.g. temperature/humidity sensors) can be registered instead of failing with 500.
+
+- [#273](https://github.com/radoslavirha/homelab-apps/pull/273) [`1f8ee1b`](https://github.com/radoslavirha/homelab-apps/commit/1f8ee1b2795bb0487aead2be69bb7f8d5b4c6439) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Re-subscribing to a property right after unsubscribing during an in-flight poll now publishes its current value instead of nothing.
+
+- [#294](https://github.com/radoslavirha/homelab-apps/pull/294) [`e2b6571`](https://github.com/radoslavirha/homelab-apps/commit/e2b6571f3b7b4e0d6c8611b5d7a20baa5db8584c) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Registering a device with a model unknown to miot-spec.org now answers 400 instead of 500.
+- Updated dependencies [[`baf24d8`](https://github.com/radoslavirha/homelab-apps/commit/baf24d81cb7d9b33bd15c6705592c39d5322e857), [`5279db2`](https://github.com/radoslavirha/homelab-apps/commit/5279db293debf77c521795a30e8ca5cb085990ec), [`bc14ed5`](https://github.com/radoslavirha/homelab-apps/commit/bc14ed5c75e154089fd6ff05a5e84be73ca4da9e), [`d67638d`](https://github.com/radoslavirha/homelab-apps/commit/d67638d551c197e7a380e65cca20c2d4e468626c), [`5ca23a4`](https://github.com/radoslavirha/homelab-apps/commit/5ca23a41bec2e6e382038ff332de3a5ac04e5bf7)]:
+  - @radoslavirha/miot-device@0.7.2
+  - @radoslavirha/otel@0.6.4
+  - @radoslavirha/tsed-http-provider@0.2.8
+  - @radoslavirha/tsed-health@0.3.2
+
 ## 0.28.0
 
 ### Minor Changes

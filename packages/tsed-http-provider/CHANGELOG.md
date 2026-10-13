@@ -1,5 +1,16 @@
 # @radoslavirha/tsed-http-provider
 
+## 0.2.8
+
+### Patch Changes
+
+- [#279](https://github.com/radoslavirha/homelab-apps/pull/279) [`d67638d`](https://github.com/radoslavirha/homelab-apps/commit/d67638d551c197e7a380e65cca20c2d4e468626c) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Outbound HTTP logging sections (headers, query, request, response) stay disabled unless switched on, so a `logging` block with only `enabled`/`stack` no longer logs payloads unredacted.
+
+- [#280](https://github.com/radoslavirha/homelab-apps/pull/280) [`5ca23a4`](https://github.com/radoslavirha/homelab-apps/commit/5ca23a41bec2e6e382038ff332de3a5ac04e5bf7) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Outbound logging now redacts credentials injected through `auth.transport` headers and query params, and `x-api-key` by default.
+- Updated dependencies [[`663d4c8`](https://github.com/radoslavirha/homelab-apps/commit/663d4c8d756157cf23296c89ac1820ce0cb10971), [`b5893aa`](https://github.com/radoslavirha/homelab-apps/commit/b5893aa9e781fbd6d8dc89cb2bcaa12687462c47)]:
+  - @radoslavirha/resilience@0.2.3
+  - @radoslavirha/http-provider@0.3.2
+
 ## 0.2.7
 
 ### Patch Changes

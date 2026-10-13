@@ -1,5 +1,11 @@
 # @radoslavirha/tsed-resilience
 
+## 0.2.3
+
+### Patch Changes
+
+- [#284](https://github.com/radoslavirha/homelab-apps/pull/284) [`0a9369c`](https://github.com/radoslavirha/homelab-apps/commit/0a9369c419daabe2f2f15c10e28b1c3316b42fc9) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - `@RequestSignal()` now starts aborted when the client disconnected before the signal was first requested.
+
 ## 0.2.2
 
 ### Patch Changes
