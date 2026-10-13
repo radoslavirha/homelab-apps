@@ -62,11 +62,14 @@ describe('MiotSpecV2Endpoint', () => {
         expect(mock.history['get']?.[0]?.params).toEqual({ status: 'released' });
     });
 
-    it('throws when the model is absent from the registry', async () => {
+    it('throws a 400 when the model is absent from the registry', async () => {
         expect.assertions(1);
         mock.onGet('/instances').reply(200, { instances: INSTANCES });
 
         await expect(endpoint.fetchRaw('unknown.model.v9'))
-            .rejects.toThrow('Model unknown.model.v9 not found in MIoT spec');
+            .rejects.toMatchObject({
+                status: 400,
+                message: 'Model unknown.model.v9 not found in MIoT spec'
+            });
     });
 });
