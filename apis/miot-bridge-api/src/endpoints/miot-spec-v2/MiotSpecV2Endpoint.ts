@@ -1,3 +1,4 @@
+import { BadRequest } from '@tsed/exceptions';
 import { Injectable, Scope, ProviderScope } from '@tsed/di';
 import { InjectHttpClient, type HttpClient } from '@radoslavirha/tsed-http-provider';
 import { Serializer } from '@radoslavirha/tsed-common';
@@ -42,7 +43,7 @@ export class MiotSpecV2Endpoint {
             .find(i => i.model === model);
 
         if (!instance) {
-            throw new Error(`Model ${model} not found in MIoT spec`);
+            throw new BadRequest(`Model ${model} not found in MIoT spec`);
         }
 
         const spec = await this.client.get<object>(INSTANCE_PATH, {
