@@ -95,6 +95,10 @@ for. Their descriptions in the skill list say when each applies.
 | Adding a timer, poller, listener, startup task or outbound device call | `instrumenting-entry-points` |
 | Any change to auth in a UI, `packages/ui-auth` or an Authentik blueprint | `verifying-auth-in-browser` |
 
+**Design history.** Specs, past decisions and the reasons behind non-obvious code live in a private
+knowledge base, not in this repo. Use the global `knowledge-base` skill before changing anything that
+looks odd or re-proposing a design.
+
 Managing them:
 
 ```bash

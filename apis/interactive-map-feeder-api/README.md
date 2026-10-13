@@ -29,9 +29,8 @@ property of the map having its own application, not of how this API is configure
 ### Giving a device its credential
 
 The device's token carries `aud` and `iss` of **its own** client, not this API's. This API trusts that
-pair explicitly as a second row in `auth.IDP.trustedIssuers` — option 1 of *Devices* in `homelab` →
-`docs/superpowers/specs/2026-09-04-authentik-tenancy-topology.md`, which is the authority for the
-reasoning below. No custom Authentik scope mapping is needed, and no role claim is read: `iss` + `aud`
+pair explicitly as a second row in `auth.IDP.trustedIssuers` — option 1 of the *Devices* design in the Authentik tenancy topology
+(design history: private knowledge base). No custom Authentik scope mapping is needed, and no role claim is read: `iss` + `aud`
 carry the whole decision.
 
 **In Authentik** (`homelab`; the client secret must come from OpenBao, never the blueprint values —

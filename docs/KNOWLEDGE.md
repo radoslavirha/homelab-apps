@@ -33,8 +33,8 @@ pnpm monorepo of small independent Node.js APIs and UIs (Ts.ED, TypeScript ESM).
 
 ## Auth
 
-Design and live status: [`superpowers/specs/2026-09-05-auth-design.md`](./superpowers/specs/2026-09-05-auth-design.md).
-IdP facts: [`superpowers/specs/2026-09-04-authentik-integration-contract.md`](./superpowers/specs/2026-09-04-authentik-integration-contract.md).
+Design, live status and IdP facts: the auth design and the Authentik integration contract in the
+private knowledge base (skill `knowledge-base`).
 
 ### Which APIs verify (2026-09-07)
 

@@ -26,7 +26,7 @@ const READY_STATE_NAMES: Record<number, string> = {
  * **Scheduled to move to `@radoslavirha/tsed-mongoose`** — that package already owns
  * mongoose, its peers and its testcontainers setup. This file lives here only because
  * `tsed-mongoose` is in `toolkit-hub` and cannot depend on an unpublished workspace
- * package. See `docs/superpowers/specs/2026-08-11-health-packages-graduation.md`.
+ * package.
  *
  * Imported from the `/mongoose` subpath so `mongoose` and `@tsed/mongoose` stay optional
  * peers — an app with no database never resolves them:

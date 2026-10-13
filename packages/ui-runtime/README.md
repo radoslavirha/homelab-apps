@@ -5,8 +5,6 @@ Headless runtime primitives for the browser apps: loading and validating
 visual layer is `@radoslavirha/ui-kit`, which keeps the dependency arrow
 one-way and lets a non-React consumer use the status model.
 
-Spec: `docs/superpowers/specs/2026-08-06-iot-app-health-checks-frontend.md`.
-
 ## Runtime config
 
 One Zod schema per app, used in two places from the same source file:

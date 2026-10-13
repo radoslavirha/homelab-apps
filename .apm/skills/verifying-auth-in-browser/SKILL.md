@@ -159,12 +159,33 @@ curl -s  https://auth.irha.cz/application/o/<client>/.well-known/openid-configur
 curl -sI -H 'Origin: https://<app-host>' https://auth.irha.cz/application/o/token/ | grep -i access-control
 ```
 
-The full headless login recipe — flow executor, stage walking, the `query=` wrapping trap — is in
-`docs/superpowers/specs/2026-09-04-authentik-integration-contract.md` under *Reproducing the
-verification*. It is genuinely useful for token and claim checks. It **cannot** see framing, cookie
-policy, or anything React does, which is exactly how the iframe mistake survived.
+### Headless login recipe
+
+Logging in without a browser goes through Authentik's flow executor API in four steps. It is
+genuinely useful for token and claim checks. It **cannot** see framing, cookie policy, or anything
+React does, which is exactly how the iframe mistake survived. Two details cost time once:
+
+1. `GET /application/o/authorize/?…` returns `302` to `/if/flow/<slug>/?<query>`.
+2. Call the executor as
+   `GET /api/v3/flows/executor/<slug>/?query=<the flow page's query string, urlencoded whole>`.
+   **Passing that query string raw instead of wrapped in a single `query=` parameter silently drops
+   `next`** — login then succeeds and dumps you on `/if/user/` with no code, which looks exactly like
+   a refusal.
+3. Walk the stages, `POST`ing JSON to the same executor URL with a cookie jar:
+   `ak-stage-identification` ← `{"uid_field": "<username>"}`, then
+   `ak-stage-password` ← `{"password": "…"}`. **A `302` back to the executor means "stage advanced,
+   re-`GET` me"** — it is not a failure and not the final redirect. No CSRF header is needed.
+4. The terminal stage is `xak-flow-redirect`, whose `to` is the callback URL carrying `code=`.
+   A refusal instead ends on a `200` HTML page titled `Permission denied - authentik`.
+
+Then `POST /application/o/token/` form-encoded with `grant_type=authorization_code`, `code`,
+`redirect_uri`, `client_id` and `code_verifier` — and no secret.
+
+Throwaway test users can be created and deleted through `/api/v3/core/users/` with an Authentik
+admin API token. Delete them afterwards.
 
 ## Recording what you find
 
-A surprise goes into the contract's *What is NOT verified* section, with the command that proves it.
+A surprise goes into the Authentik integration contract's *What is NOT verified* section, in the
+private knowledge base (skill `knowledge-base`), with the command that proves it.
 That is how the next person avoids assuming the same thing.

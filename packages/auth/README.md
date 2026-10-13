@@ -8,8 +8,6 @@ the shared test kit — and the JWT verifier itself.
 `@radoslavirha/tsed-auth` applies the decision. That split is what keeps every outcome testable
 without a server.
 
-Design and roadmap: [`docs/superpowers/specs/2026-09-05-auth-design.md`](../../docs/superpowers/specs/2026-09-05-auth-design.md).
-
 ## What is in here
 
 | Export | What it fixes |

@@ -3,8 +3,6 @@
 Shared nginx assets for the SPA images in this repo. Ships **no JavaScript** — these
 files are copied into an image by a `Dockerfile`, not imported.
 
-Spec: `docs/superpowers/specs/2026-08-06-iot-app-health-checks-frontend.md`.
-
 ## Contents
 
 | File | Purpose |
@@ -46,8 +44,7 @@ an IPv4 and an IPv6 listener itself:
 
 (substitute the app's actual port, e.g. `8080` for an unprivileged image).
 Without the IPv6 line, `localhost` and `[::1]` fail inside the container even
-though the app answers fine on the pod's IPv4 address — see
-`docs/superpowers/specs/2026-08-08-nginx-ipv6-listener.md`.
+though the app answers fine on the pod's IPv4 address.
 
 ## What this package does *not* do
 

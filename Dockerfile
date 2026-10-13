@@ -130,7 +130,6 @@ EXPOSE 8080
 # ENTRYPOINT / CMD / STOPSIGNAL are inherited from the base image on purpose:
 # STOPSIGNAL SIGQUIT is what makes nginx shut down gracefully instead of
 # dropping in-flight requests, and the stock entrypoint keeps nginx as PID 1.
-# See rule F4 in docs/superpowers/specs/2026-08-06-iot-app-health-checks-frontend.md.
 
 # ─── homelab-dashboard-ui-config-validator ─────────────────────────────────────
 FROM deps AS build-homelab-dashboard-ui-validator

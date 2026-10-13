@@ -98,8 +98,7 @@ network round trip every few seconds for the life of the pod. `critical: true`.
 
 > **Moving soon.** This check belongs in `@radoslavirha/tsed-mongoose`, which already owns
 > mongoose. It lives here only because that package is in `toolkit-hub` and cannot depend
-> on an unpublished workspace package. See
-> [the graduation spec](../../docs/superpowers/specs/2026-08-11-health-packages-graduation.md).
+> on an unpublished workspace package.
 
 **Why the `/mongoose` subpath.** `mongoose` and `@tsed/mongoose` are declared
 `optional: true` in `peerDependenciesMeta`, and the check is a separate build entry. An app

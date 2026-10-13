@@ -7,8 +7,7 @@ interface Anchor {
     /**
      * The anchor's own matched hostname, lower-cased. Everything downstream
      * groups CNAMEs against this — never against a reconstructed suffix, which
-     * is a deployment detail (see
-     * docs/superpowers/specs/2026-09-03-dashboard-hostname-refactor.md).
+     * is a deployment detail.
      */
     hostname: string;
 }
