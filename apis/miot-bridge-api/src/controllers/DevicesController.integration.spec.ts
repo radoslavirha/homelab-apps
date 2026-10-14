@@ -8,6 +8,7 @@ import { DeviceCache } from '../models/DeviceCache.js';
 import { MiotSpecV2 } from '../models/miot-spec-v2/index.js';
 import { Server } from '../Server.js';
 import { MqttClientProvider } from '../providers/MqttClientProvider.js';
+import { DeviceDiscoveryService } from '../services/DeviceDiscoveryService.js';
 import { DeviceStorageService } from '../services/DeviceStorageService.js';
 import { MiotDeviceRegistry } from '../services/MiotDeviceRegistry.js';
 import { NotificationStorageService } from '../services/NotificationStorageService.js';
@@ -99,6 +100,36 @@ describe('DevicesController (integration)', () => {
 
                 expect(JSON.stringify(response.body)).not.toContain('some-other-api');
             });
+        });
+    });
+
+    describe('POST /devices', () => {
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        it.each([
+            ['too short', 'a'.repeat(31)],
+            ['non-hex', 'z'.repeat(32)],
+            ['padded with whitespace', ` ${'a'.repeat(32)} `]
+        ])('rejects a %s device token with 400 before registering', async (_, token) => {
+            const discovery = PlatformTest.get<DeviceDiscoveryService>(DeviceDiscoveryService);
+            const storage = PlatformTest.get<DeviceStorageService>(DeviceStorageService);
+            const discover = vi.spyOn(discovery, 'discover').mockResolvedValue({
+                deviceId: 442,
+                stamp: 1,
+                specUrl: 'u',
+                rawSpec: CommonUtils.buildModelCore(MiotSpecV2, { type: 't', description: 'd', services: [] }),
+                deviceSpec: undefined as never
+            });
+            vi.spyOn(storage, 'getByDeviceId').mockResolvedValue(undefined);
+            const create = vi.spyOn(storage, 'create').mockRejectedValue(new Error('persisted'));
+
+            const response = await api.post('/devices').send({ address: '192.168.1.10', token, model: 'xiaomi.vacuum.c102gl' });
+
+            expect(create).not.toHaveBeenCalled();
+            expect(discover).not.toHaveBeenCalled();
+            expect(response.status).toBe(400);
         });
     });
 

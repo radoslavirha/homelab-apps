@@ -1,4 +1,4 @@
-import { AdditionalProperties, Description, Example, Property, Required } from '@tsed/schema';
+import { AdditionalProperties, Description, Example, Pattern, Property, Required } from '@tsed/schema';
 
 @Description('Request model for device registration (persists to cache).')
 @AdditionalProperties(false)
@@ -10,6 +10,7 @@ export class DeviceRequest {
 
     @Description('Device token (32-char hex string), obtained from Xiaomi Cloud Tokens Extractor.')
     @Required()
+    @Pattern(/^[0-9a-fA-F]{32}$/)
     @Property()
     public token: string;
 
