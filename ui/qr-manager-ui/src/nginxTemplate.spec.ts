@@ -57,4 +57,15 @@ describe('nginx.conf.template with the image default NGINX_BASE_PATH=/', () => {
         expect(response.status).toBe(200);
         expect(await response.text()).toContain('<base href="/">');
     });
+
+    it('answers 404 for a missing hashed asset instead of serving index.html as JavaScript', async () => {
+        const response = await fetch(`${base}/assets/index-0ld4a5h.js`);
+        expect(response.status).toBe(404);
+        expect(await response.text()).not.toContain('<title>x</title>');
+    });
+
+    it('stops browsers from caching index.html across a deploy', async () => {
+        const response = await fetch(`${base}/admin`);
+        expect(response.headers.get('cache-control')).toMatch(/no-cache|no-store/);
+    });
 });

@@ -54,11 +54,23 @@ server {
         return 301 ${NGINX_BASE_PATH}/;
     }
 
+    # Hashed build assets. A file the pod doesn't have (old hash during a rolling
+    # update or from a cached index.html) must be a 404, not index.html served as
+    # 200 text/html, which the browser refuses as a module script (blank page).
+    location ${NGINX_BASE_PATH}/assets/ {
+        alias /usr/share/nginx/html/assets/;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        try_files $uri =404;
+    }
+
     # Serve the SPA. alias strips the sub-path prefix before mapping to the
     # html root. Falls back to the named @spa location for any path not found
     # on disk (client-side routes like /qr-manager/admin or /qr-manager/admin/id).
     location ${NGINX_BASE_PATH}/ {
         alias /usr/share/nginx/html/;
+        # index.html carries a per-pod <base href> and the current asset hashes,
+        # so it must revalidate on every load.
+        add_header Cache-Control "no-cache" always;
         try_files $uri $uri/ @spa;
     }
 
@@ -66,6 +78,7 @@ server {
     # here (not alias) so the absolute /index.html path resolves correctly.
     location @spa {
         root /usr/share/nginx/html;
+        add_header Cache-Control "no-cache" always;
         try_files /index.html =404;
     }
 }
