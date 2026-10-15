@@ -7,7 +7,7 @@ import {
 } from '@radoslavirha/otel';
 import { type BaseLogger, Logger } from '@radoslavirha/tsed-logger';
 import { CommonUtils } from '@radoslavirha/utils';
-import { Inject, ProviderScope, Scope, Service } from '@tsed/di';
+import { getAsyncStore, Inject, ProviderScope, Scope, Service } from '@tsed/di';
 import { RunOutcome } from '../models/RunOutcome.enum.js';
 import {
     ATTR_KNOWLEDGE_BASE_FULL,
@@ -104,7 +104,11 @@ export class IndexingLoopService {
         }
 
         clearTimeout(this.timer);
-        void this.start(request);
+        // Off the request's async context. Started inside it, the run — and every run the loop
+        // schedules after it — would carry the request along, and with it the caller who asked.
+        getAsyncStore().exit(() => {
+            void this.start(request);
+        });
 
         return false;
     }

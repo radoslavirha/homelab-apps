@@ -1,6 +1,8 @@
+import { PrincipalService } from '@radoslavirha/tsed-auth';
 import { PlatformTest } from '@tsed/platform-http/testing';
 import type SuperTest from 'supertest';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { IndexerService } from '../services/IndexerService.js';
 import { IndexingLoopService } from '../services/IndexingLoopService.js';
 import { bootstrapIndexed } from '../test/bootstrapIndexed.js';
 import type { FakeSourceAdapterFactory } from '../test/FakeSourceAdapterFactory.js';
@@ -30,6 +32,27 @@ describe('ReindexController (integration)', () => {
         expect(response.body).toEqual({ knowledgeBases: ['dev'], full: false, queued: false });
 
         await expect.poll(() => sources.adapter.cursors).toEqual(['c1']);
+        await idle();
+    });
+
+    it('runs outside the request, so the run has no caller — not the admin who asked for it', async () => {
+        expect.assertions(4); // idle() polls once more
+
+        const principals = PlatformTest.get<PrincipalService>(PrincipalService);
+        const indexer = PlatformTest.get<IndexerService>(IndexerService);
+        const index = indexer.index.bind(indexer);
+        const callers: unknown[] = [];
+
+        vi.spyOn(indexer, 'index').mockImplementation((kb, options) => {
+            callers.push(principals.current());
+
+            return index(kb, options);
+        });
+
+        expect((await request.post('/reindex').set('Authorization', `Bearer ${await adminToken()}`)).status).toBe(202);
+
+        await expect.poll(() => callers).toHaveLength(1);
+        expect(callers[0]).toBeUndefined();
         await idle();
     });
 

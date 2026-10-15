@@ -92,6 +92,17 @@ export class KnowledgeBaseAccessService {
 - `require()` returns the `Principal` or throws `Unauthorized`. Behind `@Authenticate()` the guard
   has already refused a request without one, so this is a safe failure, not a second check.
 
+**Background work started by a request inherits the request.** A job a route kicks off and does
+not await (a reindex, a sync) runs in the request's async context, and so does every timer it sets
+after: `current()` there returns the caller who triggered it, long after the response. Start such
+work outside the context:
+
+```ts
+getAsyncStore().exit(() => {      // from @tsed/di
+    void this.start(request);
+});
+```
+
 **Prefer this to passing `@CurrentPrincipal()` down.** A controller that only forwards the principal
 through a handler to the one service that reads it adds a parameter to every layer between them.
 Ts.ED keeps the request context in async-local storage for the whole request, so a `SINGLETON`
