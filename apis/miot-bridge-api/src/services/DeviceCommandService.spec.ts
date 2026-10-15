@@ -2,7 +2,6 @@ import { PlatformTest } from '@tsed/platform-http/testing';
 import { metrics, SpanKind, SpanStatusCode, trace, type Attributes } from '@opentelemetry/api';
 import {
     MeterProvider,
-    MetricReader,
     type DataPoint,
     type Histogram as HistogramValue,
     type MetricData
@@ -19,7 +18,6 @@ import {
     MIOT_ERROR_DEVICE_ERROR,
     MIOT_ERROR_TIMEOUT,
     MIOT_METHOD_GET_PROPERTIES,
-    type GetPropertiesResult,
     type MiotDevice
 } from '@radoslavirha/miot-device';
 import { CommonUtils } from '@radoslavirha/utils';
@@ -43,6 +41,8 @@ import {
     SPAN_MIOT_GET_PROPERTIES,
     SPAN_MIOT_SET_PROPERTIES
 } from '../otel/telemetry.js';
+import { FakeMiotDevice } from '../test/FakeMiotDevice.js';
+import { OnDemandMetricReader } from '../test/OnDemandMetricReader.js';
 import { DeviceCommandService } from './DeviceCommandService.js';
 import { DeviceStorageService } from './DeviceStorageService.js';
 import { MiotDeviceRegistry } from './MiotDeviceRegistry.js';
@@ -58,17 +58,6 @@ const ACTION_KEY = 'vacuum:start-sweep';
 const UNRESOLVED_KEY = 'vacuum:sweep-mode';
 
 const exporter = new InMemorySpanExporter();
-
-/** Collects on demand, with none of the timers a `PeriodicExportingMetricReader` would start. */
-class OnDemandMetricReader extends MetricReader {
-    protected onForceFlush(): Promise<void> {
-        return Promise.resolve();
-    }
-
-    protected onShutdown(): Promise<void> {
-        return Promise.resolve();
-    }
-}
 
 let reader: OnDemandMetricReader;
 
@@ -144,16 +133,6 @@ const request = (overrides: Partial<DeviceCommandRequest> = {}): DeviceCommandRe
         operation: DeviceCommandOperation.GetProperty,
         ...overrides
     }) as DeviceCommandRequest;
-
-/** Only the four command methods are stubbed — the transport underneath is never reached. */
-class FakeMiotDevice {
-    public readonly getProperty = vi.fn(async () => 'sweeping');
-    public readonly setProperty = vi.fn(async () => undefined);
-    public readonly callAction = vi.fn(async () => undefined);
-    public readonly getProperties = vi.fn(
-        async (): Promise<GetPropertiesResult[]> => [{ siid: 2, piid: 1, value: 'sweeping', code: 0 }]
-    );
-}
 
 describe('DeviceCommandService', () => {
     let service: DeviceCommandService;

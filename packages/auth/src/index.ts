@@ -24,7 +24,8 @@ export type { IKeySource, KeyLookup, VerificationKey } from './IKeySource.js';
 
 // ─── Pipeline ─────────────────────────────────────────────────────────────────
 
-export { Authenticator, AuthConfigurationError, buildVerifiers, statusForReason } from './Authenticator.js';
+export { AuthConfigurationError } from './AuthConfigurationError.js';
+export { Authenticator, buildVerifiers, statusForReason } from './Authenticator.js';
 export { describeAuthConfig } from './describeAuthConfig.js';
 
 export type { AuthDecision, AuthVerifiers } from './Authenticator.js';
@@ -74,11 +75,9 @@ export type { MintTestTokenOptions } from './test/mintTestToken.js';
 // ─── Verification ─────────────────────────────────────────────────────────────
 
 export { JwtVerifier } from './verifiers/JwtVerifier.js';
-export {
-    StaticAlgorithmMismatchError,
-    StaticKeySource,
-    UnknownStaticIssuerError
-} from './keys/StaticKeySource.js';
+export { StaticAlgorithmMismatchError } from './keys/StaticAlgorithmMismatchError.js';
+export { StaticKeySource } from './keys/StaticKeySource.js';
+export { UnknownStaticIssuerError } from './keys/UnknownStaticIssuerError.js';
 export { RemoteJwksSource, SERVICE_ACCOUNT_TOKEN_PATH } from './keys/RemoteJwksSource.js';
 export { createKeySource } from './keys/createKeySource.js';
 

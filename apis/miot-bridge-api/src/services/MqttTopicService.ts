@@ -116,6 +116,6 @@ export class MqttTopicService {
      */
     private build(path: string): string {
         const prefix = this.getPrefix();
-        return prefix === '' ? path : `${prefix}/${path}`;
+        return CommonUtils.isEmpty(prefix) ? path : `${prefix}/${path}`;
     }
 }

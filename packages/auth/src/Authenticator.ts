@@ -1,4 +1,5 @@
 import { CommonUtils } from '@radoslavirha/utils';
+import { AuthConfigurationError } from './AuthConfigurationError.js';
 import { VerifierType } from './VerifierType.js';
 import { recordVerification } from './authTelemetry.js';
 import { createKeySource } from './keys/createKeySource.js';
@@ -86,7 +87,7 @@ export class Authenticator {
      * no vocabulary of them.
      */
     async authenticate(source: CredentialSource, methods: readonly string[]): Promise<AuthDecision> {
-        if (methods.length === 0) {
+        if (CommonUtils.isEmpty(methods)) {
             throw new AuthConfigurationError('A guarded endpoint named no auth method.');
         }
 
@@ -195,13 +196,6 @@ const mostTelling = (failures: readonly RefusedOutcome[]): RefusedOutcome =>
 
 /** The verifiers a service has, addressed by the name a route asks for. */
 export type AuthVerifiers = ReadonlyMap<string, ITokenVerifier>;
-
-export class AuthConfigurationError extends Error {
-    constructor(message: string) {
-        super(message);
-        this.name = 'AuthConfigurationError';
-    }
-}
 
 const issuerOf = (outcome: VerificationOutcome): string | undefined =>
     outcome.reason === VerificationReason.Ok ? outcome.principal.issuer : undefined;

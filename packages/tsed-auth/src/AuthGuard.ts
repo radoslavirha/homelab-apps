@@ -1,5 +1,5 @@
 import { AuthConfigurationError, VerificationReason } from '@radoslavirha/auth';
-import { ArrayUtils, StringUtils } from '@radoslavirha/utils';
+import { ArrayUtils, CommonUtils, StringUtils } from '@radoslavirha/utils';
 import type { Principal } from '@radoslavirha/auth';
 import { inject } from '@tsed/di';
 import { Forbidden, ServiceUnavailable, Unauthorized } from '@tsed/exceptions';
@@ -168,7 +168,7 @@ export class AuthGuard {
         }
 
         const methods = decodeMethods(options?.methods);
-        if (methods.length === 0) {
+        if (CommonUtils.isEmpty(methods)) {
             // The guard ran on a route that never said what it wanted verified,
             // which means it was wired up by hand rather than by `@Authenticate`.
             // Loud, because the alternative is a route silently open.
@@ -224,7 +224,7 @@ export class AuthGuard {
  */
 const satisfies = (principal: Principal, requirements: readonly (readonly string[])[]): boolean =>
     requirements.every(
-        (anyOf) => anyOf.length === 0 || anyOf.some((role) => principal.roles.includes(role))
+        (anyOf) => CommonUtils.isEmpty(anyOf) || anyOf.some((role) => principal.roles.includes(role))
     );
 
 const exceptionFor = (reason: VerificationReason): Error =>

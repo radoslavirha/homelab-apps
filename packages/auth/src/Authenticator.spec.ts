@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { credentialSourceOf } from './CredentialSource.js';
 import { VerifierType } from './VerifierType.js';
-import { Authenticator, AuthConfigurationError, buildVerifiers, statusForReason } from './Authenticator.js';
+import { AuthConfigurationError } from './AuthConfigurationError.js';
+import { Authenticator, buildVerifiers, statusForReason } from './Authenticator.js';
 import { AuthConfigSchema } from './schemas/auth.schema.js';
 import { FakeTokenVerifier, TEST_METHOD, failureOutcome, successOutcome, verifiersFor } from './test/FakeTokenVerifier.js';
 import { TEST_SECRET, mintTestToken } from './test/mintTestToken.js';

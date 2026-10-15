@@ -40,36 +40,24 @@ describe('MiotSpecV2Endpoint', () => {
         expect(endpoint.specUrl('urn:new')).toBe(`${BASE_URL}/instance?type=urn:new`);
     });
 
-    it('fetches the newest released instance for a model', async () => {
+    it('fetches the released instances', async () => {
         expect.assertions(2);
         mock.onGet('/instances').reply(200, { instances: INSTANCES });
-        mock.onGet('/instance').reply(200, { type: 'urn:new', services: [] });
 
-        const spec = await endpoint.fetchRaw('xiaomi.vacuum.c102gl');
+        const { instances } = await endpoint.fetchInstances();
 
-        expect(spec.type).toBe('urn:new');
-        // newest ts wins, and the model filter excludes other devices
-        expect(mock.history['get']?.[1]?.params).toEqual({ type: 'urn:new' });
-    });
-
-    it('requests only released instances', async () => {
-        expect.assertions(1);
-        mock.onGet('/instances').reply(200, { instances: INSTANCES });
-        mock.onGet('/instance').reply(200, { type: 'urn:new', services: [] });
-
-        await endpoint.fetchRaw('xiaomi.vacuum.c102gl');
-
+        expect(instances.map(i => i.type)).toEqual(['urn:new', 'urn:old', 'urn:other']);
+        // only released instances are requested
         expect(mock.history['get']?.[0]?.params).toEqual({ status: 'released' });
     });
 
-    it('throws a 400 when the model is absent from the registry', async () => {
-        expect.assertions(1);
-        mock.onGet('/instances').reply(200, { instances: INSTANCES });
+    it('fetches the spec of an instance by type', async () => {
+        expect.assertions(2);
+        mock.onGet('/instance').reply(200, { type: 'urn:new', services: [] });
 
-        await expect(endpoint.fetchRaw('unknown.model.v9'))
-            .rejects.toMatchObject({
-                status: 400,
-                message: 'Model unknown.model.v9 not found in MIoT spec'
-            });
+        const spec = await endpoint.fetchSpec('urn:new');
+
+        expect(spec.type).toBe('urn:new');
+        expect(mock.history['get']?.[0]?.params).toEqual({ type: 'urn:new' });
     });
 });
