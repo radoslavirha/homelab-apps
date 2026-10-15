@@ -1,6 +1,7 @@
 /**
  * Postgres advisory locks this service takes, as `(namespace, key)` pairs for the two-integer
- * form of `pg_advisory_lock`. The namespace keeps them clear of any other app sharing the server.
+ * form of `pg_advisory_lock`. Advisory locks are scoped to the database already; the namespace
+ * makes this service's keys recognisable in `pg_locks`.
  */
 export interface AdvisoryLock {
     readonly namespace: number;

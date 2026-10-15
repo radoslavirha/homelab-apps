@@ -3,6 +3,7 @@ import type SuperTest from 'supertest';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { bootstrapIndexed } from '../test/bootstrapIndexed.js';
 import { CORPUS } from '../test/corpus.js';
+import { chunkDTO, documentDTO, seedDocument } from '../test/seed.js';
 import { FOREIGN_AUDIENCE, noRoleToken, readerToken, refusedCredentials } from '../test/tokens.js';
 
 describe('DocumentsController (integration)', () => {
@@ -42,6 +43,17 @@ describe('DocumentsController (integration)', () => {
 
         expect(response.status).toBe(200);
         expect(response.body.externalId).toBe(CORPUS[0].externalId);
+    });
+
+    it('finds a path that itself holds a #, with or without an anchor', async () => {
+        expect.assertions(2);
+
+        const id = 'raw/2026-01-09-c#-notes.md';
+
+        await seedDocument(documentDTO(id), [chunkDTO(0, 'Fact', 'A path may hold a hash.')]);
+
+        expect((await get({ id })).body.externalId).toBe(id);
+        expect((await get({ id: `${id}#fact` })).body.externalId).toBe(id);
     });
 
     it('answers 404 for an id nobody holds', async () => {

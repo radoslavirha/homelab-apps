@@ -42,11 +42,6 @@ export class KnowledgeBaseRepository {
         await this.postgres.query('UPDATE knowledge_bases SET cursor = $2 WHERE id = $1', [id, cursor]);
     }
 
-    /** Clears the cursor, so the next run asks the source for everything. */
-    public async resetCursor(id: string): Promise<void> {
-        await this.postgres.query('UPDATE knowledge_bases SET cursor = NULL WHERE id = $1', [id]);
-    }
-
     public async recordRunStart(id: string): Promise<void> {
         await this.postgres.query(
             `UPDATE knowledge_bases

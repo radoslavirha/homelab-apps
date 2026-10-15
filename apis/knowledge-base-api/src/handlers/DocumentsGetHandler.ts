@@ -4,6 +4,7 @@ import { Conflict, NotFound } from '@tsed/exceptions';
 import { DocumentMapper } from '../mappers/DocumentMapper.js';
 import type { DocumentsGetResponse } from '../models/DocumentsGetResponse.js';
 import { KnowledgeBaseAccessService } from '../services/KnowledgeBaseAccessService.js';
+import type { DocumentDTO } from '../storage/postgres/dto/DocumentDTO.js';
 import { DocumentRepository } from '../storage/postgres/DocumentRepository.js';
 
 @Injectable()
@@ -17,12 +18,11 @@ export class DocumentsGetHandler {
 
     /**
      * `id` may be a search result's anchor: the `#section` part is dropped, the whole document
-     * returned.
+     * returned. The id is tried as given first, so a path that itself holds a `#` still resolves.
      */
     public async execute(id: string, kb: string | undefined): Promise<DocumentsGetResponse> {
         const knowledgeBases = this.access.resolve(kb).map((candidate) => candidate.id);
-        const externalId = id.split('#')[0];
-        const found = CommonUtils.isEmpty(knowledgeBases) ? [] : await this.documents.find(knowledgeBases, externalId);
+        const found = CommonUtils.isEmpty(knowledgeBases) ? [] : await this.find(knowledgeBases, id);
 
         if (CommonUtils.isEmpty(found)) {
             throw new NotFound('Document not found.');
@@ -33,5 +33,15 @@ export class DocumentsGetHandler {
         }
 
         return this.mapper.storageToResponse(found[0]);
+    }
+
+    private async find(knowledgeBases: readonly string[], id: string): Promise<DocumentDTO[]> {
+        const exact = await this.documents.find(knowledgeBases, id);
+        const anchor = id.lastIndexOf('#');
+
+        // A slug never holds a `#`, so the anchor is whatever follows the last one.
+        return CommonUtils.isEmpty(exact) && anchor > 0
+            ? this.documents.find(knowledgeBases, id.slice(0, anchor))
+            : exact;
     }
 }

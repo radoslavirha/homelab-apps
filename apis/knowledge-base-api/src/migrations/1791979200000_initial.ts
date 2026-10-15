@@ -9,7 +9,7 @@ import type { MigrationBuilder } from 'node-pg-migrate';
  * `CREATE EXTENSION vector` is not here: the extension is declared on the database by its
  * operator, and this service's role cannot create it.
  *
- * The per-model HNSW indexes are not here either: they follow configuration, so `SchemaService`
+ * The per-model HNSW indexes are not here either: they follow configuration, so `SchemaMigrator`
  * creates them at startup.
  */
 export const up = (pgm: MigrationBuilder): void => {

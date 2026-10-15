@@ -29,14 +29,12 @@ describe('KnowledgeBaseRepository', () => {
         expect(await knowledgeBases.list(['missing'])).toEqual([]);
     });
 
-    it('stores, reads and clears the cursor', async () => {
-        expect.assertions(3);
+    it('stores and reads the cursor, null before the first run', async () => {
+        expect.assertions(2);
 
         expect(await knowledgeBases.getCursor('dev')).toBeNull();
         await knowledgeBases.setCursor('dev', 'abc');
         expect(await knowledgeBases.getCursor('dev')).toBe('abc');
-        await knowledgeBases.resetCursor('dev');
-        expect(await knowledgeBases.getCursor('dev')).toBeNull();
     });
 
     it('records a successful run and its time', async () => {

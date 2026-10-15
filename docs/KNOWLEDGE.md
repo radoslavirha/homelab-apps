@@ -43,7 +43,7 @@ private knowledge base (skill `knowledge-base`).
 |-----|-------|
 | `qr-manager-api` | **Enforcing.** `/qr-codes` answers `401` without a valid token. `GET /r/:slug`, `/health*` and `GET /qr-codes/:id/image` stay open |
 | `miot-bridge-api` | **Enforcing.** All 16 REST routes need a token; `/health*` stays open. Commands also arrive over MQTT, which no decorator reaches — that identity is the broker's. The UDP command listener is gone |
-| `knowledge-base-api` | **Enforcing.** One trust domain, `IDP`, on every route but `/health*`; `knowledge-base-api.reader` as the floor, `knowledge-base-api.admin` added on `POST /reindex`. Each knowledge base's `readers` roles decide which ones a caller sees |
+| `knowledge-base-api` | **Enforcing.** One trust domain, `IDP`, on every route but `/health*` and the Swagger UI; `knowledge-base-api.reader` as the floor, `knowledge-base-api.admin` added on `POST /reindex`. Each knowledge base's `readers` roles decide which ones a caller sees |
 | `interactive-map-feeder-api` | **Enforcing.** One trust domain, `IDP`, on all four routes. The LaskaKit map logs in against the same IdP from its own Authentik application, so it is a second row in `trustedIssuers` rather than a second domain. The map has no credential yet |
 
 An API's `auth` block is a map of trust domains it accepts, keyed by the service's own `AuthMethod`

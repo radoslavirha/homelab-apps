@@ -9,6 +9,10 @@
  * the knowledge base it measures, not here. Each further argument is a `fullText:vector`
  * weight pair, sent as per-request weights. A hit is any expected document in the top 5;
  * MRR uses the rank of the first expected document (0 when none is in the top 5).
+ *
+ * Ranks count **documents**, as the original measurement did ("an expected file in the top 5"):
+ * search returns sections, and a document split into several would otherwise take several of the
+ * five places. Each document keeps the rank of its best section.
  */
 import { readFileSync } from 'node:fs';
 
@@ -33,7 +37,8 @@ const search = async (question, blend) => {
 
     url.search = new URLSearchParams({
         q: question,
-        limit: '5',
+        // Enough sections to fill five distinct documents.
+        limit: '50',
         fullTextWeight: String(blend.fullText),
         vectorWeight: String(blend.vector)
     }).toString();
@@ -55,7 +60,7 @@ for (const blend of blends) {
 
     for (const { question, expected } of questions) {
         const body = await search(question, blend);
-        const ids = body.results.map((result) => result.externalId);
+        const ids = [...new Set(body.results.map((result) => result.externalId))].slice(0, 5);
         const rank = ids.findIndex((id) => expected.includes(id)) + 1;
 
         modes.set(body.mode, (modes.get(body.mode) ?? 0) + 1);
