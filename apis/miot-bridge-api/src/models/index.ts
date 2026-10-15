@@ -24,3 +24,4 @@ export * from './DevicesGetResponse.js';
 export * from './DevicePostResponse.js';
 export * from './DeviceRequest.js';
 export * from './DeviceWithSpec.js';
+export * from './DeviceToken.js';
