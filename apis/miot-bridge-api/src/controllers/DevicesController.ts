@@ -2,6 +2,7 @@ import { Controller, Scope, ProviderScope } from '@tsed/di';
 import { BodyParams, PathParams } from '@tsed/platform-params';
 import { Delete, Description, Get, Post, Required, Returns } from '@tsed/schema';
 import { Docs } from '@tsed/swagger';
+import { Conflict, NotFound } from '@tsed/exceptions';
 import { DeviceDiscoveryHandler } from '../handlers/devices/DeviceDiscoveryHandler.js';
 import { DeviceDeleteHandler } from '../handlers/devices/DeviceDeleteHandler.js';
 import { DeviceGetAllHandler } from '../handlers/devices/DeviceGetAllHandler.js';
@@ -45,6 +46,7 @@ export class DevicesController {
     @Post('/')
     @Description('Registers a device: performs handshake, fetches MIoT spec and persists the device to cache.')
     @(Returns(201, DevicePostResponse).Groups(GROUP_SIMPLIFIED_SPEC))
+    @Returns(Conflict.STATUS, Conflict)
     async register(
         @Required() @BodyParams(DeviceRequest) body: DeviceRequest
     ): Promise<DevicePostResponse> {
@@ -61,6 +63,7 @@ export class DevicesController {
     @Get('/:deviceId')
     @Description('Returns a registered device by its application-level UUID.')
     @(Returns(200, DeviceGetResponse).Groups(GROUP_SIMPLIFIED_SPEC))
+    @Returns(NotFound.STATUS, NotFound)
     async get(
         @PathParams('deviceId') id: string
     ): Promise<DeviceGetResponse> {
@@ -70,6 +73,7 @@ export class DevicesController {
     @Delete('/:deviceId')
     @Description('Deletes a registered device from the cache.')
     @Returns(204)
+    @Returns(NotFound.STATUS, NotFound)
     async delete(
         @PathParams('deviceId') id: string
     ): Promise<void> {

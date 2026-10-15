@@ -4,6 +4,8 @@ import SuperTest from 'supertest';
 import { authenticateBearerJwt, mintTestToken } from '@radoslavirha/tsed-auth';
 import { Server } from '../Server.js';
 import { MqttClientProvider } from '../providers/MqttClientProvider.js';
+import { getSpec } from '@tsed/schema';
+import { CommandController } from './CommandController.js';
 
 /**
  * The command surface, which is the one that actuates a device.
@@ -153,5 +155,12 @@ describe('CommandController (integration)', () => {
                 expect(JSON.stringify(response.body)).not.toContain('some-other-api');
             });
         });
+    });
+
+    it('declares the errors its routes raise', () => {
+        expect.assertions(2);
+        const { paths } = getSpec(CommandController) as unknown as { paths: Record<string, Record<string, { responses?: object }>> };
+        expect(Object.keys(paths['/command']?.post?.responses ?? {})).toEqual(expect.arrayContaining(['400', '404']));
+        expect(Object.keys(paths['/command/raw']?.post?.responses ?? {})).toEqual(expect.arrayContaining(['400', '404']));
     });
 });

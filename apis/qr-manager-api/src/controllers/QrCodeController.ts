@@ -4,6 +4,7 @@ import { PlatformContext } from '@tsed/platform-http';
 import { Delete, Description, Enum, Get, Maximum, Minimum, Post, Put, Required, Returns } from '@tsed/schema';
 import { MAX_PNG_SIZE, MIN_PNG_SIZE } from '../constants.js';
 import { Docs } from '@tsed/swagger';
+import { Conflict, NotFound } from '@tsed/exceptions';
 import { QrCodeCreateHandler } from '../handlers/qr-codes/QrCodeCreateHandler.js';
 import { QrCodeDeleteHandler } from '../handlers/qr-codes/QrCodeDeleteHandler.js';
 import { QrCodeGetHandler } from '../handlers/qr-codes/QrCodeGetHandler.js';
@@ -39,6 +40,7 @@ export class QrCodeController {
     @Post('/')
     @Description('Allocates a new short slug and persists the mapping. Returns the created record with computed qrURL.')
     @Returns(201, QrCodeResponse)
+    @Returns(Conflict.STATUS, Conflict)
     public async create(
         @Required() @BodyParams(QrCodeCreateRequest) body: QrCodeCreateRequest
     ): Promise<QrCodeResponse> {
@@ -58,6 +60,7 @@ export class QrCodeController {
     @Get('/:id')
     @Description('Returns a single QR code mapping by its Mongo id.')
     @Returns(200, QrCodeResponse)
+    @Returns(NotFound.STATUS, NotFound)
     public async get(
         @PathParams('id') id: string
     ): Promise<QrCodeResponse> {
@@ -67,6 +70,7 @@ export class QrCodeController {
     @Put('/:id')
     @Description('Updates a QR code mapping. All fields are optional; omitted fields are left unchanged.')
     @Returns(200, QrCodeResponse)
+    @Returns(NotFound.STATUS, NotFound)
     public async update(
         @PathParams('id') id: string,
         @Required() @BodyParams(QrCodeUpdateRequest) body: QrCodeUpdateRequest
@@ -77,6 +81,7 @@ export class QrCodeController {
     @Delete('/:id')
     @Description('Deletes a QR code mapping. The slug becomes available for reuse.')
     @Returns(204)
+    @Returns(NotFound.STATUS, NotFound)
     public async delete(
         @PathParams('id') id: string
     ): Promise<void> {
@@ -88,6 +93,7 @@ export class QrCodeController {
     @Description('Returns the rendered QR image.\n\n- `format`: `svg` (default, vector) or `png` (raster).\n- `size`: PNG width in px (ignored for SVG). Range 64–4096, default 512.\n- `ecLevel`: error correction. `M` default (~15% damage tolerance, smallest). `L`/`Q`/`H` for less/more redundancy. Lower level = fewer modules = smaller print.\n- `download`: `1` or `true` sends `Content-Disposition: attachment; filename="<slug>.<format>"` so a cross-origin link saves the file instead of navigating to it. Omitted = inline.')
     @(Returns(200).ContentType('image/png'))
     @(Returns(200).ContentType('image/svg+xml'))
+    @Returns(NotFound.STATUS, NotFound)
     public async image(
         @PathParams('id') id: string,
         @Context() ctx: PlatformContext,

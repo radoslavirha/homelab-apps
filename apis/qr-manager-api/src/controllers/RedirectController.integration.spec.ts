@@ -8,6 +8,8 @@ import { QrCodeService } from '../services/QrCodeService.js';
 import { QrCode } from '../models/QrCode.js';
 import { QrType } from '../models/QrType.enum.js';
 import { QrCodeMongoRepository } from '../storage/qr-mongo/QrCodeMongoRepository.js';
+import { getSpec } from '@tsed/schema';
+import { RedirectController } from './RedirectController.js';
 
 const sampleModel = (overrides: Partial<QrCode> = {}): QrCode =>
     CommonUtils.buildModelStrict(QrCode, {
@@ -75,5 +77,11 @@ describe('RedirectController (integration)', () => {
             vi.spyOn(repository, 'findBySlug').mockRejectedValue(new TaskCancelledError('Operation timed out'));
             await request.get('/r/x7k2').expect(504);
         });
+    });
+
+    it('declares the errors its routes raise', () => {
+        expect.assertions(1);
+        const { paths } = getSpec(RedirectController) as unknown as { paths: Record<string, Record<string, { responses?: object }>> };
+        expect(Object.keys(paths['/r/{slug}']?.get?.responses ?? {})).toEqual(expect.arrayContaining(['400', '404', '503', '504']));
     });
 });

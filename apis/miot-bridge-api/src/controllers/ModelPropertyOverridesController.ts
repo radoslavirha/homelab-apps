@@ -2,6 +2,7 @@ import { Controller, Scope, ProviderScope } from '@tsed/di';
 import { BodyParams, PathParams, QueryParams } from '@tsed/platform-params';
 import { Delete, Description, Get, Optional, Post, Required, Returns } from '@tsed/schema';
 import { Docs } from '@tsed/swagger';
+import { NotFound } from '@tsed/exceptions';
 import { ModelPropertyOverrideCreateHandler } from '../handlers/model-property-overrides/ModelPropertyOverrideCreateHandler.js';
 import { ModelPropertyOverrideDeleteHandler } from '../handlers/model-property-overrides/ModelPropertyOverrideDeleteHandler.js';
 import { ModelPropertyOverrideGetAllHandler } from '../handlers/model-property-overrides/ModelPropertyOverrideGetAllHandler.js';
@@ -45,6 +46,7 @@ export class ModelPropertyOverridesController {
     @Delete('/:id')
     @Description('Deletes a model property override by ID.')
     @Returns(204)
+    @Returns(NotFound.STATUS, NotFound)
     public async deleteOverride(
         @PathParams('id') id: string
     ): Promise<void> {

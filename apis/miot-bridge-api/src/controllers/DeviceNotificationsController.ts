@@ -2,6 +2,7 @@ import { Controller, Scope, ProviderScope } from '@tsed/di';
 import { PathParams, BodyParams } from '@tsed/platform-params';
 import { Delete, Description, Get, Post, Required, Returns } from '@tsed/schema';
 import { Docs } from '@tsed/swagger';
+import { BadRequest, Forbidden, NotFound } from '@tsed/exceptions';
 import { SwaggerDocs } from '../models/SwaggerDocs.enum.js';
 import { Authenticate } from '@radoslavirha/tsed-auth';
 import { AuthMethod } from '../models/config/AuthMethod.enum.js';
@@ -28,6 +29,8 @@ export class DeviceNotificationsController {
     @Post('/')
     @Description('Creates notification subscriptions for specified device properties. Each property gets its own subscription record.')
     @Returns(201, DeviceNotificationsResponse)
+    @Returns(BadRequest.STATUS, BadRequest)
+    @Returns(NotFound.STATUS, NotFound)
     async create(
         @PathParams('deviceId') deviceId: string,
         @Required() @BodyParams(NotificationRequest) body: NotificationRequest
@@ -56,6 +59,8 @@ export class DeviceNotificationsController {
     @Delete('/:notificationId')
     @Description('Deletes a specific notification subscription.')
     @Returns(204)
+    @Returns(NotFound.STATUS, NotFound)
+    @Returns(Forbidden.STATUS, Forbidden)
     async delete(
         @PathParams('deviceId') deviceId: string,
         @PathParams('notificationId') notificationId: string

@@ -3,6 +3,7 @@ import { BodyParams, Context } from '@tsed/platform-params';
 import { PlatformContext } from '@tsed/platform-http';
 import { AcceptMime, Description, Post, Returns } from '@tsed/schema';
 import { Docs } from '@tsed/swagger';
+import { BadRequest, NotFound } from '@tsed/exceptions';
 import { CommandHandler } from '../handlers/CommandHandler.js';
 import { RawCommandHandler } from '../handlers/RawCommandHandler.js';
 import { CommandRequestModel } from '../models/CommandRequestModel.js';
@@ -31,6 +32,8 @@ export class CommandController {
     @Returns(204)
     @(Returns(200, CommandValueResponse).ContentType('application/json'))
     @(Returns(200, String).ContentType('text/plain'))
+    @Returns(BadRequest.STATUS, BadRequest)
+    @Returns(NotFound.STATUS, NotFound)
     public async commandPost(
         @BodyParams(CommandRequestModel) body: CommandRequestModel,
         @Context() ctx: PlatformContext
@@ -44,6 +47,8 @@ export class CommandController {
     @Returns(204)
     @(Returns(200, CommandValueResponse).ContentType('application/json'))
     @(Returns(200, String).ContentType('text/plain'))
+    @Returns(BadRequest.STATUS, BadRequest)
+    @Returns(NotFound.STATUS, NotFound)
     public async rawCommandPost(
         @BodyParams(RawCommandRequestModel) body: RawCommandRequestModel,
         @Context() ctx: PlatformContext
