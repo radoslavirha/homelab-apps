@@ -3,7 +3,7 @@ import type SuperTest from 'supertest';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { bootstrapIndexed } from '../test/bootstrapIndexed.js';
 import { CORPUS } from '../test/corpus.js';
-import { noRoleToken, readerToken } from '../test/tokens.js';
+import { FOREIGN_AUDIENCE, noRoleToken, readerToken, refusedCredentials } from '../test/tokens.js';
 
 describe('DocumentsController (integration)', () => {
     let request: SuperTest.Agent;
@@ -61,5 +61,18 @@ describe('DocumentsController (integration)', () => {
 
         expect((await request.get('/documents').query({ id: CORPUS[0].externalId })).status).toBe(401);
         expect((await get({ id: CORPUS[0].externalId }, await noRoleToken())).status).toBe(403);
+    });
+
+    it('refuses a forged, foreign, expired or non-bearer credential with 401, saying nothing about why', async () => {
+        const credentials = await refusedCredentials();
+
+        expect.assertions(credentials.length * 2);
+
+        for (const [reason, authorization] of credentials) {
+            const response = await request.get('/documents').query({ id: CORPUS[0].externalId }).set('Authorization', authorization);
+
+            expect(response.status, reason).toBe(401);
+            expect(JSON.stringify(response.body), reason).not.toContain(FOREIGN_AUDIENCE);
+        }
     });
 });

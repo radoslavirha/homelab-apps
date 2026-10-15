@@ -6,7 +6,7 @@ import { ROLE_ADMIN } from '../models/Roles.js';
 import { SearchMode } from '../models/SearchMode.enum.js';
 import { bootstrapIndexed } from '../test/bootstrapIndexed.js';
 import type { FakeOllamaEndpoint } from '../test/FakeOllamaEndpoint.js';
-import { noRoleToken, readerToken } from '../test/tokens.js';
+import { FOREIGN_AUDIENCE, noRoleToken, readerToken, refusedCredentials } from '../test/tokens.js';
 
 interface Result {
     externalId: string;
@@ -49,12 +49,17 @@ describe('SearchController (integration)', () => {
             expect((await search({ q: 'pods' }, await mintTestToken({ claims: { roles: [ROLE_ADMIN] } }))).status).toBe(403);
         });
 
-        it('refuses a forged token', async () => {
-            expect.assertions(1);
+        it('refuses a forged, foreign, expired or non-bearer credential with 401, saying nothing about why', async () => {
+            const credentials = await refusedCredentials();
 
-            const forged = await mintTestToken({ secret: 'another-secret-not-real-0000000000', claims: { roles: ['knowledge-base-api.reader'] } });
+            expect.assertions(credentials.length * 2);
 
-            expect((await search({ q: 'pods' }, forged)).status).toBe(401);
+            for (const [reason, authorization] of credentials) {
+                const response = await request.get('/search').query({ q: 'pods' }).set('Authorization', authorization);
+
+                expect(response.status, reason).toBe(401);
+                expect(JSON.stringify(response.body), reason).not.toContain(FOREIGN_AUDIENCE);
+            }
         });
     });
 

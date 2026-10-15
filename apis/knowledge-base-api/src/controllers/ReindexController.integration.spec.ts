@@ -6,7 +6,7 @@ import { IndexerService } from '../services/IndexerService.js';
 import { IndexingLoopService } from '../services/IndexingLoopService.js';
 import { bootstrapIndexed } from '../test/bootstrapIndexed.js';
 import type { FakeSourceAdapterFactory } from '../test/FakeSourceAdapterFactory.js';
-import { adminToken, readerToken } from '../test/tokens.js';
+import { adminToken, FOREIGN_AUDIENCE, readerToken, refusedCredentials } from '../test/tokens.js';
 
 describe('ReindexController (integration)', () => {
     let request: SuperTest.Agent;
@@ -74,6 +74,19 @@ describe('ReindexController (integration)', () => {
         expect((await request.post('/reindex').set('Authorization', `Bearer ${await readerToken()}`)).status).toBe(403);
         expect((await request.post('/reindex')).status).toBe(401);
         expect(sources.adapter.cursors).toEqual([]);
+    });
+
+    it('refuses a forged, foreign, expired or non-bearer credential with 401, saying nothing about why', async () => {
+        const credentials = await refusedCredentials();
+
+        expect.assertions(credentials.length * 2);
+
+        for (const [reason, authorization] of credentials) {
+            const response = await request.post('/reindex').set('Authorization', authorization);
+
+            expect(response.status, reason).toBe(401);
+            expect(JSON.stringify(response.body), reason).not.toContain(FOREIGN_AUDIENCE);
+        }
     });
 
     it('answers 404 for a knowledge base the caller cannot read', async () => {
