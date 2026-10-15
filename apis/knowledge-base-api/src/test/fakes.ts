@@ -15,13 +15,18 @@ export const fakeVector = (text: string): number[] => {
     return vector.map((value) => value / length);
 };
 
-export const sourceDocument = (externalId: string, content: string, extra: Partial<SourceDocument> = {}): SourceDocument => ({
-    externalId,
-    title: extra.title ?? externalId,
-    date: null,
-    url: `https://example.test/${externalId}`,
-    content,
-    version: 'c1',
-    metadata: { area: externalId.split('/')[0] },
-    ...extra
-});
+/** A source document; its url names the version, as a git permalink names the commit. */
+export const sourceDocument = (externalId: string, content: string, extra: Partial<SourceDocument> = {}): SourceDocument => {
+    const version = extra.version ?? 'c1';
+
+    return {
+        externalId,
+        title: extra.title ?? externalId,
+        date: null,
+        url: `https://example.test/blob/${version}/${externalId}`,
+        content,
+        version,
+        metadata: { area: externalId.split('/')[0] },
+        ...extra
+    };
+};

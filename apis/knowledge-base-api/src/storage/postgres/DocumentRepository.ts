@@ -22,8 +22,9 @@ export class DocumentRepository {
     /**
      * Writes one document and its chunks in one transaction.
      *
-     * A document whose fields and chunk hashes are all unchanged only gets its `version`
-     * bumped — a full rebuild is mostly that. Otherwise the chunks are reconciled by hash: a
+     * A document whose fields and chunk hashes are all unchanged only gets its `version` and
+     * `url` bumped — a full rebuild is mostly that. The url is not compared: a source may derive
+     * it from the version (a git permalink names the commit), so it changes whenever that does. Otherwise the chunks are reconciled by hash: a
      * chunk whose hash survives keeps its row, so its embeddings survive with it, and only new
      * or changed text is embedded again.
      */
@@ -42,7 +43,7 @@ export class DocumentRepository {
                 const stored = Serializer.deserialize(row, DocumentDTO);
 
                 if (sameDocument(stored, document) && sameHashes(row.hashes, chunks)) {
-                    await client.query('UPDATE documents SET version = $2 WHERE id = $1', [row.id, document.version]);
+                    await client.query('UPDATE documents SET version = $2, url = $3 WHERE id = $1', [row.id, document.version, document.url]);
 
                     return DOCUMENT_CHANGE_VALUE_UNCHANGED;
                 }
@@ -151,7 +152,6 @@ export class DocumentRepository {
 const sameDocument = (stored: DocumentDTO, incoming: DocumentDTO): boolean =>
     stored.title === incoming.title &&
     stored.date === incoming.date &&
-    stored.url === incoming.url &&
     stored.content === incoming.content &&
     stableJson(stored.metadata) === stableJson(incoming.metadata);
 

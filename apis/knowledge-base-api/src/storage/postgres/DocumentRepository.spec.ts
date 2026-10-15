@@ -35,18 +35,24 @@ describe('DocumentRepository', () => {
             expect((await postgres.query("SELECT 1 FROM chunks WHERE fts @@ to_tsquery('english', 'probe')")).rowCount).toBe(1);
         });
 
-        it('only bumps the version when content, fields and chunks are unchanged — whatever the metadata key order', async () => {
+        it('only bumps the version and url when content, fields and chunks are unchanged — whatever the metadata key order', async () => {
             expect.assertions(3);
 
             const chunks = [chunkDTO(0, 'A', 'alpha')];
 
-            await documents.upsert(documentDTO('raw/a.md', { metadata: { area: 'raw', type: 'gotcha' } }), 'english', chunks);
+            // The url names the commit, as a git permalink does, so it changes with the version.
+            await documents.upsert(documentDTO('raw/a.md', { url: 'https://git.test/blob/c1/raw/a.md', metadata: { area: 'raw', type: 'gotcha' } }), 'english', chunks);
             const before = await chunkIds('raw/a.md');
-            const change = await documents.upsert(documentDTO('raw/a.md', { version: 'c2', metadata: { type: 'gotcha', area: 'raw' } }), 'english', chunks);
+            const change = await documents.upsert(documentDTO('raw/a.md', {
+                version: 'c2',
+                url: 'https://git.test/blob/c2/raw/a.md',
+                metadata: { type: 'gotcha', area: 'raw' }
+            }), 'english', chunks);
 
             expect(change).toBe(DOCUMENT_CHANGE_VALUE_UNCHANGED);
             expect(await chunkIds('raw/a.md')).toEqual(before);
-            expect((await postgres.query<{ version: string }>('SELECT version FROM documents')).rows).toEqual([{ version: 'c2' }]);
+            expect((await postgres.query<{ version: string; url: string }>('SELECT version, url FROM documents')).rows)
+                .toEqual([{ version: 'c2', url: 'https://git.test/blob/c2/raw/a.md' }]);
         });
 
         it('rewrites a document whose chunking changed even though its content did not', async () => {

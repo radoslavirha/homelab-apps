@@ -25,7 +25,7 @@ describe('DocumentMapper', () => {
             externalId: 'raw/a.md',
             title: 'raw/a.md',
             date: '2026-01-01',
-            url: 'https://example.test/raw/a.md',
+            url: 'https://example.test/blob/c1/raw/a.md',
             content: '# A',
             version: 'c1',
             metadata: { area: 'raw', repos: ['x'] }
