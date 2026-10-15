@@ -9,7 +9,7 @@
     "cleanup:all": "pnpm run cleanup:artifacts && pnpm run cleanup:modules",
     "cleanup:artifacts": "rm -rf coverage dist",
     "cleanup:modules": "rm -rf node_modules",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint --fix .",
     "start": "nodemon src/index.ts",
     "start:prod": "node --import /home/app/dist/otel/instrument.js dist/index.js",

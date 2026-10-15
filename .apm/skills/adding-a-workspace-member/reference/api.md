@@ -5,7 +5,7 @@ each one rather than writing it from scratch.
 
 | File | What to adapt |
 | --- | --- |
-| `package.json` | `name`, `description`, `version: 0.1.0`. Keep `@radoslavirha/*` and `@tsed/*` on the catalog like the other APIs. Build-only packages (`typescript`, `@swc/cli`, `@swc-node/register`) stay in `devDependencies`; `@swc/helpers` stays in `dependencies`. |
+| `package.json` | `name`, `description`, `version: 0.1.0`. Keep `"lint": "eslint . --max-warnings 0"`. Keep `@radoslavirha/*` and `@tsed/*` on the catalog like the other APIs. Build-only packages (`typescript`, `@swc/cli`, `@swc-node/register`) stay in `devDependencies`; `@swc/helpers` stays in `dependencies`. |
 | `tsconfig.json` | Extends `@radoslavirha/config-typescript/tsconfig.json`; `composite: false`. |
 | `eslint.config.mjs`, `nodemon.json`, `.swcrc`, `vitest.config.ts` | Usually identical across APIs. `.swcrc` keeps `sourceMaps: false` and `externalHelpers: true`. |
 | `config/localhost.json` | `server.httpPort` unique across APIs (the checker enforces it). |
@@ -32,6 +32,9 @@ each one rather than writing it from scratch.
 3. **No change** to `pnpm-workspace.yaml` — the `apis/*` glob picks it up.
 
 ## Tests to start with
+
+Read `.apm/instructions/tsed-testing.instructions.md` first: providers come from DI
+(`PlatformTest.create` + `PlatformTest.get`, collaborators replaced with `vi.spyOn`), never `new`.
 
 - `Server.integration.spec.ts` asserting the expected health check **names** (a 200 from `/health` does not prove a check is registered).
 - An integration suite for each controller covering the auth failure paths: forged signature, wrong audience, expired token, non-bearer scheme.
