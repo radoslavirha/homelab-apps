@@ -16,6 +16,8 @@ import { ModelPropertyOverrideService } from '../services/ModelPropertyOverrideS
 import { NotificationStorageService } from '../services/NotificationStorageService.js';
 import { DevicePropertyPollerService } from '../services/DevicePropertyPollerService.js';
 import { MIOT_PROPERTY_SOURCE_VALUE_SPEC } from '../otel/telemetry.js';
+import { getSpec } from '@tsed/schema';
+import { DeviceNotificationsController } from './DeviceNotificationsController.js';
 
 /**
  * A **child** controller of `DevicesController`, and the reason this file exists
@@ -189,5 +191,12 @@ describe('DeviceNotificationsController (integration)', () => {
 
             expect(poller.removeSubscription).toHaveBeenCalledWith('d1', 'vacuum:mode');
         });
+    });
+
+    it('declares the errors its routes raise', () => {
+        expect.assertions(2);
+        const { paths } = getSpec(DeviceNotificationsController) as unknown as { paths: Record<string, Record<string, { responses?: object }>> };
+        expect(Object.keys(paths['/{deviceId}/notifications']?.post?.responses ?? {})).toEqual(expect.arrayContaining(['400', '404']));
+        expect(Object.keys(paths['/{deviceId}/notifications/{notificationId}']?.delete?.responses ?? {})).toEqual(expect.arrayContaining(['403', '404']));
     });
 });

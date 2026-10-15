@@ -4,6 +4,8 @@ import SuperTest from 'supertest';
 import { authenticateBearerJwt, mintTestToken } from '@radoslavirha/tsed-auth';
 import { Server } from '../Server.js';
 import { MqttClientProvider } from '../providers/MqttClientProvider.js';
+import { getSpec } from '@tsed/schema';
+import { ModelPropertyOverridesController } from './ModelPropertyOverridesController.js';
 
 /**
  * Per-model property overrides. A write here changes how every device of that
@@ -91,5 +93,11 @@ describe('ModelPropertyOverridesController (integration)', () => {
                 expect(JSON.stringify(response.body)).not.toContain('some-other-api');
             });
         });
+    });
+
+    it('declares the errors its routes raise', () => {
+        expect.assertions(1);
+        const { paths } = getSpec(ModelPropertyOverridesController) as unknown as { paths: Record<string, Record<string, { responses?: object }>> };
+        expect(Object.keys(paths['/model-property-overrides/{id}']?.delete?.responses ?? {})).toEqual(expect.arrayContaining(['404']));
     });
 });

@@ -11,6 +11,8 @@ import { QrErrorCorrection } from '../models/QrErrorCorrection.enum.js';
 import { QrImageFormat } from '../models/QrImageFormat.enum.js';
 import { QrType } from '../models/QrType.enum.js';
 import { authenticateBearerJwt, mintTestToken } from '@radoslavirha/tsed-auth';
+import { getSpec } from '@tsed/schema';
+import { QrCodeController } from './QrCodeController.js';
 
 // test.json: redirect.baseURL = 'http://localhost:4011', api.publicURL = undefined → ''
 const sampleModel = (overrides: Partial<QrCode> = {}): QrCode =>
@@ -321,5 +323,15 @@ describe('QrCodeController (integration)', () => {
 
             await request.get('/qr-codes/671b00000000000000000001/image').expect(200);
         });
+    });
+
+    it('declares the errors its routes raise', () => {
+        expect.assertions(5);
+        const { paths } = getSpec(QrCodeController) as unknown as { paths: Record<string, Record<string, { responses?: object }>> };
+        expect(Object.keys(paths['/qr-codes']?.post?.responses ?? {})).toEqual(expect.arrayContaining(['409']));
+        expect(Object.keys(paths['/qr-codes/{id}']?.get?.responses ?? {})).toEqual(expect.arrayContaining(['404']));
+        expect(Object.keys(paths['/qr-codes/{id}']?.put?.responses ?? {})).toEqual(expect.arrayContaining(['404']));
+        expect(Object.keys(paths['/qr-codes/{id}']?.delete?.responses ?? {})).toEqual(expect.arrayContaining(['404']));
+        expect(Object.keys(paths['/qr-codes/{id}/image']?.get?.responses ?? {})).toEqual(expect.arrayContaining(['404']));
     });
 });

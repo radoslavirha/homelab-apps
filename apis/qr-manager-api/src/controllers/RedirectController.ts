@@ -3,6 +3,7 @@ import { Context, PathParams } from '@tsed/platform-params';
 import { PlatformContext } from '@tsed/platform-http';
 import { Description, Get, Pattern, Returns } from '@tsed/schema';
 import { Docs } from '@tsed/swagger';
+import { BadRequest, GatewayTimeout, NotFound, ServiceUnavailable } from '@tsed/exceptions';
 import { RequestSignal } from '@radoslavirha/tsed-resilience';
 import { SLUG_PATTERN } from '../constants.js';
 import { RedirectHandler } from '../handlers/RedirectHandler.js';
@@ -48,10 +49,10 @@ export class RedirectController {
     @Get('/:slug')
     @Description('Resolves the slug and returns a 302 redirect to the current target URL. Returns 404 when the slug is unknown or has been deactivated, 400 when the slug format is invalid, 503 when the lookup circuit is open and 504 when the lookup times out.')
     @Returns(302)
-    @Returns(404)
-    @Returns(400)
-    @Returns(503)
-    @Returns(504)
+    @Returns(NotFound.STATUS, NotFound)
+    @Returns(BadRequest.STATUS, BadRequest)
+    @Returns(ServiceUnavailable.STATUS, ServiceUnavailable)
+    @Returns(GatewayTimeout.STATUS, GatewayTimeout)
     public async redirect(
         @PathParams('slug') @Pattern(SLUG_PATTERN) slug: string,
         @RequestSignal() signal: AbortSignal,

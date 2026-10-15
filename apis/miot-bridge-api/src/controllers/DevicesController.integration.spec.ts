@@ -12,6 +12,8 @@ import { DeviceDiscoveryService } from '../services/DeviceDiscoveryService.js';
 import { DeviceStorageService } from '../services/DeviceStorageService.js';
 import { MiotDeviceRegistry } from '../services/MiotDeviceRegistry.js';
 import { NotificationStorageService } from '../services/NotificationStorageService.js';
+import { getSpec } from '@tsed/schema';
+import { DevicesController } from './DevicesController.js';
 
 /**
  * The device registry. Registration performs a handshake and fetches a spec from
@@ -213,5 +215,13 @@ describe('DevicesController (integration)', () => {
             expect(emitted).toHaveBeenCalled();
             expect(JSON.stringify(emitted.mock.calls)).not.toContain(TOKEN);
         });
+    });
+
+    it('declares the errors its routes raise', () => {
+        expect.assertions(3);
+        const { paths } = getSpec(DevicesController) as unknown as { paths: Record<string, Record<string, { responses?: object }>> };
+        expect(Object.keys(paths['/devices']?.post?.responses ?? {})).toEqual(expect.arrayContaining(['409']));
+        expect(Object.keys(paths['/devices/{deviceId}']?.get?.responses ?? {})).toEqual(expect.arrayContaining(['404']));
+        expect(Object.keys(paths['/devices/{deviceId}']?.delete?.responses ?? {})).toEqual(expect.arrayContaining(['404']));
     });
 });
