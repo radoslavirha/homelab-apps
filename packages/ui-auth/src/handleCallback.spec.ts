@@ -21,23 +21,51 @@ describe('handleCallback', () => {
         expect(c.signinRedirectCallback).toHaveBeenCalledOnce();
     });
 
-    it('reports no-session for login_required, without attempting an exchange', async () => {
+    const errorResponse = (error: string, returnTo?: unknown) =>
+        Object.assign(new Error(error), { error, state: returnTo === undefined ? undefined : { returnTo } });
+
+    it('reports no-session for login_required, keeping the return path', async () => {
         // The prompt=none attempt made on load. Not an error: it is the IdP
         // saying nobody is signed in, and the caller renders a sign-in page.
         at('?error=login_required&state=xyz');
-        const c = client();
+        const c = client({
+            signinRedirectCallback: vi.fn().mockRejectedValue(errorResponse('login_required', '/qr/admin/671b'))
+        });
 
-        await expect(handleCallback(c)).resolves.toEqual({ result: 'no-session' });
-        expect(c.signinRedirectCallback).not.toHaveBeenCalled();
+        await expect(handleCallback(c)).resolves.toEqual({ result: 'no-session', returnTo: '/qr/admin/671b' });
     });
 
     it.each(['consent_required', 'interaction_required'])(
         'treats %s as no-session too — all three mean "interaction needed"',
         async error => {
             at(`?error=${error}&state=xyz`);
-            await expect(handleCallback(client())).resolves.toEqual({ result: 'no-session' });
+            const c = client({ signinRedirectCallback: vi.fn().mockRejectedValue(errorResponse(error)) });
+            await expect(handleCallback(c)).resolves.toEqual({ result: 'no-session', returnTo: undefined });
         }
     );
+
+    it('refuses an unsafe return path on no-session', async () => {
+        at('?error=login_required&state=xyz');
+        const c = client({
+            signinRedirectCallback: vi.fn().mockRejectedValue(errorResponse('login_required', '//evil.test'))
+        });
+
+        await expect(handleCallback(c)).resolves.toEqual({ result: 'no-session', returnTo: undefined });
+    });
+
+    it('still reports no-session when the state entry is gone', async () => {
+        at('?error=login_required&state=gone');
+        const c = client({ signinRedirectCallback: vi.fn().mockRejectedValue(new Error('No matching state found')) });
+
+        await expect(handleCallback(c)).resolves.toEqual({ result: 'no-session', returnTo: undefined });
+    });
+
+    it('reports failure for an error response that is not a missing session', async () => {
+        at('?error=access_denied&state=xyz');
+        const c = client({ signinRedirectCallback: vi.fn().mockRejectedValue(errorResponse('access_denied')) });
+
+        await expect(handleCallback(c)).resolves.toEqual({ result: 'failed' });
+    });
 
     it('returns where the user was, so a renewal does not lose their place', async () => {
         // Renewal is a redirect. Without this, every renewal drops whoever was
@@ -78,5 +106,47 @@ describe('handleCallback', () => {
         const c = client({ signinRedirectCallback: vi.fn().mockRejectedValue(new Error('invalid_grant')) });
 
         await expect(handleCallback(c)).resolves.toEqual({ result: 'failed' });
+    });
+});
+
+describe('handleCallback — no session, real client', () => {
+    it('keeps the return path when the prompt=none probe finds no session', async () => {
+        const { createAuthClient } = await import('./createAuthClient.js');
+        const issuer = 'https://auth.test/application/o/qr/';
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(async () =>
+                Response.json({
+                    issuer,
+                    authorization_endpoint: 'https://auth.test/authorize',
+                    token_endpoint: 'https://auth.test/token'
+                })
+            )
+        );
+        const c = createAuthClient({
+            issuer,
+            clientId: 'qr',
+            scope: 'openid profile roles',
+            redirectUri: 'http://localhost/callback',
+            postLogoutRedirectUri: 'http://localhost/'
+        });
+        // What AuthProvider's recover()/renewal stores before leaving for the IdP.
+        const request = await (
+            c as unknown as { _client: { createSigninRequest(a: object): Promise<{ state: { id: string } }> } }
+        )._client.createSigninRequest({
+            request_type: 'si:r',
+            redirect_uri: 'http://localhost/callback',
+            response_type: 'code',
+            scope: 'openid profile roles',
+            prompt: 'none',
+            state: { returnTo: '/qr-manager/admin/671b' }
+        });
+        at(`?error=login_required&state=${request.state.id}`);
+
+        await expect(handleCallback(c)).resolves.toEqual({
+            result: 'no-session',
+            returnTo: '/qr-manager/admin/671b'
+        });
+        vi.unstubAllGlobals();
     });
 });
