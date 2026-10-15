@@ -27,6 +27,11 @@ export class FakeOllamaEndpoint {
         }));
     }
 
+    /** Questions take the same path here; only the real endpoint's budgets differ. */
+    public embedQuestion(request: OllamaEmbedRequestDTO): Promise<OllamaEmbedResponseDTO> {
+        return this.embed(request);
+    }
+
     /** Texts sent as documents (not questions) so far. */
     public get embeddedDocuments(): string[] {
         return this.requests.flatMap((request) => request.input).filter((text) => !text.startsWith('task: search result'));

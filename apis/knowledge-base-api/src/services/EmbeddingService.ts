@@ -2,6 +2,7 @@ import { ArrayUtils, CommonUtils, StringUtils } from '@radoslavirha/utils';
 import { ProviderScope, Scope, Service } from '@tsed/di';
 import { BadGateway } from '@tsed/exceptions';
 import { OllamaEmbedRequestDTO } from '../endpoints/ollama/dto/OllamaEmbedRequestDTO.js';
+import type { OllamaEmbedResponseDTO } from '../endpoints/ollama/dto/OllamaEmbedResponseDTO.js';
 import { OllamaEndpoint } from '../endpoints/ollama/OllamaEndpoint.js';
 import type { EmbeddingModelConfig } from '../models/config/EmbeddingsConfig.js';
 import { ConfigService } from './ConfigService.js';
@@ -50,23 +51,29 @@ export class EmbeddingService {
         return model.queryTemplate.replace(/\{query\}/g, () => question);
     }
 
+    /** Under the indexing budget (`externalApis.OLLAMA`). */
     public embedDocuments(model: EmbeddingModelConfig, chunks: readonly EmbeddableChunk[]): Promise<number[][]> {
-        return this.embed(model, chunks.map((chunk) => EmbeddingService.documentInput(model, chunk)));
+        return this.embed(model, chunks.map((chunk) => EmbeddingService.documentInput(model, chunk)), (request) => this.ollama.embed(request));
     }
 
-    public async embedQuery(model: EmbeddingModelConfig, question: string, signal?: AbortSignal): Promise<number[]> {
-        const [vector] = await this.embed(model, [EmbeddingService.queryInput(model, question)], signal);
+    /** Under the search budget (`externalApis.OLLAMA_SEARCH`), so a slow embedder fails fast to full-text. */
+    public async embedQuery(model: EmbeddingModelConfig, question: string): Promise<number[]> {
+        const [vector] = await this.embed(model, [EmbeddingService.queryInput(model, question)], (request) => this.ollama.embedQuestion(request));
 
         return vector;
     }
 
-    private async embed(model: EmbeddingModelConfig, input: string[], signal?: AbortSignal): Promise<number[][]> {
-        const response = await this.ollama.embed(CommonUtils.buildModelStrict(OllamaEmbedRequestDTO, {
+    private async embed(
+        model: EmbeddingModelConfig,
+        input: string[],
+        send: (request: OllamaEmbedRequestDTO) => Promise<OllamaEmbedResponseDTO>
+    ): Promise<number[][]> {
+        const response = await send(CommonUtils.buildModelStrict(OllamaEmbedRequestDTO, {
             model: model.name,
             input,
             keepAlive: this.configService.config.embeddings.keepAlive,
             truncate: true
-        }), signal);
+        }));
         const vectors = ArrayUtils.toArray(response.embeddings);
 
         if (vectors.length !== input.length) {

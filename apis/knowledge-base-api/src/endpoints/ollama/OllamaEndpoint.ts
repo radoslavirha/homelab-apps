@@ -9,7 +9,8 @@ const EMBED_PATH = '/api/embed';
 
 /**
  * Ollama's embed API. Base URL, timeouts, retries and the circuit breaker come from
- * `externalApis.OLLAMA`; failures arrive already translated to 502/503/504.
+ * `externalApis.OLLAMA` for indexing and `externalApis.OLLAMA_SEARCH` for a question at search
+ * time; failures arrive already translated to 502/503/504.
  *
  * @see https://github.com/ollama/ollama/blob/main/docs/api.md#generate-embeddings
  */
@@ -19,8 +20,21 @@ export class OllamaEndpoint {
     @InjectHttpClient(ExternalApi.Ollama)
     private readonly client!: HttpClient;
 
-    public async embed(request: OllamaEmbedRequestDTO, signal?: AbortSignal): Promise<OllamaEmbedResponseDTO> {
-        const response = await this.client.post<object>(
+    @InjectHttpClient(ExternalApi.OllamaSearch)
+    private readonly searchClient!: HttpClient;
+
+    /** Embeds chunks for the index, under the indexing budget. */
+    public embed(request: OllamaEmbedRequestDTO, signal?: AbortSignal): Promise<OllamaEmbedResponseDTO> {
+        return OllamaEndpoint.post(this.client, request, signal);
+    }
+
+    /** Embeds a question for a search, under the search budget. */
+    public embedQuestion(request: OllamaEmbedRequestDTO): Promise<OllamaEmbedResponseDTO> {
+        return OllamaEndpoint.post(this.searchClient, request);
+    }
+
+    private static async post(client: HttpClient, request: OllamaEmbedRequestDTO, signal?: AbortSignal): Promise<OllamaEmbedResponseDTO> {
+        const response = await client.post<object>(
             EMBED_PATH,
             Serializer.serialize(request, OllamaEmbedRequestDTO),
             { signal }

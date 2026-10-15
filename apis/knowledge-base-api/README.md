@@ -67,7 +67,8 @@ Git documents get `metadata` from their frontmatter plus `area` (first path segm
 | `knowledgeBases[]` | `id`, `source` (`GIT`), `contentType` (`MARKDOWN`), `tsConfig` (Postgres text search configuration), `models` (first answers questions), `readers` (roles), `chunking` (`maxChars` default 3000, `overlapChars`), `git` (`branch`, `include` path prefixes, `extensions`) |
 | `indexer` | `enabled`, `intervalMs`, `initialDelayMs`, `fetchConcurrency`, `maxScheduledEmbeddings` (default 300) |
 | `search` | `defaultLimit`, `candidates` per leg, `rrfK`, `weights` (`fullText` default 0, `vector` default 1), `fullTextMatch` (`ANY` ORs the question's lexemes; `ALL` is `websearch_to_tsquery`) |
-| `externalApis.OLLAMA` | Base URL, timeout, retry, circuit breaker |
+| `externalApis.OLLAMA` | Indexing: base URL, timeout, retry, circuit breaker. A batch of chunks on a CPU needs a long budget (60 s) |
+| `externalApis.OLLAMA_SEARCH` | The same Ollama for a question at search time: a short timeout (5 s), no retry. Past it, search answers from full-text. A timeout does not trip the circuit breaker, so a slow Ollama costs every search this timeout |
 | `auth.IDP` | Trusted issuers |
 
 A cross-field mistake (a KB naming an undeclared model, a git KB without `github`) fails the boot.

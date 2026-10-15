@@ -6,6 +6,11 @@
  * (see `github` in the configuration).
  */
 export enum ExternalApi {
-    /** Ollama — the embed API that turns chunks and questions into vectors. */
-    Ollama = 'OLLAMA'
+    /** Ollama's embed API for indexing: batches of chunks, a budget long enough for a CPU. */
+    Ollama = 'OLLAMA',
+    /**
+     * The same Ollama, for embedding a question at search time. A short budget and no retry:
+     * answering from full-text at once beats waiting out the indexing budget on a slow embedder.
+     */
+    OllamaSearch = 'OLLAMA_SEARCH'
 }

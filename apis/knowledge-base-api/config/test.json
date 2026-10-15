@@ -6,6 +6,9 @@
     "externalApis": {
         "OLLAMA": {
             "baseURL": "http://ollama.test:11434"
+        },
+        "OLLAMA_SEARCH": {
+            "baseURL": "http://ollama.test:11434"
         }
     },
     "database": {

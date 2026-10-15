@@ -72,10 +72,21 @@ describe('EmbeddingService', () => {
         });
     });
 
+    it('embeds a question through the search budget, not the indexing one', async () => {
+        expect.assertions(3);
+
+        const embed = vi.spyOn(ollama, 'embed');
+        const embedQuestion = vi.spyOn(ollama, 'embedQuestion').mockResolvedValue(response(1));
+
+        await expect(service.embedQuery(MODEL, 'why?')).resolves.toHaveLength(4);
+        expect(embedQuestion.mock.calls[0][0]).toMatchObject({ input: ['task: search result | query: why?'] });
+        expect(embed).not.toHaveBeenCalled();
+    });
+
     it('fails with the fix in the message when the model returns another dimension', async () => {
         expect.assertions(1);
 
-        vi.spyOn(ollama, 'embed').mockResolvedValue(response(1, 768));
+        vi.spyOn(ollama, 'embedQuestion').mockResolvedValue(response(1, 768));
 
         await expect(service.embedQuery(MODEL, 'q')).rejects.toThrow(
             new BadGateway('Model test-embed:v1 returned 768 dimensions; embeddings.models declares 4.')
@@ -85,7 +96,7 @@ describe('EmbeddingService', () => {
     it('fails when Ollama returns fewer vectors than inputs', async () => {
         expect.assertions(1);
 
-        vi.spyOn(ollama, 'embed').mockResolvedValue(response(0));
+        vi.spyOn(ollama, 'embedQuestion').mockResolvedValue(response(0));
 
         await expect(service.embedQuery(MODEL, 'q')).rejects.toThrow(new BadGateway('Ollama returned 0 vectors for 1 inputs.'));
     });
