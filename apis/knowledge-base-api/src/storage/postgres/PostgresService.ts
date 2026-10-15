@@ -39,16 +39,10 @@ export class PostgresService {
     public async $onInit(): Promise<void> {
         this.pool ??= this.createPool();
 
-        const client = await this.pool.connect();
-
-        try {
-            await new SchemaMigrator(client, this.log).migrate({
-                models: this.configService.config.embeddings.models,
-                knowledgeBases: this.configService.config.knowledgeBases
-            });
-        } finally {
-            client.release();
-        }
+        await this.withClient((client) => new SchemaMigrator(client, this.log).migrate({
+            models: this.configService.config.embeddings.models,
+            knowledgeBases: this.configService.config.knowledgeBases
+        }));
     }
 
     public async $onDestroy(): Promise<void> {
@@ -63,32 +57,31 @@ export class PostgresService {
     }
 
     /** Runs `fn` in one transaction on one connection; rolls back on any error. */
-    public async transaction<T>(fn: (client: pg.PoolClient) => Promise<T>): Promise<T> {
-        const client = await this.open().connect();
+    public transaction<T>(fn: (client: pg.PoolClient) => Promise<T>): Promise<T> {
+        return this.withClient(async (client) => {
+            try {
+                await client.query('BEGIN');
+                const result = await fn(client);
+                await client.query('COMMIT');
 
-        try {
-            await client.query('BEGIN');
-            const result = await fn(client);
-            await client.query('COMMIT');
-
-            return result;
-        } catch (error) {
-            await client.query('ROLLBACK').catch(() => undefined);
-            throw error;
-        } finally {
-            client.release();
-        }
+                return result;
+            } catch (error) {
+                await client.query('ROLLBACK').catch(() => undefined);
+                throw error;
+            }
+        });
     }
 
     /**
      * Runs `fn` only if the session-level advisory lock is free, holding it for the whole call.
      * The lock lives on one pooled connection for that time; if the pod dies, Postgres releases
      * it with the connection.
+     *
+     * If that connection is lost while `fn` runs (a Postgres restart), Postgres has released the
+     * lock already: `fn` is left to finish, and there is nothing left to unlock.
      */
-    public async withTryAdvisoryLock<T>(lock: AdvisoryLock, fn: () => Promise<T>): Promise<LockedResult<T>> {
-        const client = await this.open().connect();
-
-        try {
+    public withTryAdvisoryLock<T>(lock: AdvisoryLock, fn: () => Promise<T>): Promise<LockedResult<T>> {
+        return this.withClient(async (client, isLost) => {
             const { rows } = await client.query<{ locked: boolean }>(
                 'SELECT pg_try_advisory_lock($1, $2) AS locked',
                 [lock.namespace, lock.key]
@@ -101,16 +94,47 @@ export class PostgresService {
             try {
                 return { acquired: true, result: await fn() };
             } finally {
-                await client.query('SELECT pg_advisory_unlock($1, $2)', [lock.namespace, lock.key]);
+                if (isLost()) {
+                    this.log.warn('The advisory lock was released with its lost connection.', {
+                        event: 'DB_LOCK_LOST',
+                        lock: lock.key
+                    });
+                } else {
+                    await client.query('SELECT pg_advisory_unlock($1, $2)', [lock.namespace, lock.key]);
+                }
             }
-        } finally {
-            client.release();
-        }
+        });
     }
 
     /** One round trip, for readiness. */
     public async ping(): Promise<void> {
         await this.open().query('SELECT 1');
+    }
+
+    /**
+     * Runs `fn` on one pooled connection, listening for that connection's `error` meanwhile.
+     *
+     * pg-pool listens only while a client sits idle. A connection lost while checked out (a
+     * Postgres restart during a run) emits `error` with nobody listening: an uncaught exception,
+     * and the process stops. Listened to, the query in flight rejects as usual, and the broken
+     * client is destroyed on release instead of going back to the pool.
+     */
+    private async withClient<T>(fn: (client: pg.PoolClient, isLost: () => boolean) => Promise<T>): Promise<T> {
+        const client = await this.open().connect();
+        let lost: Error | undefined;
+        const onError = (error: Error): void => {
+            lost = error;
+            this.log.warn('A Postgres connection in use failed.', { event: 'DB_CLIENT_ERROR', error: error.message });
+        };
+
+        client.on('error', onError);
+
+        try {
+            return await fn(client, () => CommonUtils.notUndefined(lost));
+        } finally {
+            client.off('error', onError);
+            client.release(lost);
+        }
     }
 
     private open(): pg.Pool {
