@@ -49,7 +49,8 @@ export interface SearchOutcome {
 /**
  * Search over two legs — full-text and one vector leg per model — merged with weighted
  * reciprocal rank fusion. With the default weights the full-text leg is 0 (vector alone measured
- * best), so it runs only for what the vector leg cannot answer.
+ * best), so it runs only for what the vector leg cannot answer: a knowledge base without a vector
+ * leg, and chunks not embedded yet.
  *
  * **Degrades instead of failing.** A knowledge base without a vector leg — no model configured,
  * or the question could not be embedded (Ollama down, the model not loaded in time) — is answered
@@ -82,6 +83,7 @@ export class SearchService {
         const weights: SearchWeights = { ...config.weights, ...query.weights };
         const rankings: Ranking[] = [];
         const models: string[] = [];
+        let fullTextAnswered = false;
         const covered = new Set<string>();
 
         if (weights.vector > 0) {
@@ -106,6 +108,20 @@ export class SearchService {
                 });
                 models.push(name);
                 group.forEach((id) => covered.add(id));
+
+                if (weights.fullText <= 0) {
+                    // The vector leg cannot see a chunk this model has no vector for yet: a section
+                    // changed since the last embedding, a failed batch, a deferred backlog. Full-text
+                    // answers those, and only those, so everything embedded keeps the vector ranking.
+                    const unembedded = await this.searchRepository.fullText(
+                        group, query.question, config.fullTextMatch, query.filter, config.candidates, name
+                    );
+
+                    if (!CommonUtils.isEmpty(unembedded)) {
+                        rankings.push({ ids: unembedded, weight: FALLBACK_WEIGHT });
+                        fullTextAnswered = true;
+                    }
+                }
             }
         }
 
@@ -117,9 +133,12 @@ export class SearchService {
                 ids: await this.searchRepository.fullText(fullTextKbs, query.question, config.fullTextMatch, query.filter, config.candidates),
                 weight: weights.fullText > 0 ? weights.fullText : FALLBACK_WEIGHT
             });
+            fullTextAnswered = true;
         }
 
-        const fused = this.rankFusion.fuse(rankings, config.rrfK);
+        // Cut to the limit before demoting: a superseded note that is a top match is still
+        // returned, last. Demoting first would push it behind every candidate, out of the window.
+        const fused = this.rankFusion.fuse(rankings, config.rrfK).slice(0, query.limit);
         const details = new Map((await this.searchRepository.details(fused.map((hit) => hit.id), query.question))
             .map((hit) => [hit.id, hit]));
         const ranked = fused
@@ -129,11 +148,11 @@ export class SearchService {
         const hits = [...ranked.filter((scored) => !scored.hit.demoted), ...ranked.filter((scored) => scored.hit.demoted)];
         const mode = CommonUtils.isEmpty(models)
             ? SearchMode.FullText
-            : CommonUtils.isEmpty(fullTextKbs) ? SearchMode.Vector : SearchMode.Hybrid;
+            : fullTextAnswered ? SearchMode.Hybrid : SearchMode.Vector;
 
         knowledgeBaseInstruments().searches.add(1, { [ATTR_SEARCH_MODE]: METRIC_MODE[mode] });
 
-        return { mode, models, hits: hits.slice(0, query.limit) };
+        return { mode, models, hits };
     }
 
     /** KB ids grouped by the model that answers their vector leg. KBs with no model have none. */

@@ -2,7 +2,7 @@ import { AdditionalProperties, CollectionOf, Description, Enum, Example, Require
 import { SearchMode } from './SearchMode.enum.js';
 import { SearchResult } from './SearchResult.js';
 
-@Description('Search results, best first. Superseded notes and abandoned specs are ranked last, not hidden.')
+@Description('Search results, best first. A superseded note or an abandoned spec among them is moved to the end, not dropped.')
 @AdditionalProperties(false)
 export class SearchGetResponse {
     @Description('VECTOR: vector leg only (the default weights). HYBRID: both legs fused. FULLTEXT: no searched knowledge base has a model, or the embedder was unreachable.')

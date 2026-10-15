@@ -14,6 +14,6 @@ export class SearchHitDTO {
     @Nullable(String) public date: string | null;
     @Nullable(String) public url: string | null;
     @Property(Object) public metadata: Record<string, unknown>;
-    /** An abandoned spec, or a note another note supersedes: ranked last, never hidden. */
+    /** An abandoned spec, or a note another note supersedes: moved to the end of the results, not dropped. */
     @Property() public demoted: boolean;
 }

@@ -51,15 +51,21 @@ export const metadataFilterSql = (filter: MetadataFilter, firstIndex: number): {
 export class SearchRepository {
     public constructor(private readonly postgres: PostgresService) {}
 
-    /** Chunk ids matching the question, best `ts_rank_cd` first. */
+    /**
+     * Chunk ids matching the question, best `ts_rank_cd` first.
+     *
+     * With `withoutVectorFor`, only chunks that model has no vector for yet: what its vector leg
+     * cannot see.
+     */
     public async fullText(
         kbs: readonly string[],
         question: string,
         match: FullTextMatch,
         filter: MetadataFilter,
-        limit: number
+        limit: number,
+        withoutVectorFor?: string
     ): Promise<string[]> {
-        const filterSql = metadataFilterSql(filter, 4);
+        const filterSql = metadataFilterSql(filter, 5);
         const { rows } = await this.postgres.query<{ id: string }>(
             `WITH q AS (
                  SELECT k.id AS kb, ${tsQuery(match)} AS query FROM knowledge_bases k WHERE k.id = ANY($1::text[])
@@ -68,10 +74,11 @@ export class SearchRepository {
              FROM q
              JOIN documents d ON d.kb = q.kb
              JOIN chunks c ON c.document_id = d.id
-             WHERE q.query IS NOT NULL AND numnode(q.query) > 0 AND c.fts @@ q.query${filterSql.sql}
+             WHERE q.query IS NOT NULL AND numnode(q.query) > 0 AND c.fts @@ q.query
+               AND ($4::text IS NULL OR NOT EXISTS (SELECT 1 FROM embeddings e WHERE e.chunk_id = c.id AND e.model = $4))${filterSql.sql}
              ORDER BY ts_rank_cd(c.fts, q.query) DESC, c.id
              LIMIT $3`,
-            [kbs, question, limit, ...filterSql.values]
+            [kbs, question, limit, withoutVectorFor ?? null, ...filterSql.values]
         );
 
         return rows.map((row) => row.id);
@@ -119,8 +126,8 @@ export class SearchRepository {
      * What a result shows, for the given chunk ids, with a snippet around the question's terms
      * (or the start of the chunk when none of them occur — a vector-only hit).
      *
-     * `demoted` marks what search ranks last without hiding: a document whose `status` is
-     * `abandoned`, and one another document names in `supersedes`.
+     * `demoted` marks what search moves to the end of its results without dropping it: a document
+     * whose `status` is `abandoned`, and one another document names in `supersedes`.
      */
     public async details(ids: readonly string[], question: string): Promise<SearchHitDTO[]> {
         if (CommonUtils.isEmpty(ids)) {

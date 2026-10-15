@@ -61,6 +61,16 @@ describe('SearchRepository', () => {
             expect(await search.fullText(['dev'], 'the of and', FullTextMatch.Any, NO_FILTER, 10)).toEqual([]);
         });
 
+        it('keeps to chunks the given model has no vector for, when asked', async () => {
+            expect.assertions(2);
+
+            const pending = await seedDocument(documentDTO('raw/pending.md'), [chunkDTO(0, 'Fact', 'The pod waits for its vector.')]);
+
+            expect(await search.fullText(['dev'], 'pod', FullTextMatch.Any, NO_FILTER, 10, 'test-embed:v1')).toEqual([pending.Fact]);
+            expect(await search.fullText(['dev'], 'pod', FullTextMatch.Any, NO_FILTER, 10, 'other-model:v1'))
+                .toEqual(expect.arrayContaining([ids.configmap, ids.successor, pending.Fact]));
+        });
+
         it('searches only the given knowledge bases and honours the metadata filter', async () => {
             expect.assertions(2);
 

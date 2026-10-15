@@ -22,14 +22,14 @@ Every route but `/health*` needs a bearer token with `knowledge-base-api.reader`
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/search` | Search. Query: `q` (required), `kb` (comma-separated ids), `filter` (`key:value,…` on metadata — a repeated key means "or", different keys "and"; matches scalars and array members), `limit` (1–50, default 10), `model` (answer with another configured model, to compare), `fullTextWeight` / `vectorWeight` (0–10, per-request RRF weights — to measure a blend). Returns `{ mode: VECTOR\|HYBRID\|FULLTEXT, models, results: [{ kb, externalId, anchor, title, heading, snippet, score, date, url, metadata }] }`. Abandoned specs (`status: abandoned`) and superseded notes (named in another document's `supersedes`) rank last |
+| GET | `/search` | Search. Query: `q` (required), `kb` (comma-separated ids), `filter` (`key:value,…` on metadata — a repeated key means "or", different keys "and"; matches scalars and array members), `limit` (1–50, default 10), `model` (answer with another configured model, to compare), `fullTextWeight` / `vectorWeight` (0–10, per-request RRF weights — to measure a blend). Returns `{ mode: VECTOR\|HYBRID\|FULLTEXT, models, results: [{ kb, externalId, anchor, title, heading, snippet, score, date, url, metadata }] }`. Abandoned specs (`status: abandoned`) and superseded notes (named in another document's `supersedes`) that make the `limit` are moved to the end, not dropped |
 | GET | `/documents` | One whole document. Query: `id` (an `externalId` or a result's `anchor`), `kb`. `404` when no readable KB holds it, `409` when several do and `kb` is omitted |
 | GET | `/status` | Per readable KB: cursor (git: indexed commit), last run (start, end, outcome, error), last success, document and chunk counts, documents per `area`, per model embedded and pending chunks; plus this pod's loop state |
 | POST | `/reindex` | Starts a run now and answers `202`. Query: `kb`, `full=true` (ignore the cursor and read everything — the recovery path). The only way to build a knowledge base for the first time or to embed a backlog above `indexer.maxScheduledEmbeddings`. Queues behind a run already in progress in this pod |
 
 ## Search
 
-Two legs merged with weighted reciprocal rank fusion: full-text (the question's lexemes ORed, `ts_rank_cd`) and vector (cosine distance on the model's HNSW index). **Default weights are vector only** — in the model measurement vector alone beat plain RRF — and full-text answers whatever the vector leg cannot: a knowledge base without a model, or every knowledge base when the question cannot be embedded (`mode: FULLTEXT`). Measure a blend before configuring it:
+Two legs merged with weighted reciprocal rank fusion: full-text (the question's lexemes ORed, `ts_rank_cd`) and vector (cosine distance on the model's HNSW index). **Default weights are vector only** — in the model measurement vector alone beat plain RRF — and full-text answers whatever the vector leg cannot: a knowledge base without a model, chunks the model has no vector for yet (a deferred backlog, a failed batch — `mode: HYBRID`), or every knowledge base when the question cannot be embedded (`mode: FULLTEXT`). Measure a blend before configuring it:
 
 ```bash
 KB_API_URL=http://localhost:4003 KB_API_TOKEN=… node scripts/evaluate-search.mjs questions.json 0:1 0.25:1 0.5:1
