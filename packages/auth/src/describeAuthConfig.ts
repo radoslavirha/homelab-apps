@@ -1,4 +1,4 @@
-import { ObjectUtils } from '@radoslavirha/utils';
+import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
 import { VerifierType } from './VerifierType.js';
 import type { AuthConfig, TrustedIssuer } from './schemas/auth.schema.js';
 
@@ -22,7 +22,7 @@ export const describeAuthConfig = (config: AuthConfig): AuthConfigSummary => {
     return {
         // Nothing configured is the one state worth raising a voice about: any
         // guarded route will fail, and no request will ever say why.
-        level: methods.length === 0 ? 'warn' : 'info',
+        level: CommonUtils.isEmpty(methods) ? 'warn' : 'info',
         message: summaryLine(config, methods),
         methods,
         issuers: issuersOf(config).map(describeIssuer)
@@ -50,7 +50,7 @@ export interface IssuerSummary {
 }
 
 const summaryLine = (config: AuthConfig, methods: readonly string[]): string => {
-    if (methods.length === 0) {
+    if (CommonUtils.isEmpty(methods)) {
         return 'auth — no verifier is configured; any guarded route will fail.';
     }
 

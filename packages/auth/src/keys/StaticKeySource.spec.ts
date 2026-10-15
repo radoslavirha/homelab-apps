@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { generateKeyPair, exportSPKI } from 'jose';
-import { StaticAlgorithmMismatchError, StaticKeySource, UnknownStaticIssuerError } from './StaticKeySource.js';
+import { StaticAlgorithmMismatchError } from './StaticAlgorithmMismatchError.js';
+import { StaticKeySource } from './StaticKeySource.js';
+import { UnknownStaticIssuerError } from './UnknownStaticIssuerError.js';
 import { TrustedIssuerSchema } from '../schemas/auth.schema.js';
 import { TEST_SECRET } from '../test/mintTestToken.js';
 

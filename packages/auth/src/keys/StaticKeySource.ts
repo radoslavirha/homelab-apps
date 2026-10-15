@@ -1,5 +1,7 @@
 import { importSPKI } from 'jose';
-import { UnresolvableKeyError } from '../IKeySource.js';
+import { InvalidStaticKeyError } from './InvalidStaticKeyError.js';
+import { StaticAlgorithmMismatchError } from './StaticAlgorithmMismatchError.js';
+import { UnknownStaticIssuerError } from './UnknownStaticIssuerError.js';
 import type { IKeySource, KeyLookup, VerificationKey } from '../IKeySource.js';
 import type { StaticKey, TrustedIssuer } from '../schemas/auth.schema.js';
 import { CommonUtils } from '@radoslavirha/utils';
@@ -84,53 +86,5 @@ export class StaticKeySource implements IKeySource {
 
         this.#imported.set(issuer, imported);
         return imported;
-    }
-}
-
-/**
- * The inline key for this issuer is not a usable PEM public key for its algorithm.
- *
- * `UnresolvableKeyError`: nothing local can ever succeed, and there is no remote
- * to blame, so the verifier must not report it as the key source being down.
- */
-export class InvalidStaticKeyError extends UnresolvableKeyError {
-    constructor(
-        readonly issuer: string,
-        cause: unknown
-    ) {
-        super(`Static key for issuer ${issuer} could not be imported: ${cause instanceof Error ? cause.message : String(cause)}`);
-        this.name = 'InvalidStaticKeyError';
-    }
-}
-
-/**
- * No inline key is configured for this issuer.
- *
- * `UnresolvableKeyError`, because this source is local: there is no fetch to
- * fail, so a miss can only ever mean the credential asked for something that
- * does not exist.
- */
-export class UnknownStaticIssuerError extends UnresolvableKeyError {
-    constructor(readonly issuer: string) {
-        super(`No static key configured for issuer ${issuer}.`);
-        this.name = 'UnknownStaticIssuerError';
-    }
-}
-
-/**
- * The token asked for an algorithm this issuer's key is not for.
- *
- * This is the algorithm-confusion attack arriving — a token signed HS256 with
- * an RSA public key as the secret, against a row configured for RS256. It is
- * emphatically the credential's fault, so it must surface as `invalid`.
- */
-export class StaticAlgorithmMismatchError extends UnresolvableKeyError {
-    constructor(
-        readonly issuer: string,
-        readonly expected: string,
-        readonly received: string
-    ) {
-        super(`Issuer ${issuer} is configured for ${expected}, token used ${received}.`);
-        this.name = 'StaticAlgorithmMismatchError';
     }
 }

@@ -1,28 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { Store } from '@tsed/core';
-import { Get, Post, SpecTypes, getSpec } from '@tsed/schema';
-import { Controller } from '@tsed/di';
+import { SpecTypes, getSpec } from '@tsed/schema';
 import { AuthGuard, decodeMethods } from './AuthGuard.js';
 import { TEST_METHOD } from '@radoslavirha/auth';
 import { SwaggerSecurityScheme } from '@radoslavirha/tsed-swagger';
-import { Anonymous, Authenticate, BEARER_JWT_SCHEME, CurrentPrincipal, RequireRoles } from './decorators.js';
+import { BEARER_JWT_SCHEME } from './decorators.js';
+import { DocumentedController } from './test/DocumentedController.js';
+import { EmptyController } from './test/EmptyController.js';
+import { ExplicitController } from './test/ExplicitController.js';
+import { MixedController } from './test/MixedController.js';
+import { MultiController } from './test/MultiController.js';
+import { OpenController } from './test/OpenController.js';
+import { PartlyProtectedController } from './test/PartlyProtectedController.js';
+import { ProtectedController } from './test/ProtectedController.js';
+import { RoledController } from './test/RoledController.js';
 import type { AuthGuardOptions } from './AuthGuard.js';
-import type { Principal } from '@radoslavirha/auth';
-
-@Controller('/things')
-@Authenticate(TEST_METHOD)
-class ProtectedController {
-    @Get('/')
-    list(@CurrentPrincipal() principal: Principal | undefined): string {
-        return principal?.subject ?? 'anonymous';
-    }
-
-    @Get('/public')
-    @Anonymous()
-    open(): string {
-        return 'open';
-    }
-}
 
 const guardOptionsOn = (property: string): AuthGuardOptions | undefined =>
     Store.fromMethod(ProtectedController, property).get(AuthGuard) as AuthGuardOptions | undefined;
@@ -57,14 +49,6 @@ describe('@CurrentPrincipal', () => {
 });
 
 describe('@Authenticate(method)', () => {
-    @Controller('/devices')
-    @Authenticate(TEST_METHOD)
-    class ExplicitController {
-        @Get('/')
-        list(): string {
-            return '';
-        }
-    }
 
     it('records the method the route asked for', () => {
         const options = Store.fromMethod(ExplicitController, 'list').get(AuthGuard) as { methods?: string };
@@ -79,15 +63,6 @@ describe('@Authenticate(method)', () => {
     });
 
     it('records several methods in the order the route listed them', () => {
-        // Order is policy: the chain tries them in this sequence, so it must
-        // survive the round trip through the store.
-        @Controller('/multi')
-        @Authenticate(TEST_METHOD, 'API_KEY')
-        class MultiController {
-            @Get('/') list(): string {
-                return ''; 
-            }
-        }
 
         const options = Store.fromMethod(MultiController, 'list').get(AuthGuard) as { methods?: string };
 
@@ -95,23 +70,6 @@ describe('@Authenticate(method)', () => {
     });
 
     it('lets a method-level decorator REPLACE the class-level one, not add to it', () => {
-        // The behaviour `interactive-map-feeder-api` depends on to keep a
-        // person's token out of the device route. It works only because the
-        // encoded value is a string: Ts.ED concatenates arrays on merge, so a
-        // plain `string[]` here would have made this route admit both.
-        @Controller('/mixed')
-        @Authenticate(TEST_METHOD)
-        class MixedController {
-            @Get('/inherited') inherited(): string {
-                return ''; 
-            }
-
-            @Get('/swapped')
-            @Authenticate('DEVICE')
-            swapped(): string {
-                return ''; 
-            }
-        }
 
         const read = (key: string) =>
             decodeMethods((Store.fromMethod(MixedController, key).get(AuthGuard) as { methods?: string }).methods);
@@ -120,63 +78,6 @@ describe('@Authenticate(method)', () => {
         expect(read('swapped')).toEqual(['DEVICE']);
     });
 });
-
-@Controller('/qr-codes')
-@Authenticate(TEST_METHOD)
-class DocumentedController {
-    @Get('/')
-    list(@CurrentPrincipal() principal: Principal | undefined): string {
-        return principal?.subject ?? '';
-    }
-
-    @Post('/')
-    create(): string {
-        return 'created';
-    }
-
-    @Get('/:slug')
-    @Anonymous()
-    resolve(): string {
-        return 'redirect';
-    }
-}
-
-/** Method-level use: supported, though the class-level form is the safe default. */
-@Controller('/mixed')
-class PartlyProtectedController {
-    @Get('/open')
-    open(): string {
-        return 'open';
-    }
-
-    @Get('/closed')
-    @Authenticate(TEST_METHOD)
-    closed(): string {
-        return 'closed';
-    }
-}
-
-@Controller('/roled')
-@Authenticate(TEST_METHOD)
-@RequireRoles('qr-manager.reader')
-class RoledController {
-    @Get('/')
-    read(): string {
-        return 'read';
-    }
-
-    @Get('/admin-only')
-    @RequireRoles('qr-manager.admin')
-    adminOnly(): string {
-        return 'admin';
-    }
-
-    @Get('/either')
-    @RequireRoles('qr-manager.admin', 'qr-manager.editor')
-    either(): string {
-        return 'either';
-    }
-}
 
 const specOf = (token: Parameters<typeof getSpec>[0]) =>
     getSpec(token, { specType: SpecTypes.OPENAPI }) as {
@@ -308,16 +209,6 @@ describe('generated OpenAPI — @RequireRoles', () => {
     });
 
     it('puts no 403 on an anonymous route, which cannot refuse anyone for a role', () => {
-        @Controller('/open')
-        @Authenticate(TEST_METHOD)
-        @RequireRoles('qr-manager.reader')
-        class OpenController {
-            @Get('/free')
-            @Anonymous()
-            free(): string {
-                return 'free'; 
-            }
-        }
 
         const spec = specOf(OpenController);
 
@@ -326,17 +217,6 @@ describe('generated OpenAPI — @RequireRoles', () => {
     });
 
     it('adds no 403 for a decorator that named no role at all', () => {
-        // `@RequireRoles()` is a mistake, but it must not document a refusal the
-        // guard will never produce — it treats an empty entry as no requirement.
-        @Controller('/empty')
-        @Authenticate(TEST_METHOD)
-        class EmptyController {
-            @Get('/')
-            @RequireRoles()
-            list(): string {
-                return ''; 
-            }
-        }
 
         expect(specOf(EmptyController).paths['/empty']?.['get']?.responses?.['403']).toBeUndefined();
     });

@@ -1,5 +1,6 @@
 export * from './MiotSpecV2DTO.js';
 export * from './MiotSpecV2InstanceDTO.js';
+export * from './MiotSpecV2InstancesDTO.js';
 export * from './MiotSpecV2PropertyValueDTO.js';
 export * from './MiotSpecV2ServiceActionDTO.js';
 export * from './MiotSpecV2ServiceDTO.js';

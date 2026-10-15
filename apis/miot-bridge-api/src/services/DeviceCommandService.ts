@@ -113,7 +113,7 @@ export class DeviceCommandService {
         // no span and makes no call, and it is the one this reporting exists for.
         this.reportUnresolvedProperties(storageId, device.model, unresolved);
 
-        if (!props.length) return { miotDeviceId: device.deviceId, results: [] };
+        if (CommonUtils.isEmpty(props)) return { miotDeviceId: device.deviceId, results: [] };
 
         const miotDevice = this.registry.getOrCreate(device);
         // No `propertySource` here: a bulk read mixes published and overridden entries, so the call
@@ -173,7 +173,7 @@ export class DeviceCommandService {
      * restart. The dedupe set is bounded by the subscription count, and a restart re-arms it.
      */
     private reportUnresolvedProperties(storageId: string, model: string, unresolved: string[]): void {
-        if (!unresolved.length) return;
+        if (CommonUtils.isEmpty(unresolved)) return;
 
         recordPropertyUnresolved({ method: MIOT_METHOD_GET_PROPERTIES, count: unresolved.length });
 
@@ -212,7 +212,7 @@ export class DeviceCommandService {
      */
     private reportRejectedProperties(span: Span, miotDeviceId: number, results: KeyedPropertyResult[]): void {
         const rejected = results.filter(r => r.code !== 0);
-        if (!rejected.length) return;
+        if (CommonUtils.isEmpty(rejected)) return;
 
         span.setAttributes({
             [ATTR_MIOT_PROPERTY_REJECTED]: rejected.map(r => r.key),
@@ -465,7 +465,7 @@ export class DeviceCommandService {
         };
 
         // Enum property: the value must be one of the listed ones (strict equality: 4 !== "4")
-        if (property.values.length > 0) {
+        if (!CommonUtils.isEmpty(property.values)) {
             if (!property.values.some(allowedVal => allowedVal.value === value)) {
                 reject(property.values.map(v => `${v.value} (${v.description})`).join(', '));
             }

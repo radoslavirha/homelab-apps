@@ -1,3 +1,4 @@
+import { CommonUtils } from '@radoslavirha/utils';
 import { Store, decorateMethodsOf, decoratorTypeOf, DecoratorTypes, useDecorators } from '@tsed/core';
 import { UseAuth } from '@tsed/platform-middlewares';
 import { ParamTypes, UseParam, UsePipe } from '@tsed/platform-params';
@@ -149,8 +150,8 @@ const documentRolesMethod = (): MethodDecorator =>
             return descriptor;
         }
 
-        const requirements = (options?.roles ?? []).filter((anyOf) => anyOf.length > 0);
-        if (requirements.length === 0) {
+        const requirements = (options?.roles ?? []).filter((anyOf) => !CommonUtils.isEmpty(anyOf));
+        if (CommonUtils.isEmpty(requirements)) {
             return descriptor;
         }
 

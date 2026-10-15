@@ -1,3 +1,4 @@
+import { CommonUtils } from '@radoslavirha/utils';
 import {
     HEALTH_CHECKS,
     breakerCheck,
@@ -54,7 +55,7 @@ export class UpstreamHealthCheck implements HealthCheck {
             }
         }
 
-        if (degraded.length === 0) {
+        if (CommonUtils.isEmpty(degraded)) {
             return { status: HealthStatus.Pass };
         }
 

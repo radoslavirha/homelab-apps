@@ -5,6 +5,7 @@ export default defineConfig(mergeConfig(defaultConfig, {
     oxc: false,
     test: {
         coverage: {
+            exclude: ['src/test/**'],
             thresholds: {
                 branches: 90,
                 functions: 90,

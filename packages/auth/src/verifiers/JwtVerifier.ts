@@ -53,7 +53,7 @@ export class JwtVerifier implements ITokenVerifier {
         }
 
         const [scheme, ...rest] = header.trim().split(/\s+/);
-        if (scheme?.toLowerCase() !== 'bearer' || rest.length === 0) {
+        if (scheme?.toLowerCase() !== 'bearer' || CommonUtils.isEmpty(rest)) {
             return undefined;
         }
 
@@ -64,7 +64,7 @@ export class JwtVerifier implements ITokenVerifier {
         // An absent or blank credential is `missing`, not `invalid`. P1.3 counts
         // these separately, and the difference is what tells "a caller nobody
         // remembered" apart from "a caller sending rubbish".
-        if (credential.trim() === '') {
+        if (!StringUtils.isNotEmpty(credential.trim())) {
             return { reason: VerificationReason.Missing };
         }
 

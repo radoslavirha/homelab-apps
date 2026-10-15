@@ -255,7 +255,7 @@ export class DevicePropertyPollerService extends EventEmitter implements OnInit,
     private async pollDueDevices(intervalMs: number): Promise<void> {
         const due = this.dueDevices();
 
-        if (due.length === 0) {
+        if (CommonUtils.isEmpty(due)) {
             recordJobSkip({ name: JOB_POLL_DEVICE_PROPERTIES, reason: JOB_SKIP_REASON_VALUE_NOTHING_DUE });
             return;
         }

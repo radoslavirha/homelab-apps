@@ -1,5 +1,5 @@
 import type { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
-import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
+import { CommonUtils, ObjectUtils, StringUtils } from '@radoslavirha/utils';
 import { RedactionProfile } from '@radoslavirha/redaction';
 import type { ResolvedHttpLogConfig } from './logging.schema.js';
 import type { BaseLogger } from '@radoslavirha/tsed-logger';
@@ -135,11 +135,11 @@ function resolveUrl(requestConfig: LoggedRequestConfig | undefined): string | un
     const url = requestConfig?.url;
     const baseURL = requestConfig?.baseURL;
 
-    if (CommonUtils.isUndefined(url) || url === '') {
+    if (!StringUtils.isNotEmpty(url)) {
         return baseURL;
     }
 
-    if (CommonUtils.isUndefined(baseURL) || baseURL === '' || ABSOLUTE_URL.test(url)) {
+    if (!StringUtils.isNotEmpty(baseURL) || ABSOLUTE_URL.test(url)) {
         return url;
     }
 
