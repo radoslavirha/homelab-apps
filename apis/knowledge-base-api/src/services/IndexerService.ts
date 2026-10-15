@@ -126,9 +126,12 @@ export class IndexerService {
                 embedded[model] = await this.embeddingRepository.copyByHash(kb.id, model);
             }
 
+            const upsertedIds = changes.upserts.map((document) => document.externalId);
+            // A path can be both: git pairs a rewritten file with another as a rename, so the
+            // source of the rename is reported deleted while it still exists at head.
             const deleted = changes.complete
-                ? await this.documents.deleteAllExcept(kb.id, changes.upserts.map((document) => document.externalId))
-                : await this.documents.delete(kb.id, changes.deletes);
+                ? await this.documents.deleteAllExcept(kb.id, upsertedIds)
+                : await this.documents.delete(kb.id, changes.deletes.filter((id) => !upsertedIds.includes(id)));
 
             if (deleted > 0) {
                 instruments.documentsIndexed.add(deleted, { [ATTR_KNOWLEDGE_BASE_ID]: kb.id, [ATTR_DOCUMENT_CHANGE]: DOCUMENT_CHANGE_VALUE_DELETE });

@@ -159,6 +159,19 @@ describe('IndexerService', () => {
         expect(await count('SELECT count(*) AS n FROM embeddings')).toBe(1);
     });
 
+    it('keeps a path reported both changed and deleted, as a rewrite paired into a rename is', async () => {
+        expect.assertions(2);
+
+        sources.adapter.next = { upserts: [sourceDocument('raw/a.md', '## A\n\nalpha')], deletes: [], cursor: 'c1', complete: true };
+        await indexer.index(dev, MANUAL);
+
+        sources.adapter.next = { upserts: [sourceDocument('raw/a.md', '## A\n\nrewritten', { version: 'c2' })], deletes: ['raw/a.md'], cursor: 'c2', complete: false };
+        const result = await indexer.index(dev, MANUAL);
+
+        expect(result.deleted).toBe(0);
+        expect((await postgres.query<{ external_id: string }>('SELECT external_id FROM documents')).rows).toEqual([{ external_id: 'raw/a.md' }]);
+    });
+
     it('treats a complete snapshot as the whole truth: anything else is deleted', async () => {
         expect.assertions(1);
 
