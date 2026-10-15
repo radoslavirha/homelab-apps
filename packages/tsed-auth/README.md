@@ -70,6 +70,34 @@ using the enum at both the decorator and `createAuthConfigSchema` is what keeps 
 `@CurrentPrincipal()` yields `Principal | undefined` and never a stand-in. It is `undefined` on an
 `@Anonymous()` route, which is the only place a request reaches a handler unverified.
 
+## Reading the principal in a service
+
+When a service decides something by the caller (which records they may see, whose name goes in an
+audit column), it injects `PrincipalService` and asks for the principal itself:
+
+```ts
+@Service()
+export class KnowledgeBaseAccessService {
+    public constructor(private readonly principals: PrincipalService) {}
+
+    public readable(): KnowledgeBaseConfig[] {
+        const { roles } = this.principals.require();
+        …
+    }
+}
+```
+
+- `current()` returns `Principal | undefined`: `undefined` outside a request (a scheduled job, a
+  startup hook) and on an `@Anonymous()` route the caller sent no credential to.
+- `require()` returns the `Principal` or throws `Unauthorized`. Behind `@Authenticate()` the guard
+  has already refused a request without one, so this is a safe failure, not a second check.
+
+**Prefer this to passing `@CurrentPrincipal()` down.** A controller that only forwards the principal
+through a handler to the one service that reads it adds a parameter to every layer between them.
+Ts.ED keeps the request context in async-local storage for the whole request, so a `SINGLETON`
+reads the right caller on every call. `@CurrentPrincipal()` stays for a controller that uses the
+principal itself.
+
 ## Requiring a role
 
 `@Authenticate` asks *who are you*. `@RequireRoles` asks *may you do this*:

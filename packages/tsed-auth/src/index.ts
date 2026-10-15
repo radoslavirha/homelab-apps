@@ -9,6 +9,7 @@
 export { AuthGuard, PRINCIPAL_CONTEXT_KEY, decodeMethods, encodeMethods, principalOf } from './AuthGuard.js';
 export { AuthenticationService } from './AuthenticationService.js';
 export { PrincipalPipe } from './PrincipalPipe.js';
+export { PrincipalService } from './PrincipalService.js';
 export { Anonymous, Authenticate, CurrentPrincipal, RequireRoles } from './decorators.js';
 export { authenticateBearerJwt } from './testing/authenticateBearerJwt.js';
 export type { AuthenticatableAgent } from './testing/authenticateBearerJwt.js';
