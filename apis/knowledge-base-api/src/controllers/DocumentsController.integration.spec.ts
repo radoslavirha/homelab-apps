@@ -1,0 +1,65 @@
+import { PlatformTest } from '@tsed/platform-http/testing';
+import type SuperTest from 'supertest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { bootstrapIndexed } from '../test/bootstrapIndexed.js';
+import { CORPUS } from '../test/corpus.js';
+import { noRoleToken, readerToken } from '../test/tokens.js';
+
+describe('DocumentsController (integration)', () => {
+    let request: SuperTest.Agent;
+
+    const get = async (query: Record<string, string>, token?: string): Promise<SuperTest.Response> =>
+        request.get('/documents').query(query).set('Authorization', `Bearer ${token ?? await readerToken()}`);
+
+    beforeEach(async () => {
+        ({ request } = await bootstrapIndexed());
+    });
+    afterEach(PlatformTest.reset);
+
+    it('returns the whole document as indexed', async () => {
+        expect.assertions(2);
+
+        const [note] = CORPUS;
+        const response = await get({ id: note.externalId });
+
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual({
+            kb: 'dev',
+            externalId: note.externalId,
+            title: note.title,
+            date: '2026-01-01',
+            url: note.url,
+            version: 'c1',
+            metadata: note.metadata,
+            content: note.content
+        });
+    });
+
+    it('accepts a search result\'s anchor and returns the whole document', async () => {
+        expect.assertions(2);
+
+        const response = await get({ id: `${CORPUS[0].externalId}#fact` });
+
+        expect(response.status).toBe(200);
+        expect(response.body.externalId).toBe(CORPUS[0].externalId);
+    });
+
+    it('answers 404 for an id nobody holds', async () => {
+        expect.assertions(1);
+
+        expect((await get({ id: 'raw/missing.md' })).status).toBe(404);
+    });
+
+    it('answers 404 for a knowledge base the caller cannot read', async () => {
+        expect.assertions(1);
+
+        expect((await get({ id: CORPUS[0].externalId, kb: 'home' })).status).toBe(404);
+    });
+
+    it('refuses without a credential and without the reader role', async () => {
+        expect.assertions(2);
+
+        expect((await request.get('/documents').query({ id: CORPUS[0].externalId })).status).toBe(401);
+        expect((await get({ id: CORPUS[0].externalId }, await noRoleToken())).status).toBe(403);
+    });
+});
