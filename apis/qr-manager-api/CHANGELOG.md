@@ -1,5 +1,14 @@
 # qr-manager-api
 
+## 0.10.3
+
+### Patch Changes
+
+- [#305](https://github.com/radoslavirha/homelab-apps/pull/305) [`04060aa`](https://github.com/radoslavirha/homelab-apps/commit/04060aa63618dfca2f24053b4ac1b6907b800d0a) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - OpenAPI now declares the error responses each route raises, with their exception class body.
+- Updated dependencies [[`d5b67cb`](https://github.com/radoslavirha/homelab-apps/commit/d5b67cb7293177913233282fcac87de11563b933), [`d5b67cb`](https://github.com/radoslavirha/homelab-apps/commit/d5b67cb7293177913233282fcac87de11563b933), [`6bd3255`](https://github.com/radoslavirha/homelab-apps/commit/6bd32558bf2a34f2e3160a799d2618c3961853b5)]:
+  - @radoslavirha/auth@0.2.2
+  - @radoslavirha/tsed-auth@0.3.0
+
 ## 0.10.2
 
 ### Patch Changes

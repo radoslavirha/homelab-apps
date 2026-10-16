@@ -1,5 +1,15 @@
 # interactive-map-feeder
 
+## 0.16.3
+
+### Patch Changes
+
+- [#304](https://github.com/radoslavirha/homelab-apps/pull/304) [`d5b67cb`](https://github.com/radoslavirha/homelab-apps/commit/d5b67cb7293177913233282fcac87de11563b933) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Use CommonUtils.isEmpty instead of a raw length check in UpstreamHealthCheck; no behaviour change.
+- Updated dependencies [[`d5b67cb`](https://github.com/radoslavirha/homelab-apps/commit/d5b67cb7293177913233282fcac87de11563b933), [`d5b67cb`](https://github.com/radoslavirha/homelab-apps/commit/d5b67cb7293177913233282fcac87de11563b933), [`d5b67cb`](https://github.com/radoslavirha/homelab-apps/commit/d5b67cb7293177913233282fcac87de11563b933), [`6bd3255`](https://github.com/radoslavirha/homelab-apps/commit/6bd32558bf2a34f2e3160a799d2618c3961853b5)]:
+  - @radoslavirha/auth@0.2.2
+  - @radoslavirha/tsed-auth@0.3.0
+  - @radoslavirha/tsed-http-provider@0.2.9
+
 ## 0.16.2
 
 ### Patch Changes

@@ -1,5 +1,19 @@
 # miot-bridge
 
+## 0.28.2
+
+### Patch Changes
+
+- [#298](https://github.com/radoslavirha/homelab-apps/pull/298) [`cd19ebf`](https://github.com/radoslavirha/homelab-apps/commit/cd19ebfad35eaee8b0ee26d6b612a043389046f9) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - POST /devices and POST /devices/discover now reject a device token that is not 32 hex characters with 400 instead of registering a device that can never be controlled.
+
+- [#304](https://github.com/radoslavirha/homelab-apps/pull/304) [`d5b67cb`](https://github.com/radoslavirha/homelab-apps/commit/d5b67cb7293177913233282fcac87de11563b933) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Read the miot-spec /instances envelope through a DTO class and choose the newest instance in DeviceDiscoveryService; no behaviour change.
+
+- [#305](https://github.com/radoslavirha/homelab-apps/pull/305) [`04060aa`](https://github.com/radoslavirha/homelab-apps/commit/04060aa63618dfca2f24053b4ac1b6907b800d0a) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - OpenAPI now declares the error responses each route raises, with their exception class body.
+- Updated dependencies [[`d5b67cb`](https://github.com/radoslavirha/homelab-apps/commit/d5b67cb7293177913233282fcac87de11563b933), [`d5b67cb`](https://github.com/radoslavirha/homelab-apps/commit/d5b67cb7293177913233282fcac87de11563b933), [`d5b67cb`](https://github.com/radoslavirha/homelab-apps/commit/d5b67cb7293177913233282fcac87de11563b933), [`6bd3255`](https://github.com/radoslavirha/homelab-apps/commit/6bd32558bf2a34f2e3160a799d2618c3961853b5)]:
+  - @radoslavirha/auth@0.2.2
+  - @radoslavirha/tsed-auth@0.3.0
+  - @radoslavirha/tsed-http-provider@0.2.9
+
 ## 0.28.1
 
 ### Patch Changes
