@@ -1,14 +1,22 @@
-import { describe, expect, it } from 'vitest';
+import { PlatformTest } from '@tsed/platform-http/testing';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { PRINT_PNG_SIZE } from '../constants.js';
 import { QrErrorCorrection } from '../models/QrErrorCorrection.enum.js';
 import { QrImageFormat } from '../models/QrImageFormat.enum.js';
 import { QrImageService } from './QrImageService.js';
 
 describe('QrImageService', () => {
-    const service = new QrImageService();
+    let service: QrImageService;
     const URL = 'https://qr.home/x7k2';
 
+    beforeEach(PlatformTest.create);
+    beforeEach(() => {
+        service = PlatformTest.get<QrImageService>(QrImageService);
+    });
+    afterEach(PlatformTest.reset);
+
     it('renders a PNG buffer with the PNG content type', async () => {
+        expect.assertions(3);
         const result = await service.render(URL, QrImageFormat.PNG);
         expect(result.contentType).toBe('image/png');
         expect(result.body).toBeInstanceOf(Buffer);
@@ -18,6 +26,7 @@ describe('QrImageService', () => {
     });
 
     it('renders an SVG string with the SVG content type', async () => {
+        expect.assertions(3);
         const result = await service.render(URL, QrImageFormat.SVG);
         expect(result.contentType).toBe('image/svg+xml');
         expect(typeof result.body).toBe('string');
@@ -25,6 +34,7 @@ describe('QrImageService', () => {
     });
 
     it('lower error correction produces fewer modules (smaller viewBox)', async () => {
+        expect.assertions(1);
         const low = (await service.render(URL, QrImageFormat.SVG, { ecLevel: QrErrorCorrection.L })).body as string;
         const high = (await service.render(URL, QrImageFormat.SVG, { ecLevel: QrErrorCorrection.H })).body as string;
         const sizeOf = (svg: string): number => {
@@ -35,6 +45,7 @@ describe('QrImageService', () => {
     });
 
     it('honours the size option for PNG output', async () => {
+        expect.assertions(1);
         const result = await service.render(URL, QrImageFormat.PNG, { size: 256 });
         const buffer = result.body as Buffer;
         // PNG IHDR chunk: bytes 16-19 = width (big-endian 32-bit)
@@ -43,6 +54,7 @@ describe('QrImageService', () => {
     });
 
     it('falls back to PRINT_PNG_SIZE when no size is given', async () => {
+        expect.assertions(1);
         const result = await service.render(URL, QrImageFormat.PNG);
         const buffer = result.body as Buffer;
         expect(buffer.readUInt32BE(16)).toBe(PRINT_PNG_SIZE);

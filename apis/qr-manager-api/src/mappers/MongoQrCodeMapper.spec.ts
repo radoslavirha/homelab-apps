@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { PlatformTest } from '@tsed/platform-http/testing';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CommonUtils } from '@radoslavirha/utils';
 import { QrCode } from '../models/QrCode.js';
 import { QrType } from '../models/QrType.enum.js';
@@ -18,7 +19,13 @@ const buildDto = (overrides: Partial<QrCodeMongoDTO> = {}): QrCodeMongoDTO => Ob
 });
 
 describe('MongoQrCodeMapper', () => {
-    const mapper = new MongoQrCodeMapper();
+    let mapper: MongoQrCodeMapper;
+
+    beforeEach(PlatformTest.create);
+    beforeEach(() => {
+        mapper = PlatformTest.get<MongoQrCodeMapper>(MongoQrCodeMapper);
+    });
+    afterEach(PlatformTest.reset);
 
     it('maps a Mongo document to the domain model', () => {
         const model = mapper.mongoToModel(buildDto());
