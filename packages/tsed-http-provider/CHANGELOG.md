@@ -1,5 +1,11 @@
 # @radoslavirha/tsed-http-provider
 
+## 0.2.9
+
+### Patch Changes
+
+- [#304](https://github.com/radoslavirha/homelab-apps/pull/304) [`d5b67cb`](https://github.com/radoslavirha/homelab-apps/commit/d5b67cb7293177913233282fcac87de11563b933) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Use StringUtils.isNotEmpty for URL checks in request logging; no behaviour change.
+
 ## 0.2.8
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @radoslavirha/auth
 
+## 0.2.2
+
+### Patch Changes
+
+- [#304](https://github.com/radoslavirha/homelab-apps/pull/304) [`d5b67cb`](https://github.com/radoslavirha/homelab-apps/commit/d5b67cb7293177913233282fcac87de11563b933) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - One class per file for the key-source errors and AuthConfigurationError, and toolkit empty checks; exports unchanged.
+
 ## 0.2.1
 
 ### Patch Changes

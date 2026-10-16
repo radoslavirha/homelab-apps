@@ -1,5 +1,11 @@
 # qr-manager-ui
 
+## 0.13.4
+
+### Patch Changes
+
+- [#299](https://github.com/radoslavirha/homelab-apps/pull/299) [`0842489`](https://github.com/radoslavirha/homelab-apps/commit/0842489fe755b786ba377a42f7d7917be2bf7278) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - A missing hashed asset now returns 404 and index.html is served with no-cache, so a deploy no longer leaves a blank page.
+
 ## 0.13.3
 
 ### Patch Changes
