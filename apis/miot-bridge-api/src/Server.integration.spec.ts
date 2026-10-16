@@ -1,5 +1,6 @@
 import { describe, beforeEach, afterEach, expect, it, vi } from 'vitest';
 import { PlatformTest } from '@tsed/platform-http/testing';
+import { TestContainersMongo } from '@tsed/testcontainers-mongo';
 import SuperTest from 'supertest';
 import { Logger } from '@radoslavirha/tsed-logger';
 import { Server } from './Server.js';
@@ -8,13 +9,13 @@ import { MqttClientProvider } from './providers/MqttClientProvider.js';
 describe('Server', () => {
     let request: SuperTest.Agent;
 
-    beforeEach(PlatformTest.bootstrap(Server, {
+    beforeEach(TestContainersMongo.bootstrap(Server, {
         imports: [{ token: MqttClientProvider, use: null }]
     }));
     beforeEach(() => {
         request = SuperTest(PlatformTest.callback());
     });
-    afterEach(PlatformTest.reset);
+    afterEach(() => TestContainersMongo.reset());
 
     // Every controller in this service is guarded, so these are the only routes
     // left that answer without a credential. Asserted here rather than in a

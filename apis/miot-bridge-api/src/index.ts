@@ -48,13 +48,13 @@ try {
         ...config.server,
         api: config.api,
         swagger: new SwaggerProvider(swaggerConfig).config,
-        mongoose: ObjectUtils.isEnabled(config.config.mongodb) ? [
+        mongoose: [
             {
                 id: 'default',
                 url: config.config.mongodb.url,
                 connectionOptions: config.config.mongodb.connectionOptions
             }
-        ] : undefined
+        ]
     };
 
     const platform = await Platform.bootstrap(configuration);

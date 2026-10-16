@@ -58,7 +58,11 @@ still sets `http` boots normally and the key is ignored.
 | Xiaomi devices (LAN) | MIoT binary UDP | always | Device control, property reads |
 | miot-spec.org | HTTPS GET | on device registration | Fetch device capability spec |
 | MQTT broker | MQTT pub/sub | `mqtt.enabled` | Inbound commands + outbound notifications |
-| MongoDB | TCP | `mongodb.enabled` | Device registry + notification subscriptions (fallback: local JSON cache) |
+| MongoDB | TCP | always (`mongodb.enabled` must be `true`) | Device registry, notification subscriptions, model property overrides |
+
+MongoDB is the only storage: a config without an enabled `mongodb` block fails at boot. The local
+JSON file storage was removed; a config file that still sets `cachePath` boots normally and the key
+is ignored.
 
 ## Configuration (externalApis)
 
