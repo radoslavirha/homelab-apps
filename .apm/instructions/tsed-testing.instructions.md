@@ -13,9 +13,37 @@ Always import test utilities explicitly from `vitest`:
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 ```
 
+## What gets a spec
+
+Every service, repository, mapper and endpoint has its own `<ClassName>.spec.ts`, and so does any
+plain class with logic of its own (a parser, a state machine). Handlers are the exception: their
+behaviour is covered by the controller integration tests (below). A class covered only indirectly —
+through the integration test of something that uses it — still needs its own spec.
+
 ## Unit tests — with DI container
 
 Ts.ED is DI-based. All `@Service`, `@Injectable`, `@Controller` and `@Provider` classes must be resolved via the DI container, never instantiated with `new` in tests.
+
+`knowledge-base-api` enforces this in lint: a `no-restricted-syntax` block in its `eslint.config.mjs`
+rejects `new XService()` / `XRepository` / `XMapper` / … in spec files (`Fake…` test doubles exempt).
+Copy the block into an app's config once its specs pass it.
+
+Override configuration with a spy on the getter — the provider hands out a deep clone, so mutating
+`configService.config` changes nothing:
+
+```ts
+vi.spyOn(configService, 'config', 'get').mockReturnValue({ ...configService.config, indexer: { ...configService.config.indexer, enabled: true } });
+```
+
+Importing `@radoslavirha/tsed-auth` registers its `AuthenticationService` provider, which
+`PlatformTest.create` cannot build without the app's `AuthProvider` — keep token helpers
+(`mintTestToken`) in a file only the integration specs import. A unit spec whose provider injects
+`PrincipalService` imports `'../providers/AuthProvider.js'` for its side effect, and sets the caller
+with a spy:
+
+```ts
+vi.spyOn(PlatformTest.get<PrincipalService>(PrincipalService), 'require').mockReturnValue(principal);
+```
 
 ### PlatformTest.create — for services and mappers without MongoDB
 
@@ -85,6 +113,22 @@ describe('QrCodeMongoRepository', () => {
     });
 });
 ```
+
+### Postgres — for repositories and anything that needs the schema
+
+A Postgres-backed app starts one container for the run (`globalSetup`) and gives each spec file a
+database of its own (`setupFiles`, before the file's imports load the config). `PlatformTest.create`
+then migrates it like a booting pod, so a repository spec runs against the real schema:
+
+```ts
+beforeEach(PlatformTest.create);
+beforeEach(async () => {
+    documents = PlatformTest.get<DocumentRepository>(DocumentRepository);
+    await truncateIndex();
+});
+```
+
+Never mock the database for a repository: the SQL is the thing under test.
 
 ## Test data
 

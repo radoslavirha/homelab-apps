@@ -61,6 +61,19 @@ COPY --from=build-interactive-map-feeder-api --chown=65532:65532 /prod/interacti
 # No `node` here: the distroless ENTRYPOINT is the node binary, CMD is its argv.
 CMD ["--import", "/home/app/dist/otel/instrument.js", "dist/index.js"]
 
+# ─── knowledge-base-api ────────────────────────────────────────────────────────────
+FROM deps AS build-knowledge-base-api
+
+RUN --mount=type=secret,id=npmrc,target=/root/.npmrc \
+    pnpm --filter=knowledge-base-api run build && \
+    pnpm deploy --filter=knowledge-base-api --prod /prod/knowledge-base-api
+
+FROM runtime-base AS knowledge-base-api
+
+COPY --from=build-knowledge-base-api --chown=65532:65532 /prod/knowledge-base-api /home/app
+# No `node` here: the distroless ENTRYPOINT is the node binary, CMD is its argv.
+CMD ["--import", "/home/app/dist/otel/instrument.js", "dist/index.js"]
+
 # ─── miot-bridge-api ───────────────────────────────────────────────────────────────
 FROM deps AS build-miot-bridge-api
 

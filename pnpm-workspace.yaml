@@ -55,6 +55,8 @@ catalogs:
     '@opentelemetry/instrumentation-express': ^0.70.0
     '@opentelemetry/instrumentation-http': ^0.222.0
     '@opentelemetry/instrumentation-mongoose': ^0.68.0
+    '@opentelemetry/instrumentation-pg': ^0.74.0
+    '@opentelemetry/instrumentation-undici': ^0.32.0
     '@opentelemetry/instrumentation-winston': ^0.66.0
     '@opentelemetry/resources': ^2.11.0
     '@opentelemetry/sdk-logs': ^0.222.0

@@ -28,10 +28,10 @@ Copy this checklist into your response and tick it off as you go:
 ```
 Member: <type>/<name>   Template: <template path>
 - [ ] 1. Pick the template member
-- [ ] 2. Copy it and strip its domain code
+- [ ] 2. Copy it, strip its domain code, read the path-scoped rules before writing any
 - [ ] 3. Wire it in (type-specific reference file)
 - [ ] 4. Agent docs: AGENTS.md + CLAUDE.md (apps only)
-- [ ] 5. Install, then lint/build/test until green
+- [ ] 5. Install, then lint (zero warnings)/build/test until green
 - [ ] 6. check-member.sh passes
 - [ ] 7. README via updating-docs (apps); onboarding-to-homelab (apps); changeset when it should ship
 ```
@@ -58,6 +58,13 @@ Then in the copy:
 - `package.json`: `name` (`<name>` for apps, `@radoslavirha/<name>` for packages), a real `description` (it becomes the image description), `version` `0.1.0`.
 - Delete the template's domain code (controllers, handlers, models, pages, …) and keep the scaffolding: bootstrap, config, providers, health, otel, runtime config, test setup.
 - Replace every remaining occurrence of the template's name. Step 6 lists any you missed.
+
+**Then, before writing any code, read the rules that apply** — for an API
+`.apm/instructions/tsed-api.instructions.md` and `tsed-testing.instructions.md`, for a UI
+`react-testing.instructions.md`. They are path-scoped: they load when a matching file is *read*, never
+when a new one is written, so a member written from scratch misses every one of them otherwise —
+one class per file, DTOs (de)serialized with `Serializer`, `@radoslavirha/utils` guards, providers
+resolved through DI in tests.
 
 ### 3. Wire it in
 

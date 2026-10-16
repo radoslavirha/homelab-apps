@@ -44,7 +44,7 @@ CLI tools the workflows here assume. Check before starting work that needs them:
 | --- | --- | --- |
 | `pnpm` 11 + Node 24 | everything | `pnpm -v && node -v` |
 | `NODE_AUTH_TOKEN` | `pnpm install` (GitHub Packages) — it is in `.env` | `grep -q '^NODE_AUTH_TOKEN=.' .env` |
-| Docker, running | Mongo-backed tests (testcontainers) | `docker info >/dev/null` |
+| Docker, running | Mongo- and Postgres-backed tests (testcontainers) | `docker info >/dev/null` |
 | `apm` | deploying skills and rules after clone / after editing `.apm/` | `apm --version` |
 | `gh`, authenticated | anything touching GitHub (issues, PRs, the `homelab` repo) | `gh auth status` |
 
@@ -166,6 +166,13 @@ ui/<ui-name>/
 - Avoid constructing DTOs and calling endpoints/repositories from handlers. Delegate DTO construction to services.
 - Use `@radoslavirha/*` packages from [toolkit-hub](https://github.com/radoslavirha/toolkit-hub)
 - always use class member visibility modifiers
+- **One class per file**, the file named after the class — DTOs, response models and test doubles
+  included. An interface or type used only by that class may sit beside it; a second class may not.
+- **Guards and helpers come from `@radoslavirha/utils`, never raw checks**: `CommonUtils.isNil` /
+  `notNil` / `isNull` / `isUndefined` / `isEmpty`, `StringUtils.isNotEmpty`, `DefaultsUtil` (the
+  `using-utils` skill has the table). API `lint` runs with `--max-warnings 0`, so a `PreferUtils`
+  warning fails it. Checks the linter cannot see — `x === ''`, the truthiness of a nullable,
+  `.length === 0` — fall under the same rule.
 
 ### Dependency Injection (Ts.ED)
 
@@ -182,6 +189,20 @@ ui/<ui-name>/
 - DTO models do not need `@Description` decorator, use JSDoc.
 - Endpoint request/response models follow CamelCase `{Resource}{HTTP Method}{Request/Response}` convention
 - always build models using `CommonUtils.buildModelStrict` / `CommonUtils.buildModelPartial` / `CommonUtils.buildModelCore` from `@radoslavirha/utils` (`buildModelStrict` for fully-defined models, `buildModelPartial` for partial/patch-like data, `buildModelCore` only for shared low-level model-building helpers)
+
+### Endpoints & DTOs
+
+- An endpoint accepts and returns **DTOs only**. A DTO is a `@tsed/schema`-decorated class that
+  mirrors the wire format — `@Name('wire_name')` where the wire spells a field differently,
+  `@AdditionalProperties(false)` — one per file under `endpoints/<group>/dto/` (storage:
+  `storage/<group>/dto/`).
+- **Responses are deserialized, requests serialized**, with `Serializer` from
+  `@radoslavirha/tsed-common`: `Serializer.deserialize(body, ResponseDTO)` (`deserializeArray` for a
+  list) and `Serializer.serialize(request, RequestDTO)`. Never return a client's raw body, an object
+  literal typed as a DTO, or an SDK's own types — an Octokit response is deserialized like any other.
+  Storage repositories deserialize their rows the same way.
+- No logic in an endpoint: filtering, decoding and mapping belong to its caller.
+- Details and examples: `.apm/instructions/tsed-api.instructions.md`.
 
 ### Enums
 
@@ -222,13 +243,22 @@ ui/<ui-name>/
 - One controller file per resource
 - Use `@Docs(version)` for Swagger grouping
 - Use `@Returns(...)` with proper content types
+- Declare each error a route raises with its exception class — `@Returns(NotFound.STATUS, NotFound)`, never a
+  bare `@Returns(404)`. The response model's `@Description` describes a success response; no `.Description()` on `@Returns`.
 - Export from `controllers/index.ts`
 
 ## Testing
 
 - Framework: **Vitest**. Unit specs `*.spec.ts` co-located with source; integration specs `*.integration.spec.ts` with `PlatformTest` from `@tsed/platform-http/testing`.
 - Run: `pnpm --filter ./<member-path> test` (or `pnpm test` inside the member).
-- Conventions are path-scoped rules in `.apm/instructions/` (`testing`, `tsed-testing`, `react-testing`); they load when you open a spec. A bug fix's test must fail without the fix — prove it with `bash scripts/check-regression-test.sh`.
+- Conventions are path-scoped rules in `.apm/instructions/` (`tsed-testing`, `react-testing`); they load when you open a spec. A bug fix's test must fail without the fix — prove it with `bash scripts/check-regression-test.sh`.
+- **A path-scoped rule loads when a matching file is *read*, not when a new one is written** — so in
+  a new member, read `.apm/instructions/tsed-testing.instructions.md` before the first spec. The
+  rules that get missed: every service, repository, mapper and endpoint has its own spec (handlers
+  are covered by controller integration tests); resolve providers through DI (`PlatformTest.create` +
+  `PlatformTest.get`, `vi.spyOn` on collaborators, `vi.spyOn(configService, 'config', 'get')` for
+  config) and never `new` one; `expect.assertions(n)` at the top of every async test; no tests of
+  decorators.
 
 ## Adding a workspace member
 
@@ -253,6 +283,9 @@ matter in every change:
   Local development uses the sandbox IdP's real JWKS (`config/localhost.json`); tests use an
   inline HS256 key (`config/test.json`).
 - **A misconfiguration must fail at boot** (`createAuthConfigSchema` makes it a parse error).
+- **A service that decides by the caller injects `PrincipalService`** and calls `require()` (or
+  `current()` where there may be none). Do not read `@CurrentPrincipal()` in a controller only to
+  pass it down through a handler; that parameter stays for a controller that uses the principal itself.
 
 ## Health checks
 
