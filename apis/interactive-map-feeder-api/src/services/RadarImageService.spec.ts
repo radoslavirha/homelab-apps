@@ -57,6 +57,14 @@ describe('RadarImageService', () => {
             expect(height).toBe(SURFACE.height);
         });
 
+        it('encodes the image as PNG, though the surface map is a JPEG', async () => {
+            expect.assertions(1);
+
+            const image = await service.getCurrentRadarImage();
+
+            expect((await sharp(image).metadata()).format).toBe('png');
+        });
+
         it('stacks borders, cities, radar and city dots on the surface, each scaled to it', async () => {
             expect.assertions(6);
             const composite = vi.spyOn(raster, 'compositeImages');
