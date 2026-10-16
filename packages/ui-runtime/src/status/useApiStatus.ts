@@ -36,13 +36,15 @@ export const useApiStatus = (options: UseApiStatusOptions = {}): UseApiStatusRes
     const { onlineAware = true, recoveryProbe } = options;
     const [status, setStatus] = useState<ApiStatus>('ok');
 
-    // True only while `unreachable` was set by the browser's offline event. An
-    // `online` event says the network is back, nothing about the backend or the
-    // session, so it may clear only that state — never degraded/unauthenticated.
-    const offlineRef = useRef(false);
+    // The status the browser's offline event replaced, or null while it has not
+    // fired. An `online` event says the network is back, nothing about the
+    // backend or the session, so it only restores what was there before.
+    const offlineRef = useRef<ApiStatus | null>(null);
+    const statusRef = useRef(status);
+    statusRef.current = status;
 
     const report = useCallback((outcome: RequestOutcome) => {
-        offlineRef.current = false;
+        offlineRef.current = null;
         setStatus(statusForOutcome(outcome));
     }, []);
 
@@ -51,13 +53,13 @@ export const useApiStatus = (options: UseApiStatusOptions = {}): UseApiStatusRes
             return;
         }
         const goOffline = () => {
-            offlineRef.current = true;
+            offlineRef.current ??= statusRef.current;
             setStatus('unreachable');
         };
         const goOnline = () => {
-            if (offlineRef.current) {
-                offlineRef.current = false;
-                setStatus('ok');
+            if (offlineRef.current !== null) {
+                setStatus(offlineRef.current);
+                offlineRef.current = null;
             }
         };
         window.addEventListener('offline', goOffline);
