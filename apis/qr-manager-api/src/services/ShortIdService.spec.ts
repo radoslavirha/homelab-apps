@@ -1,8 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import { PlatformTest } from '@tsed/platform-http/testing';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ShortIdService } from './ShortIdService.js';
 
 describe('ShortIdService', () => {
-    const service = new ShortIdService();
+    let service: ShortIdService;
+
+    beforeEach(PlatformTest.create);
+    beforeEach(() => {
+        service = PlatformTest.get<ShortIdService>(ShortIdService);
+    });
+    afterEach(PlatformTest.reset);
 
     it('returns a 4 character slug', () => {
         const slug = service.generate();
