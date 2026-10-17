@@ -12,6 +12,7 @@ import { GitHubBranchDTO } from './dto/GitHubBranchDTO.js';
 import { GitHubCompareDTO } from './dto/GitHubCompareDTO.js';
 import { GitHubRepositoryDTO } from './dto/GitHubRepositoryDTO.js';
 import { GitHubTreeDTO } from './dto/GitHubTreeDTO.js';
+import { fetchWithTimeout } from './fetchWithTimeout.js';
 
 /** True for a GitHub 404 — a commit, tree or file that does not exist (any more). */
 export const isGitHubNotFound = (error: unknown): boolean => error instanceof RequestError && error.status === 404;
@@ -22,6 +23,9 @@ export const isGitHubNotFound = (error: unknown): boolean => error instanceof Re
  * Octokit owns the App's token dance: it signs the App JWT from the private key (PKCS#1 as
  * GitHub issues it), finds the installations, mints installation tokens and renews them before
  * they expire. Retries on server errors and waiting out rate limits are its plugins too.
+ * `github.timeoutMs` bounds each attempt, not the call: see {@link fetchWithTimeout}.
+ *
+ * Every read takes an optional `signal` — the indexing run's — that aborts it, retries included.
  *
  * {@link listRepositories} must run first: it is what discovers which repositories the App
  * covers and keeps an installation client for each.
@@ -59,50 +63,50 @@ export class GitHubEndpoint {
         return repositories;
     }
 
-    public async getBranch(repo: GitHubRepositoryDTO, branch: string): Promise<GitHubBranchDTO> {
+    public async getBranch(repo: GitHubRepositoryDTO, branch: string, signal?: AbortSignal): Promise<GitHubBranchDTO> {
         const { data } = await this.client(repo).rest.repos.getBranch({
             owner: repo.owner.login,
             repo: repo.name,
             branch,
-            request: this.request()
+            request: { signal }
         });
 
         return Serializer.deserialize(data, GitHubBranchDTO);
     }
 
     /** What changed from `base` to `head`. Only the first page: it carries the whole file list. */
-    public async compare(repo: GitHubRepositoryDTO, base: string, head: string): Promise<GitHubCompareDTO> {
+    public async compare(repo: GitHubRepositoryDTO, base: string, head: string, signal?: AbortSignal): Promise<GitHubCompareDTO> {
         const { data } = await this.client(repo).rest.repos.compareCommitsWithBasehead({
             owner: repo.owner.login,
             repo: repo.name,
             basehead: `${base}...${head}`,
             // Commits are paginated, files are not: page one lists every file (up to 300).
             per_page: 1,
-            request: this.request()
+            request: { signal }
         });
 
         return Serializer.deserialize(data, GitHubCompareDTO);
     }
 
     /** The whole tree of commit `sha`, recursively. */
-    public async getTree(repo: GitHubRepositoryDTO, sha: string): Promise<GitHubTreeDTO> {
+    public async getTree(repo: GitHubRepositoryDTO, sha: string, signal?: AbortSignal): Promise<GitHubTreeDTO> {
         const { data } = await this.client(repo).rest.git.getTree({
             owner: repo.owner.login,
             repo: repo.name,
             tree_sha: sha,
             recursive: 'true',
-            request: this.request()
+            request: { signal }
         });
 
         return Serializer.deserialize(data, GitHubTreeDTO);
     }
 
-    public async getBlob(repo: GitHubRepositoryDTO, sha: string): Promise<GitHubBlobDTO> {
+    public async getBlob(repo: GitHubRepositoryDTO, sha: string, signal?: AbortSignal): Promise<GitHubBlobDTO> {
         const { data } = await this.client(repo).rest.git.getBlob({
             owner: repo.owner.login,
             repo: repo.name,
             file_sha: sha,
-            request: this.request()
+            request: { signal }
         });
 
         return Serializer.deserialize(data, GitHubBlobDTO);
@@ -118,10 +122,6 @@ export class GitHubEndpoint {
         return client;
     }
 
-    private request(): { signal: AbortSignal } {
-        return { signal: AbortSignal.timeout(this.config().timeoutMs) };
-    }
-
     private getApp(): App {
         if (CommonUtils.isUndefined(this.app)) {
             const config = this.config();
@@ -134,7 +134,9 @@ export class GitHubEndpoint {
                 Octokit: Octokit.defaults({
                     baseUrl: config.baseUrl,
                     userAgent: this.configService.api.service,
-                    retry: { retries: config.retries }
+                    retry: { retries: config.retries },
+                    // Every request of the App and its installations, the repository listing included.
+                    request: { fetch: fetchWithTimeout(config.timeoutMs) }
                 }),
                 log: {
                     debug: () => undefined,

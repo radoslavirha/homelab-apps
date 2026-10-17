@@ -1,6 +1,6 @@
 import { Authenticate, RequireRoles } from '@radoslavirha/tsed-auth';
 import { Controller, ProviderScope, Scope } from '@tsed/di';
-import { NotFound } from '@tsed/exceptions';
+import { Conflict, NotFound } from '@tsed/exceptions';
 import { QueryParams } from '@tsed/platform-params';
 import { Default, Description, Example, Post, Returns } from '@tsed/schema';
 import { Docs } from '@tsed/swagger';
@@ -22,9 +22,10 @@ export class ReindexController {
 
     @Post('/')
     @RequireRoles(ROLE_ADMIN)
-    @Description('Starts a run and returns at once (202). A run already in progress in this pod is followed by this one.')
+    @Description('Starts a run and returns once it has started (202, STARTED), or queues it behind the run in progress in this pod (202, QUEUED). 409 when another pod holds the index lock: nothing was started.')
     @Returns(202, ReindexPostResponse)
     @Returns(NotFound.STATUS, NotFound)
+    @Returns(Conflict.STATUS, Conflict)
     public reindex(
         @Description('Comma-separated knowledge base ids. Default: every knowledge base the caller may read.')
         @Example('dev')
@@ -35,7 +36,7 @@ export class ReindexController {
         @Default(false)
         @QueryParams('full')
         full?: boolean
-    ): ReindexPostResponse {
+    ): Promise<ReindexPostResponse> {
         return this.handler.execute(kb, full === true);
     }
 }

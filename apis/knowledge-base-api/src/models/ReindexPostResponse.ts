@@ -1,6 +1,7 @@
-import { AdditionalProperties, CollectionOf, Description, Example, Required } from '@tsed/schema';
+import { AdditionalProperties, CollectionOf, Description, Enum, Example, Required } from '@tsed/schema';
+import { ReindexState } from './ReindexState.enum.js';
 
-@Description('An indexing run was requested.')
+@Description('An indexing run was started, or queued behind the one in progress.')
 @AdditionalProperties(false)
 export class ReindexPostResponse {
     @Description('Knowledge bases the run covers.')
@@ -13,7 +14,8 @@ export class ReindexPostResponse {
     @Required()
     public full: boolean;
 
-    @Description('A run was already in progress in this pod; this one starts when it ends.')
+    @Description('STARTED: the run is in progress. QUEUED: a run is in progress in this pod; this one follows it. When another pod holds the index lock, the answer is 409 instead.')
     @Required()
-    public queued: boolean;
+    @Enum(ReindexState)
+    public state: ReindexState;
 }

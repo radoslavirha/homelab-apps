@@ -78,10 +78,11 @@ export class PostgresService {
      * it with the connection.
      *
      * If that connection is lost while `fn` runs (a Postgres restart), Postgres has released the
-     * lock already: `fn` is left to finish, and there is nothing left to unlock.
+     * lock already, and `fn`'s signal aborts: whatever it guards may now run in another pod too.
+     * There is nothing left to unlock.
      */
-    public withTryAdvisoryLock<T>(lock: AdvisoryLock, fn: () => Promise<T>): Promise<LockedResult<T>> {
-        return this.withClient(async (client, isLost) => {
+    public withTryAdvisoryLock<T>(lock: AdvisoryLock, fn: (lockLost: AbortSignal) => Promise<T>): Promise<LockedResult<T>> {
+        return this.withClient(async (client, lost) => {
             const { rows } = await client.query<{ locked: boolean }>(
                 'SELECT pg_try_advisory_lock($1, $2) AS locked',
                 [lock.namespace, lock.key]
@@ -92,9 +93,9 @@ export class PostgresService {
             }
 
             try {
-                return { acquired: true, result: await fn() };
+                return { acquired: true, result: await fn(lost) };
             } finally {
-                if (isLost()) {
+                if (lost.aborted) {
                     this.log.warn('The advisory lock was released with its lost connection.', {
                         event: 'DB_LOCK_LOST',
                         lock: lock.key
@@ -119,21 +120,24 @@ export class PostgresService {
      * and the process stops. Listened to, the query in flight rejects as usual, and the broken
      * client is destroyed on release instead of going back to the pool.
      */
-    private async withClient<T>(fn: (client: pg.PoolClient, isLost: () => boolean) => Promise<T>): Promise<T> {
+    private async withClient<T>(fn: (client: pg.PoolClient, lost: AbortSignal) => Promise<T>): Promise<T> {
         const client = await this.open().connect();
-        let lost: Error | undefined;
+        const lost = new AbortController();
+        let failure: Error | undefined;
         const onError = (error: Error): void => {
-            lost = error;
+            failure = error;
+            // An AbortError, so a GitHub or Ollama call it cancels is not retried.
+            lost.abort(new DOMException(`The Postgres connection was lost: ${error.message}`, 'AbortError'));
             this.log.warn('A Postgres connection in use failed.', { event: 'DB_CLIENT_ERROR', error: error.message });
         };
 
         client.on('error', onError);
 
         try {
-            return await fn(client, () => CommonUtils.notUndefined(lost));
+            return await fn(client, lost.signal);
         } finally {
             client.off('error', onError);
-            client.release(lost);
+            client.release(failure);
         }
     }
 

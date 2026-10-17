@@ -90,7 +90,7 @@ describe('GitSourceAdapter', () => {
 
             const changes = await adapter().changes(null);
 
-            expect(github.getBranch).toHaveBeenCalledWith(REPOSITORY, 'main');
+            expect(github.getBranch).toHaveBeenCalledWith(REPOSITORY, 'main', undefined);
             expect(changes.complete).toBe(true);
             expect(changes.cursor).toBe('head');
             expect(changes.upserts.map((document) => document.externalId)).toEqual([
@@ -133,7 +133,7 @@ describe('GitSourceAdapter', () => {
 
             await adapter({ ...kb, git: { ...kb.git, branch: 'next' } }).changes('head');
 
-            expect(github.getBranch).toHaveBeenCalledWith(REPOSITORY, 'next');
+            expect(github.getBranch).toHaveBeenCalledWith(REPOSITORY, 'next', undefined);
         });
     });
 
@@ -169,7 +169,7 @@ describe('GitSourceAdapter', () => {
 
             const changes = await adapter().changes('base');
 
-            expect(github.compare).toHaveBeenCalledWith(REPOSITORY, 'base', 'head');
+            expect(github.compare).toHaveBeenCalledWith(REPOSITORY, 'base', 'head', undefined);
             expect(changes.complete).toBe(false);
             expect(changes.upserts.map((document) => document.externalId)).toEqual([
                 'raw/2026-01-09-note.md',
@@ -214,6 +214,38 @@ describe('GitSourceAdapter', () => {
 
             await expect(adapter().changes('base')).rejects.toThrow('Server Error');
             expect(forget).toHaveBeenCalled();
+        });
+    });
+
+    describe('a run that is stopped', () => {
+        it('hands its signal to every GitHub call', async () => {
+            expect.assertions(3);
+
+            const { signal } = new AbortController();
+
+            await adapter().changes(null, signal);
+
+            expect(github.getBranch).toHaveBeenCalledWith(REPOSITORY, 'main', signal);
+            expect(github.getTree).toHaveBeenCalledWith(REPOSITORY, 'head', signal);
+            expect(github.getBlob).toHaveBeenCalledWith(REPOSITORY, 'sha-note', signal);
+        });
+
+        it('stops fetching files once aborted, and throws the reason', async () => {
+            expect.assertions(2);
+
+            const stop = new AbortController();
+            const reason = new DOMException('The pod is shutting down.', 'AbortError');
+
+            // The first file read stops the run; nothing after it is fetched.
+            vi.mocked(github.getBlob).mockImplementationOnce(() => {
+                stop.abort(reason);
+
+                return Promise.reject(reason);
+            });
+
+            await expect(adapter().changes(null, stop.signal)).rejects.toBe(reason);
+            // Two workers: each had at most one read in flight when the run stopped.
+            expect(vi.mocked(github.getBlob).mock.calls.length).toBeLessThanOrEqual(2);
         });
     });
 });
