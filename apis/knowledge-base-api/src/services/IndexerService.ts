@@ -56,6 +56,11 @@ export interface IndexOptions {
     readonly full: boolean;
     /** Started by hand (`POST /reindex`): no limit on the embedding backlog. */
     readonly manual: boolean;
+    /**
+     * Stops the run between documents and embedding batches, and cancels the source and embedder
+     * call in flight. The run then throws the signal's reason.
+     */
+    readonly signal?: AbortSignal;
 }
 
 /**
@@ -66,7 +71,8 @@ export interface IndexOptions {
  * the cursor last, so an interrupted run repeats from the old cursor — every step is idempotent.
  * Embedding comes after the cursor and never fails the run: with the embedder down, text is
  * searchable at once and the vectors catch up on a later run, because "pending" is simply "no
- * row for this model", not a list kept somewhere.
+ * row for this model", not a list kept somewhere. The same order makes stopping safe: an aborted
+ * run is an interrupted one, whichever step it stopped at.
  */
 @Service()
 @Scope(ProviderScope.SINGLETON)
@@ -100,11 +106,13 @@ export class IndexerService {
         }, async (span) => {
             const instruments = knowledgeBaseInstruments();
             const cursor = options.full ? null : await this.knowledgeBases.getCursor(kb.id);
-            const changes = await this.sources.get(kb).changes(cursor);
+            const changes = await this.sources.get(kb).changes(cursor, options.signal);
             let upserted = 0;
             let unchanged = 0;
 
             for (const document of changes.upserts) {
+                options.signal?.throwIfAborted();
+
                 const change = await this.documents.upsert(
                     this.documentMapper.sourceToStorage(kb.id, document),
                     kb.tsConfig,
@@ -125,6 +133,8 @@ export class IndexerService {
             for (const model of kb.models) {
                 embedded[model] = await this.embeddingRepository.copyByHash(kb.id, model);
             }
+
+            options.signal?.throwIfAborted();
 
             const upsertedIds = changes.upserts.map((document) => document.externalId);
             // A path can be both: git pairs a rewritten file with another as a rename, so the
@@ -160,7 +170,7 @@ export class IndexerService {
                     }
                 }
 
-                const count = await this.embedPending(kb, this.embeddings.model(name)!);
+                const count = await this.embedPending(kb, this.embeddings.model(name)!, options.signal);
 
                 embedded[name] += count.embedded;
 
@@ -210,9 +220,10 @@ export class IndexerService {
 
     /**
      * Embeds every chunk of the KB that has no vector from `model`, a batch at a time. Stops at
-     * the first embedder failure: the rest stays pending for the next run.
+     * the first embedder failure: the rest stays pending for the next run. An abort is not an
+     * embedder failure: it ends the run.
      */
-    private embedPending(kb: KnowledgeBaseConfig, model: EmbeddingModelConfig): Promise<{ embedded: number; failed: boolean }> {
+    private embedPending(kb: KnowledgeBaseConfig, model: EmbeddingModelConfig, signal?: AbortSignal): Promise<{ embedded: number; failed: boolean }> {
         return withSpan({
             name: SPAN_EMBED_CHUNKS,
             tracer: INDEXER_TRACER_NAME,
@@ -223,6 +234,8 @@ export class IndexerService {
             let embedded = 0;
 
             for (;;) {
+                signal?.throwIfAborted();
+
                 const batch = await this.embeddingRepository.pending(kb.id, model.name, batchSize);
 
                 if (CommonUtils.isEmpty(batch)) {
@@ -232,8 +245,9 @@ export class IndexerService {
                 let vectors: number[][];
 
                 try {
-                    vectors = await this.embeddings.embedDocuments(model, batch);
+                    vectors = await this.embeddings.embedDocuments(model, batch, signal);
                 } catch (error) {
+                    signal?.throwIfAborted();
                     counter.add(batch.length, { [ATTR_EMBEDDING_MODEL]: model.name, [ATTR_EMBEDDING_OUTCOME]: EMBEDDING_OUTCOME_VALUE_FAILURE });
                     this.log.warn('Embedding failed; chunks stay pending until the next run.', {
                         event: 'INDEXER_EMBED_FAILED',

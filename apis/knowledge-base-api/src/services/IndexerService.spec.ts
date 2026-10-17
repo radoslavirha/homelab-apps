@@ -5,6 +5,7 @@ import { ChunkingMode } from '../models/ChunkingMode.enum.js';
 import type { KnowledgeBaseConfig } from '../models/config/KnowledgeBaseConfig.js';
 import { SourceAdapterFactory } from '../sources/SourceAdapterFactory.js';
 import { EmbeddingRepository } from '../storage/postgres/EmbeddingRepository.js';
+import { KnowledgeBaseRepository } from '../storage/postgres/KnowledgeBaseRepository.js';
 import { PostgresService } from '../storage/postgres/PostgresService.js';
 import { FakeOllamaEndpoint } from '../test/FakeOllamaEndpoint.js';
 import { FakeSourceAdapterFactory } from '../test/FakeSourceAdapterFactory.js';
@@ -222,6 +223,43 @@ describe('IndexerService', () => {
         await indexer.index(dev, MANUAL);
 
         expect(await count('SELECT count(*) AS n FROM embeddings')).toBe(2);
+    });
+
+    describe('a stopped run', () => {
+        const SHUTDOWN = new DOMException('The pod is shutting down.', 'AbortError');
+
+        it('writes nothing when stopped before its first document', async () => {
+            expect.assertions(3);
+
+            const stop = new AbortController();
+
+            stop.abort(SHUTDOWN);
+            sources.adapter.next = { upserts: [sourceDocument('raw/note.md', NOTE)], deletes: [], cursor: 'c1', complete: true };
+
+            await expect(indexer.index(dev, { ...MANUAL, signal: stop.signal })).rejects.toBe(SHUTDOWN);
+            expect(await count('SELECT count(*) AS n FROM documents')).toBe(0);
+            expect(await PlatformTest.get<KnowledgeBaseRepository>(KnowledgeBaseRepository).getCursor('dev')).toBeNull();
+        });
+
+        it('stops embedding mid-way as an interruption, not an embedder failure, keeping what it stored', async () => {
+            expect.assertions(4);
+
+            const stop = new AbortController();
+
+            // The shutdown lands while a batch is with the embedder; the call is cancelled.
+            vi.spyOn(ollama, 'embed').mockImplementationOnce(() => {
+                stop.abort(SHUTDOWN);
+
+                return Promise.reject(SHUTDOWN);
+            });
+            sources.adapter.next = { upserts: [sourceDocument('raw/note.md', NOTE)], deletes: [], cursor: 'c1', complete: true };
+
+            await expect(indexer.index(dev, { ...MANUAL, signal: stop.signal })).rejects.toBe(SHUTDOWN);
+            expect(await count('SELECT count(*) AS n FROM chunks')).toBe(2);
+            expect(await count('SELECT count(*) AS n FROM embeddings')).toBe(0);
+            // The cursor was stored before embedding began: the next run only embeds what is pending.
+            expect(await PlatformTest.get<KnowledgeBaseRepository>(KnowledgeBaseRepository).getCursor('dev')).toBe('c1');
+        });
     });
 
     it('defers a backlog above the limit on a scheduled run, and embeds it on a run by hand', async () => {

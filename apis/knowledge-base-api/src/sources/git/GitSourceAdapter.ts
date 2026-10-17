@@ -44,9 +44,9 @@ export class GitSourceAdapter implements SourceAdapter {
         private readonly log: BaseLogger
     ) {}
 
-    public async changes(cursor: string | null): Promise<SourceChanges> {
+    public async changes(cursor: string | null, signal?: AbortSignal): Promise<SourceChanges> {
         try {
-            return await this.read(cursor);
+            return await this.read(cursor, signal);
         } catch (error) {
             // The installation may have changed (key rotated, App moved): find it again next run.
             this.repositories.forget();
@@ -54,9 +54,9 @@ export class GitSourceAdapter implements SourceAdapter {
         }
     }
 
-    private async read(cursor: string | null): Promise<SourceChanges> {
+    private async read(cursor: string | null, signal?: AbortSignal): Promise<SourceChanges> {
         const repository = await this.repositories.repository();
-        const branch = await this.github.getBranch(repository, this.kb.git.branch ?? repository.defaultBranch);
+        const branch = await this.github.getBranch(repository, this.kb.git.branch ?? repository.defaultBranch, signal);
         const head = branch.commit.sha;
 
         if (cursor === head) {
@@ -64,11 +64,11 @@ export class GitSourceAdapter implements SourceAdapter {
         }
 
         if (CommonUtils.notNull(cursor)) {
-            const diff = await this.diff(repository, cursor, head);
+            const diff = await this.diff(repository, cursor, head, signal);
 
             if (CommonUtils.notNull(diff)) {
                 return {
-                    upserts: await this.fetch(repository, head, diff.changed),
+                    upserts: await this.fetch(repository, head, diff.changed, signal),
                     deletes: diff.deleted,
                     cursor: head,
                     complete: false
@@ -76,7 +76,7 @@ export class GitSourceAdapter implements SourceAdapter {
             }
         }
 
-        const tree = await this.github.getTree(repository, head);
+        const tree = await this.github.getTree(repository, head, signal);
 
         if (tree.truncated) {
             throw new Error('GitHub truncated the tree listing; the repository is too large to list in one call.');
@@ -86,19 +86,20 @@ export class GitSourceAdapter implements SourceAdapter {
             .filter((entry) => entry.type === GitHubTreeEntryTypeDTO.Blob && this.included(entry.path))
             .map((entry) => ({ path: entry.path, sha: entry.sha }));
 
-        return { upserts: await this.fetch(repository, head, blobs), deletes: [], cursor: head, complete: true };
+        return { upserts: await this.fetch(repository, head, blobs, signal), deletes: [], cursor: head, complete: true };
     }
 
     /** Changed and deleted paths from `base` to `head`, or `null` when a full listing is needed. */
     private async diff(
         repository: GitHubRepositoryDTO,
         base: string,
-        head: string
+        head: string,
+        signal?: AbortSignal
     ): Promise<{ changed: BlobRef[]; deleted: string[] } | null> {
         let comparison: GitHubCompareDTO;
 
         try {
-            comparison = await this.github.compare(repository, base, head);
+            comparison = await this.github.compare(repository, base, head, signal);
         } catch (error) {
             if (isGitHubNotFound(error)) {
                 this.log.warn('Indexed commit no longer exists; listing the whole tree.', { event: 'GIT_SOURCE_FULL', base, head });
@@ -153,16 +154,23 @@ export class GitSourceAdapter implements SourceAdapter {
         };
     }
 
-    /** Fetches blobs a few at a time and parses each into a document. */
-    private async fetch(repository: GitHubRepositoryDTO, commit: string, blobs: readonly BlobRef[]): Promise<SourceDocument[]> {
+    /** Fetches blobs a few at a time and parses each into a document. An abort stops every worker. */
+    private async fetch(
+        repository: GitHubRepositoryDTO,
+        commit: string,
+        blobs: readonly BlobRef[],
+        signal?: AbortSignal
+    ): Promise<SourceDocument[]> {
         const documents: SourceDocument[] = new Array(blobs.length);
         let next = 0;
 
         const worker = async (): Promise<void> => {
             while (next < blobs.length) {
+                signal?.throwIfAborted();
+
                 const index = next++;
                 const blob = blobs[index];
-                const text = GitSourceAdapter.text(await this.github.getBlob(repository, blob.sha));
+                const text = GitSourceAdapter.text(await this.github.getBlob(repository, blob.sha, signal));
 
                 documents[index] = this.parser.parse(blob.path, text, commit, repository);
             }

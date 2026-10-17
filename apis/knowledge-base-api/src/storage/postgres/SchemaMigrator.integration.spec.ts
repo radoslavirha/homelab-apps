@@ -68,6 +68,39 @@ describe('SchemaMigrator (integration)', () => {
         expect(rows[0].indexdef).toContain('vector(8)');
     });
 
+    describe('a model whose dimensions changed', () => {
+        const indexesOf = async (model: string): Promise<string[]> => (await postgres.query<{ indexdef: string }>(
+            'SELECT indexdef FROM pg_indexes WHERE tablename = $1 AND indexdef LIKE $2',
+            ['embeddings', `%'${model}'%`]
+        )).rows.map((row) => row.indexdef);
+
+        it('drops the index left under the old dimension when no vector of that size is stored', async () => {
+            expect.assertions(3);
+
+            const model = { name: 'second:1b', documentTemplate: '{text}', queryTemplate: '{query}' };
+
+            // Configured with the wrong size first: nothing could be stored under it.
+            await migrate('english', [{ ...model, dimensions: 8 }]);
+            await migrate('english', [{ ...model, dimensions: 16 }]);
+
+            const indexes = await indexesOf('second:1b');
+
+            expect(indexes).toHaveLength(1);
+            expect(indexes[0]).toContain('vector(16)');
+            expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Dropped the index'), expect.objectContaining({ model: 'second:1b' }));
+        });
+
+        it('refuses to boot when vectors of the old size are stored, and says what to do', async () => {
+            expect.assertions(2);
+
+            // The indexed corpus holds 4-dimension vectors of test-embed:v1.
+            const [model] = PlatformTest.get<ConfigService>(ConfigService).config.embeddings.models;
+
+            await expect(migrate('english', [{ ...model, dimensions: 8 }])).rejects.toThrow(/cannot change under one name: add it as a new model entry/);
+            expect(await indexesOf(model.name)).toEqual([expect.stringContaining('vector(4)')]);
+        });
+    });
+
     it('refuses a text search configuration Postgres does not have', async () => {
         expect.assertions(1);
 

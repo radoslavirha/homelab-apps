@@ -20,7 +20,8 @@ export const GitHubAppConfigSchema = z.object({
         })
     ]),
     baseUrl: z.url().default('https://api.github.com'),
-    timeoutMs: z.number().int().positive().default(15_000).describe('Per request, retries excluded.'),
+    timeoutMs: z.number().int().positive().default(15_000)
+        .describe('Per attempt: each retry gets its own. A rate-limit wait between attempts is not counted.'),
     retries: z.number().int().nonnegative().max(10).default(3)
         .describe('Octokit retries server errors with backoff; rate limits are waited out separately.')
 });

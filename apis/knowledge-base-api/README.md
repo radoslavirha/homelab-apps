@@ -25,7 +25,7 @@ Every route but `/health*` and the API documentation (the Swagger landing page a
 | GET | `/search` | Search. Query: `q` (required), `kb` (comma-separated ids), `filter` (`key:value,…` on metadata — a repeated key means "or", different keys "and"; matches scalars and array members; values are strings, so a YAML `true` or `2` in frontmatter never matches), `limit` (1–50, default 10), `model` (answer with another configured model, to compare), `fullTextWeight` / `vectorWeight` (0–10, per-request RRF weights — to measure a blend). Returns `{ mode: VECTOR\|HYBRID\|FULLTEXT, models, results: [{ kb, externalId, anchor, title, heading, snippet, score, date, url, metadata }] }`. Abandoned specs (`status: abandoned`) and superseded notes (named in another document's `supersedes`) that make the `limit` are moved to the end, not dropped |
 | GET | `/documents` | One whole document. Query: `id` (an `externalId` or a result's `anchor`), `kb`. `404` when no readable KB holds it, `409` when several do and `kb` is omitted |
 | GET | `/status` | Per readable KB: cursor (git: indexed commit), last run (start, end, outcome, error), last success, document and chunk counts, documents per `area`, per model embedded and pending chunks; plus this pod's loop state |
-| POST | `/reindex` | Starts a run now and answers `202`. Query: `kb`, `full=true` (ignore the cursor and read everything — the recovery path). The only way to build a knowledge base for the first time or to embed a backlog above `indexer.maxScheduledEmbeddings`. Queues behind a run already in progress in this pod |
+| POST | `/reindex` | Starts a run. Query: `kb`, `full=true` (ignore the cursor and read everything — the recovery path). The only way to build a knowledge base for the first time or to embed a backlog above `indexer.maxScheduledEmbeddings`. Answers once it is known what happened: `202 { knowledgeBases, full, state: STARTED }` when this pod took the index lock; `202 { …, state: QUEUED }` when a run is in progress in this pod (this one follows it, merged with other queued requests); **`409`** when another pod holds the lock — nothing was started, try again when its run ends |
 
 ## Search
 
@@ -54,6 +54,8 @@ every intervalMs (default 5 min), one pod at a time (Postgres advisory lock), in
 
 **First builds and big backlogs are started by hand** (`POST /reindex`): a full embed saturates the Ollama node for ~25 minutes and evicts its chat model. A scheduled run skips a knowledge base that was never indexed, and leaves a model's backlog above `indexer.maxScheduledEmbeddings` (300) pending — `/status` shows it. Requests pass a short `keep_alive` (1m) so a chat model gets its memory back.
 
+**A run stops when the pod does.** On shutdown (a deploy) the run is aborted: the indexer stops between documents and embedding batches and cancels the GitHub or Ollama call in flight, so the pod drains inside its deadline. The same happens when the connection holding the index lock is lost. The knowledge base it was on records `INTERRUPTED` (not `FAILURE`, and no `job.run.items` either way); every step is idempotent, so the next run carries on — after a deploy during a first build, `POST /reindex` again.
+
 Git documents get `metadata` from their frontmatter plus `area` (first path segment) and, under `mirror/<repo>/`, `repos: [<repo>]`; `date` from `date` or `created`; `url` at the indexed commit.
 
 ## Configuration
@@ -61,8 +63,8 @@ Git documents get `metadata` from their frontmatter plus `area` (first path segm
 | Key | Description |
 |-----|-------------|
 | `database` | `host`, `port`, `database`, `user`, `password`, `sslMode` (`DISABLE`\|`REQUIRE`\|`VERIFY_FULL` + `caFile`), `pool`, `statementTimeoutMs` |
-| `github` | `clientId`, `privateKey` (`{ source: value, value }` or `{ source: file, path }`, PEM as GitHub issues it), `baseUrl`, `timeoutMs`, `retries`. **No repository name** — it is discovered from the App's installation, which must cover exactly one repository |
-| `embeddings.models[]` | `name` (Ollama tag), `dimensions`, `documentTemplate` (`{title}`, `{text}`), `queryTemplate` (`{query}`). Each model gets its own partial HNSW index at startup |
+| `github` | `clientId`, `privateKey` (`{ source: value, value }` or `{ source: file, path }`, PEM as GitHub issues it), `baseUrl`, `timeoutMs` (per attempt: each retry gets its own; a rate-limit wait is not counted), `retries`. **No repository name** — it is discovered from the App's installation, which must cover exactly one repository |
+| `embeddings.models[]` | `name` (Ollama tag), `dimensions`, `documentTemplate` (`{title}`, `{text}`), `queryTemplate` (`{query}`). Each model gets its own partial HNSW index at startup. Correcting a wrong `dimensions` before anything was embedded drops the old index; with vectors of the old size stored, the boot fails — a model's dimensions cannot change under one name, add a new entry |
 | `embeddings` | `batchSize`, `keepAlive` (default `1m`) |
 | `knowledgeBases[]` | `id`, `source` (`GIT`), `contentType` (`MARKDOWN`), `tsConfig` (Postgres text search configuration), `models` (first answers questions), `readers` (roles), `chunking` (`maxChars` default 3000, `overlapChars`), `git` (`branch`, `include` path prefixes, `extensions`) |
 | `indexer` | `enabled`, `intervalMs`, `initialDelayMs`, `fetchConcurrency`, `maxScheduledEmbeddings` (default 300) |

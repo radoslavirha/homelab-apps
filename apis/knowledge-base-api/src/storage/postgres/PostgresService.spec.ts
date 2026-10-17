@@ -97,11 +97,14 @@ describe('PostgresService', () => {
             await expect(postgres.ping()).resolves.toBeUndefined();
         });
 
-        it('lets a locked run finish when its lock connection is terminated, and leaves the lock free', async () => {
-            expect.assertions(2);
+        it('tells the locked work its lock is gone, lets it finish, and leaves the lock free', async () => {
+            expect.assertions(4);
 
-            const result = await postgres.withTryAdvisoryLock(LOCK_INDEX, async () => {
+            const result = await postgres.withTryAdvisoryLock(LOCK_INDEX, async (lockLost) => {
+                expect(lockLost.aborted).toBe(false);
                 await terminateHolderOf(LOCK_INDEX);
+                // An AbortError, so the GitHub and Ollama calls it cancels are not retried.
+                expect(lockLost.reason).toMatchObject({ name: 'AbortError', message: expect.stringContaining('The Postgres connection was lost') });
 
                 return 'finished';
             });

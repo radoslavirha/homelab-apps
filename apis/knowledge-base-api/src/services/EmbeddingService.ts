@@ -52,8 +52,8 @@ export class EmbeddingService {
     }
 
     /** Under the indexing budget (`externalApis.OLLAMA`). */
-    public embedDocuments(model: EmbeddingModelConfig, chunks: readonly EmbeddableChunk[]): Promise<number[][]> {
-        return this.embed(model, chunks.map((chunk) => EmbeddingService.documentInput(model, chunk)), (request) => this.ollama.embed(request));
+    public embedDocuments(model: EmbeddingModelConfig, chunks: readonly EmbeddableChunk[], signal?: AbortSignal): Promise<number[][]> {
+        return this.embed(model, chunks.map((chunk) => EmbeddingService.documentInput(model, chunk)), (request) => this.ollama.embed(request, signal));
     }
 
     /** Under the search budget (`externalApis.OLLAMA_SEARCH`), so a slow embedder fails fast to full-text. */

@@ -52,17 +52,19 @@ describe('EmbeddingService', () => {
         });
     });
 
-    it('embeds documents in one call with the model, keep_alive and truncation', async () => {
-        expect.assertions(3);
+    it('embeds documents in one call with the model, keep_alive and truncation, cancellable by the run', async () => {
+        expect.assertions(4);
 
         const embed = vi.spyOn(ollama, 'embed').mockResolvedValue(response(2));
+        const { signal } = new AbortController();
 
         const vectors = await service.embedDocuments(MODEL, [
             { title: 'a', heading: '', body: 'configmap' },
             { title: 'b', heading: '', body: 'traefik' }
-        ]);
+        ], signal);
 
         expect(vectors).toHaveLength(2);
+        expect(embed.mock.calls[0][1]).toBe(signal);
         expect(embed.mock.calls[0][0]).toBeInstanceOf(OllamaEmbedRequestDTO);
         expect(embed.mock.calls[0][0]).toMatchObject({
             model: 'test-embed:v1',

@@ -3,6 +3,7 @@ import pg from 'pg';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { OllamaEndpoint } from '../endpoints/ollama/OllamaEndpoint.js';
 import { RunOutcome } from '../models/RunOutcome.enum.js';
+import { RunStart } from '../models/RunStart.enum.js';
 import { Server } from '../Server.js';
 import { SourceAdapterFactory } from '../sources/SourceAdapterFactory.js';
 import { LOCK_INDEX } from '../storage/postgres/AdvisoryLock.js';
@@ -151,9 +152,9 @@ describe('IndexingLoopService (integration)', () => {
             };
             sources.adapter.next = { upserts: [], deletes: [], cursor: 'c1', complete: true };
 
-            expect(loop.trigger(RUN)).toBe(false);
+            await expect(loop.trigger(RUN)).resolves.toBe(RunStart.Started);
             await expect.poll(() => loop.isRunning).toBe(true);
-            expect(loop.trigger({ ...RUN, full: true })).toBe(true);
+            await expect(loop.trigger({ ...RUN, full: true })).resolves.toBe(RunStart.Queued);
 
             release();
             await expect.poll(() => sources.adapter.cursors.length).toBe(2);

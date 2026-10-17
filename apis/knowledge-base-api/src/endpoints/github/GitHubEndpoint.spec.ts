@@ -1,5 +1,6 @@
 import { Serializer } from '@radoslavirha/tsed-common';
 import { PlatformTest } from '@tsed/platform-http/testing';
+import { Octokit } from 'octokit';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GitHubBlobDTO } from './dto/GitHubBlobDTO.js';
 import { GitHubBranchDTO } from './dto/GitHubBranchDTO.js';
@@ -58,6 +59,16 @@ describe('GitHubEndpoint', () => {
         expect(appOptions[0]).toMatchObject({ appId: 'Iv-test-client-id', privateKey: 'not-a-real-key' });
     });
 
+    it('gives every request of the App a per-attempt deadline through its fetch', async () => {
+        expect.assertions(1);
+
+        const defaults = vi.spyOn(Octokit, 'defaults');
+
+        await github.listRepositories();
+
+        expect(defaults).toHaveBeenCalledWith(expect.objectContaining({ request: { fetch: expect.any(Function) } }));
+    });
+
     it('deserializes the repositories the installations can read', async () => {
         expect.assertions(2);
 
@@ -92,6 +103,17 @@ describe('GitHubEndpoint', () => {
             expect(branch).toBeInstanceOf(GitHubBranchDTO);
             expect(branch.commit.sha).toBe('abc');
             expect(octokit.rest.repos.getBranch).toHaveBeenCalledWith(expect.objectContaining({ owner: 'someone', repo: 'kb', branch: 'main' }));
+        });
+
+        it('hands the caller\'s signal to the request, so a stopped run cancels it', async () => {
+            expect.assertions(1);
+
+            const { signal } = new AbortController();
+
+            octokit.rest.git.getBlob.mockResolvedValue({ data: { sha: 'b', content: '', encoding: 'base64', size: 0 } });
+            await github.getBlob(repository, 'b', signal);
+
+            expect(octokit.rest.git.getBlob).toHaveBeenCalledWith(expect.objectContaining({ file_sha: 'b', request: { signal } }));
         });
 
         it('asks for one commit per page, since the file list comes whole on page one', async () => {

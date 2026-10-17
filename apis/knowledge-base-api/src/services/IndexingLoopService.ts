@@ -8,7 +8,9 @@ import {
 import { type BaseLogger, Logger } from '@radoslavirha/tsed-logger';
 import { CommonUtils } from '@radoslavirha/utils';
 import { getAsyncStore, Inject, ProviderScope, Scope, Service } from '@tsed/di';
+import type { KnowledgeBaseConfig } from '../models/config/KnowledgeBaseConfig.js';
 import { RunOutcome } from '../models/RunOutcome.enum.js';
+import { RunStart } from '../models/RunStart.enum.js';
 import {
     ATTR_KNOWLEDGE_BASE_FULL,
     INDEXER_TRACER_NAME,
@@ -34,6 +36,12 @@ export interface RunRequest {
     readonly manual: boolean;
 }
 
+/** Told how a triggered run started: once, as soon as the index lock is taken or refused. */
+interface StartListener {
+    resolve(start: RunStart): void;
+    reject(error: unknown): void;
+}
+
 /**
  * The background loop: a **self-rescheduling chain** — the next run is armed in `finally`,
  * `intervalMs` after the previous one ended, so runs in this pod never overlap; they run late
@@ -46,6 +54,11 @@ export interface RunRequest {
  * Each knowledge base is one `job.run.items` item: one KB failing does not fail the others,
  * and shows as an item failure inside a successful run.
  *
+ * **A run stops when the pod does.** A first build takes ~25 minutes and the drain deadline is
+ * seconds, so `$onDestroy` aborts the run (as does losing the connection that holds the lock):
+ * the indexer stops between documents and embedding batches, and the knowledge base it was on
+ * records `INTERRUPTED`, not a failure. Every step is idempotent; the next run carries on.
+ *
  * **Scheduled runs are incremental only.** A first build and a large embedding backlog cost the
  * Ollama node ~25 minutes of saturated CPU and its loaded chat model, so they happen only when
  * someone asks (`POST /reindex`): a scheduled run skips a knowledge base that was never indexed,
@@ -57,6 +70,7 @@ export class IndexingLoopService {
     private timer: NodeJS.Timeout | undefined;
     private running: Promise<void> | undefined;
     private pending: RunRequest | undefined;
+    private abort: AbortController | undefined;
     private stopped = false;
     private readonly log: BaseLogger;
 
@@ -89,36 +103,67 @@ export class IndexingLoopService {
     public async $onDestroy(): Promise<void> {
         this.stopped = true;
         clearTimeout(this.timer);
+        // An AbortError, so a GitHub or Ollama call it cancels is not retried.
+        this.abort?.abort(new DOMException('The pod is shutting down.', 'AbortError'));
         await this.running;
     }
 
     /**
-     * Starts a run now, or queues it behind the one in progress (requests queued meanwhile are
-     * merged). Returns whether it had to queue.
+     * Starts a run now, or queues it behind the one in progress in this pod (requests queued
+     * meanwhile are merged). Resolves once it is known which: `STARTED` when this pod took the
+     * index lock, `SKIPPED` when another pod holds it (nothing runs), `QUEUED`. Rejects when the
+     * lock cannot be asked for at all (the database is down).
      */
-    public trigger(request: RunRequest): boolean {
+    public trigger(request: RunRequest): Promise<RunStart> {
         if (CommonUtils.notUndefined(this.running)) {
             this.pending = merge(this.pending, request);
 
-            return true;
+            return Promise.resolve(RunStart.Queued);
         }
 
         clearTimeout(this.timer);
-        // Off the request's async context. Started inside it, the run — and every run the loop
-        // schedules after it — would carry the request along, and with it the caller who asked.
-        getAsyncStore().exit(() => {
-            void this.start(request);
-        });
 
-        return false;
+        return new Promise<RunStart>((resolve, reject) => {
+            // Off the request's async context. Started inside it, the run — and every run the loop
+            // schedules after it — would carry the request along, and with it the caller who asked.
+            getAsyncStore().exit(() => {
+                void this.start(request, { resolve, reject });
+            });
+        });
     }
 
     /** One run under the cross-pod lock. Exposed for tests; the loop and `trigger` call it. */
-    public async run(request: RunRequest): Promise<void> {
+    public async run(request: RunRequest, listener?: StartListener): Promise<void> {
         const knowledgeBases = this.configService.config.knowledgeBases
             .filter((kb) => request.knowledgeBases.includes(kb.id));
+        const shutdown = new AbortController();
 
-        const locked = await this.postgres.withTryAdvisoryLock(LOCK_INDEX, () => runJob(
+        this.abort = shutdown;
+
+        try {
+            const locked = await this.postgres.withTryAdvisoryLock(LOCK_INDEX, (lockLost) => {
+                listener?.resolve(RunStart.Started);
+
+                return this.runLocked(request, knowledgeBases, AbortSignal.any([shutdown.signal, lockLost]));
+            });
+
+            if (!locked.acquired) {
+                listener?.resolve(RunStart.Skipped);
+                recordJobSkip({ name: JOB_INDEX_KNOWLEDGE_BASES, reason: JOB_SKIP_REASON_VALUE_OVERRUN });
+                this.log.info('Another pod is indexing; this run is skipped.', { event: 'INDEXER_SKIPPED' });
+            }
+        } catch (error) {
+            listener?.reject(error);
+            throw error;
+        } finally {
+            if (this.abort === shutdown) {
+                this.abort = undefined;
+            }
+        }
+    }
+
+    private runLocked(request: RunRequest, knowledgeBases: readonly KnowledgeBaseConfig[], signal: AbortSignal): Promise<void> {
+        return runJob(
             {
                 name: JOB_INDEX_KNOWLEDGE_BASES,
                 tracer: INDEXER_TRACER_NAME,
@@ -127,6 +172,10 @@ export class IndexingLoopService {
             },
             async ({ recordItem }) => {
                 for (const kb of knowledgeBases) {
+                    if (signal.aborted) {
+                        break;
+                    }
+
                     if (!request.manual && CommonUtils.isNull(await this.knowledgeBases.getCursor(kb.id))) {
                         this.log.warn('Knowledge base was never indexed; POST /reindex builds it.', {
                             event: 'INDEXER_NOT_BUILT',
@@ -138,14 +187,27 @@ export class IndexingLoopService {
                     await this.knowledgeBases.recordRunStart(kb.id);
 
                     try {
-                        const result = await this.indexer.index(kb, { full: request.full, manual: request.manual });
+                        const result = await this.indexer.index(kb, { full: request.full, manual: request.manual, signal });
                         const lastSuccess = await this.knowledgeBases.recordRunEnd(kb.id, RunOutcome.Success, null);
 
                         recordIndexSuccess(kb.id, lastSuccess ?? new Date());
                         recordItem(JOB_OUTCOME_VALUE_SUCCESS);
                         this.log.info('Knowledge base indexed.', { event: 'INDEXER_RUN', knowledgeBase: kb.id, ...result });
                     } catch (error) {
-                        const message = error instanceof Error ? error.message : String(error);
+                        if (signal.aborted) {
+                            // Stopped, not failed: no item either way, and the next run carries on.
+                            const reason = messageOf(signal.reason);
+
+                            this.log.info('Indexing a knowledge base was interrupted.', {
+                                event: 'INDEXER_RUN_INTERRUPTED',
+                                knowledgeBase: kb.id,
+                                reason
+                            });
+                            await this.knowledgeBases.recordRunEnd(kb.id, RunOutcome.Interrupted, reason).catch(() => undefined);
+                            break;
+                        }
+
+                        const message = messageOf(error);
 
                         recordItem(JOB_OUTCOME_VALUE_FAILURE);
                         this.log.error('Indexing a knowledge base failed.', {
@@ -157,12 +219,7 @@ export class IndexingLoopService {
                     }
                 }
             }
-        ));
-
-        if (!locked.acquired) {
-            recordJobSkip({ name: JOB_INDEX_KNOWLEDGE_BASES, reason: JOB_SKIP_REASON_VALUE_OVERRUN });
-            this.log.info('Another pod is indexing; this run is skipped.', { event: 'INDEXER_SKIPPED' });
-        }
+        );
     }
 
     private schedule(delayMs: number): void {
@@ -178,13 +235,13 @@ export class IndexingLoopService {
         this.timer.unref();
     }
 
-    private async start(request: RunRequest): Promise<void> {
-        this.running = this.run(request).catch((error: unknown) => {
+    private async start(request: RunRequest, listener?: StartListener): Promise<void> {
+        this.running = this.run(request, listener).catch((error: unknown) => {
             // Reached only when the database itself fails (the lock or a run record);
             // per-KB failures are handled inside the run.
             this.log.error('Indexing run failed.', {
                 event: 'INDEXER_RUN_FAILED',
-                error: error instanceof Error ? error.message : String(error)
+                error: messageOf(error)
             });
         });
 
@@ -217,7 +274,7 @@ export class IndexingLoopService {
         } catch (error) {
             this.log.warn('Could not read the last indexing runs.', {
                 event: 'INDEXER_RESTORE_FAILED',
-                error: error instanceof Error ? error.message : String(error)
+                error: messageOf(error)
             });
         }
     }
@@ -226,6 +283,8 @@ export class IndexingLoopService {
         return this.configService.config.knowledgeBases.map((kb) => kb.id);
     }
 }
+
+const messageOf = (error: unknown): string => error instanceof Error ? error.message : String(error);
 
 const merge = (queued: RunRequest | undefined, request: RunRequest): RunRequest => CommonUtils.isUndefined(queued)
     ? request
