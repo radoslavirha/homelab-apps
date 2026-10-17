@@ -339,6 +339,25 @@ Pass extra instrumentations in from the app via `init`'s `extraInstrumentations`
 - Prefer additive config changes; remove legacy keys only after all workloads run a compatible version.
 - Do not enforce runtime strict rejection of unknown future keys when it can block older running versions.
 
+### Environment-specific values come from configuration (repository-wide rule)
+
+Write every app as if it ran in several environments on shared infrastructure, **even when it is
+deployed to one**. `production` and `sandbox` share one MongoDB, one Postgres, one MQTT broker and
+one Ollama, each environment with its own database, role and topics. Adding an environment later
+must then be deploy work only (values, a database, secrets), never a code change.
+
+- **Configurable, never a literal:** everything that would collide or differ between two
+  environments on one instance. That means connection details (host, port, credentials, TLS), the
+  **database name and user**, the MQTT topic prefix and client id, external base URLs, and auth
+  issuers and audience. Examples: `mongodb` in qr-manager-api (database per environment),
+  `mqtt.topicPrefix` in miot-bridge-api, `database.database` / `database.user` in
+  knowledge-base-api (deployed to `production` only).
+- **Fixed is fine** for names scoped inside the app's own database: collections, tables, the
+  migrations table, advisory lock keys. Two environments never share one database (sandbox would
+  run its migrations on production's schema).
+- **Role names are fixed** (`<app>.reader`, …): they are the Authentik contract. Environments are
+  told apart by the token's audience, which is configurable.
+
 ## Versioning & Changesets
 
 - Uses `@changesets/cli` for versioning; follows [Semantic Versioning](http://semver.org/).

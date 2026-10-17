@@ -10,7 +10,7 @@ each one rather than writing it from scratch.
 | `eslint.config.mjs`, `nodemon.json`, `.swcrc`, `vitest.config.ts` | Usually identical across APIs. `.swcrc` keeps `sourceMaps: false` and `externalHelpers: true`. |
 | `config/localhost.json` | `server.httpPort` unique across APIs (the checker enforces it). |
 | `config/test.json` | Test config, including the inline HS256 auth key. |
-| `src/models/config/ConfigModel.ts` | Extends `BaseConfig`; app fields here. Include `auth: createAuthConfigSchema(Object.values(AuthMethod))` and `health: HealthConfigSchema.optional()`. |
+| `src/models/config/ConfigModel.ts` | Extends `BaseConfig`; app fields here. Include `auth: createAuthConfigSchema(Object.values(AuthMethod))` and `health: HealthConfigSchema.optional()`. Every environment-specific value (database name and user, topic prefix, URLs) is a config field, even for a single-environment app: root AGENTS.md § Server configuration. |
 | `src/models/config/AuthMethod.enum.ts` | The trust domains this API accepts (`IDP`, …) — see root AGENTS.md § Authentication. |
 | `src/services/ConfigService.ts` | Standard `ConfigProvider<ConfigModel>` — identical across APIs. |
 | `src/providers/AuthProvider.ts`, `HealthProvider.ts`, `LoggerProvider.ts` | Hand each toolkit service its config by overriding its token. |
