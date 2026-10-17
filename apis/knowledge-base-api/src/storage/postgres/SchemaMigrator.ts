@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import { CommonUtils } from '@radoslavirha/utils';
 import { runner } from 'node-pg-migrate';
-import type pg from 'pg';
+import pg from 'pg';
 import type { EmbeddingModelConfig } from '../../models/config/EmbeddingsConfig.js';
 import type { KnowledgeBaseConfig } from '../../models/config/KnowledgeBaseConfig.js';
 import { LOCK_MIGRATE } from './AdvisoryLock.js';
@@ -35,6 +35,8 @@ export interface SchemaTarget {
  *
  * Nothing is ever dropped from configuration: removing a KB or a model leaves its rows and
  * index in place, unused. Cleaning up is a deliberate act, not a side effect of a values edit.
+ * The one exception is a model's index under a dimension it no longer has, while no vector of
+ * that size is stored — see {@link dropStaleModelIndexes}.
  */
 export class SchemaMigrator {
     public constructor(
@@ -66,6 +68,7 @@ export class SchemaMigrator {
 
         try {
             for (const model of target.models) {
+                await this.dropStaleModelIndexes(model);
                 await this.ensureModelIndex(model);
             }
 
@@ -87,6 +90,53 @@ export class SchemaMigrator {
             `USING hnsw ((embedding::vector(${model.dimensions})) vector_cosine_ops) ` +
             `WHERE model = ${modelLiteral(model.name)}`
         );
+    }
+
+    /**
+     * Drops the index a model left under another dimension: a `dimensions` corrected in
+     * configuration. Left in place, it would cast every new vector to the old size and fail every
+     * insert. Its name cannot tell (the readable part is cut at 28 characters); its predicate can.
+     *
+     * Vectors of another size still stored under the model's name are a different case: a model's
+     * dimensions cannot change under one name, so the boot fails and says what to do.
+     */
+    private async dropStaleModelIndexes(model: EmbeddingModelConfig): Promise<void> {
+        const { rows } = await this.client.query<{ name: string; definition: string }>(
+            `SELECT c.relname AS name, pg_get_indexdef(i.indexrelid) AS definition
+             FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid
+             WHERE i.indrelid = 'embeddings'::regclass
+               AND pg_get_expr(i.indpred, i.indrelid) = '(model = ' || quote_literal($1::text) || '::text)'`,
+            [model.name]
+        );
+        const stale = rows.filter((index) => Number(/vector\((\d+)\)/.exec(index.definition)?.[1]) !== model.dimensions);
+
+        if (CommonUtils.isEmpty(stale)) {
+            return;
+        }
+
+        const { rows: [{ stored }] } = await this.client.query<{ stored: boolean }>(
+            'SELECT EXISTS (SELECT 1 FROM embeddings WHERE model = $1 AND vector_dims(embedding) <> $2) AS stored',
+            [model.name, model.dimensions]
+        );
+
+        if (stored) {
+            throw new Error(
+                `Embedding model ${model.name} is configured with ${model.dimensions} dimensions, but vectors of another ` +
+                `size are stored under that name (index ${stale.map((index) => index.name).join(', ')}). A model's dimensions ` +
+                `cannot change under one name: add it as a new model entry, or delete its vectors ` +
+                `(DELETE FROM embeddings WHERE model = ${modelLiteral(model.name)}) and restart.`
+            );
+        }
+
+        for (const index of stale) {
+            await this.client.query(`DROP INDEX ${pg.escapeIdentifier(index.name)}`);
+            this.logger.warn('Dropped the index of a model under a dimension it no longer has.', {
+                event: 'DB_MIGRATION',
+                model: model.name,
+                index: index.name,
+                dimensions: model.dimensions
+            });
+        }
     }
 
     private async ensureKnowledgeBase(kb: KnowledgeBaseConfig): Promise<void> {
