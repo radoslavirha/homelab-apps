@@ -2,85 +2,113 @@ import { PlatformTest } from '@tsed/platform-http/testing';
 import { CommonUtils } from '@radoslavirha/utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DeviceNotification } from '../models/notifications/DeviceNotification.js';
-import { ConfigService } from './ConfigService.js';
-import { DeviceNotificationMongoService } from './DeviceNotificationMongoService.js';
-import { NotificationLocalStorageService } from './NotificationLocalStorageService.js';
+import { DeviceNotificationMongoRepository } from '../storage/notification-mongo/DeviceNotificationMongoRepository.js';
+import { DeviceNotificationMongoDTO } from '../storage/notification-mongo/dto/DeviceNotificationMongoDTO.js';
 import { NotificationStorageService } from './NotificationStorageService.js';
 
-type Method = 'getAll' | 'getById' | 'getAllByDeviceId' | 'create' | 'deleteById' | 'deleteAllByDeviceId';
-type Backend = Record<Method, (...args: unknown[]) => Promise<unknown>>;
+const DEVICE = '671b00000000000000000001';
 
-/** Lets one table drive every method; the object is the same, so `this` is kept. */
-const asBackend = (service: object): Backend => service as unknown as Backend;
+const stored = (_id: string, property: string): DeviceNotificationMongoDTO => {
+    const mongo = new DeviceNotificationMongoDTO();
+    mongo._id = _id;
+    mongo.createdAt = new Date('2026-04-01T00:00:00Z');
+    mongo.updatedAt = new Date('2026-04-02T00:00:00Z');
+    mongo.deviceId = DEVICE;
+    mongo.property = property;
+    return mongo;
+};
 
-const notification = CommonUtils.buildModelStrict(DeviceNotification, {
-    id: '671b00000000000000000002',
-    createdAt: new Date('2026-04-01T00:00:00Z'),
-    updatedAt: new Date('2026-04-02T00:00:00Z'),
-    deviceId: '671b00000000000000000001',
-    property: 'vacuum:status'
-});
-
-const CALLS: [Method, unknown[]][] = [
-    ['getAll', []],
-    ['getById', [notification.id]],
-    ['getAllByDeviceId', [notification.deviceId]],
-    ['create', [notification]],
-    ['deleteById', [notification.id]],
-    ['deleteAllByDeviceId', [notification.deviceId]]
-];
+const STATUS = stored('671b00000000000000000002', 'vacuum:status');
+const BATTERY = stored('671b00000000000000000003', 'battery:level');
 
 describe('NotificationStorageService', () => {
-    let local: NotificationLocalStorageService;
-    let mongo: DeviceNotificationMongoService;
-
-    /** The backend is picked once, when the facade is built — so set the config first, then build it. */
-    const facadeWith = (mongodb: ConfigService['config']['mongodb']): Promise<NotificationStorageService> => {
-        const configService = PlatformTest.get<ConfigService>(ConfigService);
-        vi.spyOn(configService, 'config', 'get').mockReturnValue({ ...configService.config, mongodb });
-        return PlatformTest.invoke<NotificationStorageService>(NotificationStorageService, [
-            { token: ConfigService, use: configService },
-            { token: NotificationLocalStorageService, use: local },
-            { token: DeviceNotificationMongoService, use: mongo }
-        ]);
-    };
+    let service: NotificationStorageService;
+    let repository: DeviceNotificationMongoRepository;
 
     beforeEach(PlatformTest.create);
     beforeEach(() => {
-        local = PlatformTest.get<NotificationLocalStorageService>(NotificationLocalStorageService);
-        mongo = PlatformTest.get<DeviceNotificationMongoService>(DeviceNotificationMongoService);
+        service = PlatformTest.get<NotificationStorageService>(NotificationStorageService);
+        repository = PlatformTest.get<DeviceNotificationMongoRepository>(DeviceNotificationMongoRepository);
     });
     afterEach(PlatformTest.reset);
     afterEach(() => vi.restoreAllMocks());
 
-    describe.each([
-        ['absent', undefined],
-        ['disabled', { enabled: false as const }]
-    ])('with mongodb %s', (_, mongodb) => {
-        it.each(CALLS)('%s goes to the local file storage', async (method, args) => {
-            expect.assertions(3);
-            const result = Symbol(method);
-            const toLocal = vi.spyOn(asBackend(local), method).mockResolvedValue(result);
-            const toMongo = vi.spyOn(asBackend(mongo), method).mockResolvedValue(undefined);
-            const facade = asBackend(await facadeWith(mongodb));
+    describe('getAll', () => {
+        it('maps every stored document', async () => {
+            expect.assertions(2);
+            vi.spyOn(repository, 'findAll').mockResolvedValue([STATUS, BATTERY]);
 
-            await expect(facade[method](...args)).resolves.toBe(result);
-            expect(toLocal).toHaveBeenCalledWith(...args);
-            expect(toMongo).not.toHaveBeenCalled();
+            const notifications = await service.getAll();
+
+            expect(notifications.every(notification => notification instanceof DeviceNotification)).toBe(true);
+            expect(notifications.map(({ id, property }) => ({ id, property }))).toEqual([
+                { id: STATUS._id, property: 'vacuum:status' },
+                { id: BATTERY._id, property: 'battery:level' }
+            ]);
         });
     });
 
-    describe('with mongodb enabled', () => {
-        it.each(CALLS)('%s goes to MongoDB', async (method, args) => {
-            expect.assertions(3);
-            const result = Symbol(method);
-            const toMongo = vi.spyOn(asBackend(mongo), method).mockResolvedValue(result);
-            const toLocal = vi.spyOn(asBackend(local), method).mockResolvedValue(undefined);
-            const facade = asBackend(await facadeWith({ enabled: true, url: 'mongodb://mongo.home:27017/miot' }));
+    describe('getById', () => {
+        it('maps the stored document', async () => {
+            expect.assertions(2);
+            const findById = vi.spyOn(repository, 'findById').mockResolvedValue(STATUS);
 
-            await expect(facade[method](...args)).resolves.toBe(result);
-            expect(toMongo).toHaveBeenCalledWith(...args);
-            expect(toLocal).not.toHaveBeenCalled();
+            const notification = await service.getById(STATUS._id);
+
+            expect(findById).toHaveBeenCalledWith(STATUS._id);
+            expect(notification).toMatchObject({ id: STATUS._id, deviceId: DEVICE, property: 'vacuum:status' });
+        });
+
+        it('turns the repository\'s null into undefined', async () => {
+            expect.assertions(1);
+            vi.spyOn(repository, 'findById').mockResolvedValue(null);
+
+            await expect(service.getById(STATUS._id)).resolves.toBeUndefined();
+        });
+    });
+
+    describe('getAllByDeviceId', () => {
+        it('maps the documents of that device', async () => {
+            expect.assertions(2);
+            const findAllByDeviceId = vi.spyOn(repository, 'findAllByDeviceId').mockResolvedValue([STATUS, BATTERY]);
+
+            const notifications = await service.getAllByDeviceId(DEVICE);
+
+            expect(findAllByDeviceId).toHaveBeenCalledWith(DEVICE);
+            expect(notifications.map(notification => notification.id)).toEqual([STATUS._id, BATTERY._id]);
+        });
+    });
+
+    describe('create', () => {
+        it('stores only the subscription, even when handed a whole notification, and returns the stored document', async () => {
+            expect.assertions(2);
+            const create = vi.spyOn(repository, 'create').mockResolvedValue(STATUS);
+            const subscription = CommonUtils.buildModelStrict(DeviceNotification, {
+                id: '671b0000000000000000ffff',
+                createdAt: new Date('2026-01-01T00:00:00Z'),
+                updatedAt: new Date('2026-01-01T00:00:00Z'),
+                deviceId: DEVICE,
+                property: 'vacuum:status'
+            });
+
+            const created = await service.create(subscription);
+
+            expect({ ...create.mock.calls[0][0] }).toEqual({ deviceId: DEVICE, property: 'vacuum:status' });
+            expect(created).toMatchObject({ id: STATUS._id });
+        });
+    });
+
+    describe('deleteById / deleteAllByDeviceId', () => {
+        it('deletes one subscription by id, or all of a device', async () => {
+            expect.assertions(2);
+            const deleteById = vi.spyOn(repository, 'deleteById').mockResolvedValue(undefined);
+            const deleteAllByDeviceId = vi.spyOn(repository, 'deleteAllByDeviceId').mockResolvedValue(undefined);
+
+            await service.deleteById(STATUS._id);
+            await service.deleteAllByDeviceId(DEVICE);
+
+            expect(deleteById).toHaveBeenCalledWith(STATUS._id);
+            expect(deleteAllByDeviceId).toHaveBeenCalledWith(DEVICE);
         });
     });
 });

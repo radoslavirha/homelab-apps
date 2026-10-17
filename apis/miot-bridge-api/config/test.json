@@ -2,7 +2,10 @@
     "server": {
         "httpPort": 4001
     },
-    "cachePath": "./cache",
+    "mongodb": {
+        "enabled": true,
+        "url": "mongodb://localhost:27017/miot-bridge-api-test"
+    },
     "logger": {},
     "mqtt": {
         "enabled": false

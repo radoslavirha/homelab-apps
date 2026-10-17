@@ -8,7 +8,7 @@
 - `filters/` — Ts.ED response filters (`CommandResponseFilter`).
 - `providers/MqttClientProvider.ts` — the MQTT client as a DI token; tests replace it with `{ token: MqttClientProvider, use: null }`.
 - `models/simplified-miot-spec/` — the internal property/action map built from the raw spec in `models/miot-spec-v2/`.
-- `storage/` — one subfolder per backend + entity (`device-*`, `notification-*`, `model-property-override*`), each with its own `dto/`.
+- `storage/` — MongoDB only, one subfolder per entity (`device-mongo`, `notification-mongo`, `model-property-override-mongo`), each with its own `dto/`. Controller integration specs boot against a real MongoDB (`TestContainersMongo.bootstrap`), so tests need Docker.
 - The miIO binary protocol (packets, `Stamp`, handshake) lives in `packages/miot-device`, not here. That package has **no** OpenTelemetry dependency; the app instruments it from `src/otel/miotTracing.ts`.
 
 ## Miot protocol

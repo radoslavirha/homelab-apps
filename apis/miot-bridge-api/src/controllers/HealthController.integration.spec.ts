@@ -1,5 +1,6 @@
 import { HealthCheckService } from '@radoslavirha/tsed-health';
 import { PlatformTest } from '@tsed/platform-http/testing';
+import { TestContainersMongo } from '@tsed/testcontainers-mongo';
 import SuperTest from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MongoHealthCheck } from '@radoslavirha/tsed-health/mongoose';
@@ -14,8 +15,9 @@ describe('HealthController (integration)', () => {
     let mqttCheck: MqttHealthCheck;
 
     // Same override as Server.integration.spec.ts — the real provider would otherwise be
-    // built from config, and MqttListenerService expects a live client.
-    beforeEach(PlatformTest.bootstrap(Server, {
+    // built from config, and MqttListenerService expects a live client. Mongo is real: the
+    // container from vitest's globalSetup.
+    beforeEach(TestContainersMongo.bootstrap(Server, {
         imports: [{ token: MqttClientProvider, use: null }]
     }));
     beforeEach(() => {
@@ -23,7 +25,7 @@ describe('HealthController (integration)', () => {
         mongoCheck = PlatformTest.get<MongoHealthCheck>(MongoHealthCheck);
         mqttCheck = PlatformTest.get<MqttHealthCheck>(MqttHealthCheck);
     });
-    afterEach(PlatformTest.reset);
+    afterEach(() => TestContainersMongo.reset());
     afterEach(vi.restoreAllMocks);
 
     describe('Registration', () => {
@@ -68,9 +70,9 @@ describe('HealthController (integration)', () => {
     });
 
     describe('GET /health/ready', () => {
-        // Test config omits `mongodb` and sets `mqtt.enabled: false`, so this covers the
-        // disabled-by-config guards for real: both must report pass, not fail.
-        it('Should return 200 when both dependencies are disabled by config', async () => {
+        // Mongo is the test container and `mqtt.enabled: false`, so this covers a live
+        // connection and the disabled-by-config guard for real: both must report pass.
+        it('Should return 200 with Mongo connected and MQTT disabled by config', async () => {
             expect.assertions(1);
 
             const response = await request.get('/health/ready').expect(200);
@@ -106,7 +108,7 @@ describe('HealthController (integration)', () => {
             expect(response.body).toEqual({
                 status: 'pass',
                 checks: {
-                    mongodb: { status: 'pass', detail: 'disabled' },
+                    mongodb: { status: 'pass' },
                     mqtt: { status: 'pass', detail: 'disabled' }
                 }
             });

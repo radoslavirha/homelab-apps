@@ -126,7 +126,7 @@ apis/<api-name>/
     models/               # Ts.ED schema models, enums, request/response types. Use sub-folders to group (`config/`, etc.).
     services/             # Reusable, stateless business logic. Includes ConfigService, storage facades, etc. SINGLETON scoped when possible.
     storage/
-      <storage group>/    # Per backend + entity (e.g. `qr-mongo/`, `device-local-storage/`).
+      <storage group>/    # Per backend + entity (e.g. `qr-mongo/`, `device-mongo/`).
         dto/              # DTO models for storage repositories.
         *Repository.ts    # Repository service that accepts/returns only DTOs. SINGLETON scoped when possible.
     otel/                 # OpenTelemetry bootstrap (`instrument.ts`), per-API OTel config, and `telemetry.ts` — the span names, tracer scopes, `job.name` values and app attribute keys this API emits.

@@ -37,8 +37,17 @@ const withDeviceSecretRedaction = (raw: unknown): unknown => {
 };
 
 export const ConfigSchema = BaseConfig.extend({
-    cachePath: z.string().optional().describe('Path to the JSON device cache file. Relative to CWD.'),
-    mongodb: MongoConfigSchema.optional().describe('MongoDB configuration. When mongodb.enabled is true, MongoDB is used as the device storage.'),
+    // `cachePath` (the JSON file storage) is gone. A ConfigMap still carrying it keeps parsing:
+    // `BaseConfig` strips unknown keys rather than rejecting them.
+    /**
+     * Required and enabled: MongoDB is the only storage, so a missing or disabled block
+     * fails at boot instead of starting a pod that cannot read a single device.
+     *
+     * `@radoslavirha/tsed-mongoose` exports only the enabled/disabled union, so the
+     * intersection pins `enabled: true` — and narrows the type to the branch with a
+     * required `url`.
+     */
+    mongodb: MongoConfigSchema.and(z.object({ enabled: z.literal(true) })).describe('MongoDB configuration. MongoDB is the only storage; mongodb.enabled must be true.'),
     polling: PollingConfigSchema.optional().describe('Device property polling configuration. When polling.enabled is true, subscribed properties are polled at the configured interval.'),
     // `http` (the HTTP notification sink) is gone. A ConfigMap still carrying `http.notifications`
     // keeps parsing: `BaseConfig` is a plain `z.object`, which strips unknown keys rather than
