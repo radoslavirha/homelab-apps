@@ -1,11 +1,14 @@
+import { StringUtils } from '@radoslavirha/utils';
 import { PlatformTest } from '@tsed/platform-http/testing';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import pg from 'pg';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FullTextMatch } from '../../models/config/FullTextMatch.enum.js';
 import { ConfigService } from '../../services/ConfigService.js';
 import { chunkDTO, documentDTO, seedDocument, truncateIndex } from '../../test/seed.js';
 import { SearchHitDTO } from './dto/SearchHitDTO.js';
 import { EmbeddingRepository } from './EmbeddingRepository.js';
 import { metadataFilterSql, SearchRepository } from './SearchRepository.js';
+import { modelIndexName } from './sql.js';
 
 const NO_FILTER = new Map<string, string[]>();
 
@@ -39,6 +42,7 @@ describe('SearchRepository', () => {
         ]);
     });
     afterEach(PlatformTest.reset);
+    afterEach(() => vi.restoreAllMocks());
 
     describe('fullText', () => {
         it('matches any of the question\'s words, best rank first', async () => {
@@ -87,6 +91,36 @@ describe('SearchRepository', () => {
 
             expect(await search.vector(['dev'], model, [1, 0, 0, 0], NO_FILTER, 10)).toEqual([ids.configmap, ids.successor, ids.traefik]);
             expect(await search.vector(['dev'], { ...model, name: 'other:1b' }, [1, 0, 0, 0], NO_FILTER, 10)).toEqual([]);
+        });
+
+        it('is answered from the model\'s partial HNSW index, which needs the cast and the literal model name', async () => {
+            expect.assertions(1);
+
+            const model = PlatformTest.get<ConfigService>(ConfigService).config.embeddings.models[0];
+            const plans: string[] = [];
+            const query = pg.Client.prototype.query as unknown as (this: pg.Client, ...args: unknown[]) => Promise<pg.QueryResult>;
+
+            // Explains the vector query as it is sent, inside its own transaction and settings. On
+            // tables this small the planner would rather join and sort; with sorting and sequential
+            // scans priced out, only the ordered HNSW scan answers `ORDER BY distance` cheaply — and
+            // only if the query still matches the index's cast and predicate.
+            vi.spyOn(pg.Client.prototype, 'query').mockImplementation(async function (this: pg.Client, ...args: unknown[]) {
+                const [text, values] = args as [string, unknown[]];
+
+                if (StringUtils.isString(text) && text.includes('<=>') && !text.startsWith('EXPLAIN')) {
+                    await query.call(this, 'SET LOCAL enable_seqscan = off');
+                    await query.call(this, 'SET LOCAL enable_sort = off');
+                    const { rows } = await query.call(this, `EXPLAIN ${text}`, values);
+
+                    plans.push(rows.map((row) => String(row['QUERY PLAN'])).join('\n'));
+                }
+
+                return query.apply(this, args);
+            } as never);
+
+            await search.vector(['dev'], model, [1, 0, 0, 0], NO_FILTER, 10);
+
+            expect(plans.join('\n')).toContain(`Index Scan using ${modelIndexName(model.name, model.dimensions)}`);
         });
 
         it('matches a filter value inside an array field', async () => {
