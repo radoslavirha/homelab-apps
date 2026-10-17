@@ -1,5 +1,13 @@
 # interactive-map-feeder
 
+## 0.16.4
+
+### Patch Changes
+
+- [#314](https://github.com/radoslavirha/homelab-apps/pull/314) [`9cbc3e8`](https://github.com/radoslavirha/homelab-apps/commit/9cbc3e85ad73a671261c3c1eb3aba52b33d1e3f0) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Add specs for `RadarService` and `RadarImageService`, and lint against `new` providers in tests (no runtime change).
+
+- [#318](https://github.com/radoslavirha/homelab-apps/pull/318) [`f702e82`](https://github.com/radoslavirha/homelab-apps/commit/f702e82af1f5241db3f51234bf87981472aa8660) Thanks [@radoslavirha](https://github.com/radoslavirha)! - `GET /data-sources/:dataSource/image` now sends PNG bytes to match its declared `image/png`. Before, it sent the JPEG format of the ČHMÚ surface map.
+
 ## 0.16.3
 
 ### Patch Changes
