@@ -1,5 +1,11 @@
 # qr-manager-api
 
+## 0.10.4
+
+### Patch Changes
+
+- [#312](https://github.com/radoslavirha/homelab-apps/pull/312) [`7baecf1`](https://github.com/radoslavirha/homelab-apps/commit/7baecf1f2600671dcb61d420736e79b1eed97b4f) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Resolve providers through DI in specs and lint against `new` providers in tests (no runtime change).
+
 ## 0.10.3
 
 ### Patch Changes

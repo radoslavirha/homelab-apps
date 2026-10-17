@@ -1,5 +1,15 @@
 # miot-bridge
 
+## 0.29.0
+
+### Minor Changes
+
+- [#319](https://github.com/radoslavirha/homelab-apps/pull/319) [`fe0d6e2`](https://github.com/radoslavirha/homelab-apps/commit/fe0d6e2430d605a40afe8f86ed87656e9d1c6c45) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Remove the local JSON file storage: MongoDB is the only storage. The `mongodb` config block is now required and must set `enabled: true`, so a missing or disabled block fails at boot. `cachePath` is ignored if still set.
+
+### Patch Changes
+
+- [#315](https://github.com/radoslavirha/homelab-apps/pull/315) [`eb26fb9`](https://github.com/radoslavirha/homelab-apps/commit/eb26fb94b14618175a2439ae3644bacd5808867e) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Add a spec for every mapper, service and file repository that lacked one, and lint against `new` providers in tests (no runtime change).
+
 ## 0.28.2
 
 ### Patch Changes
