@@ -138,6 +138,10 @@ apis/<api-name>/
 
 There is no `v1/` folder and no API version prefix in routes — all controllers mount at `/`. Versioning is handled at the package level via Changesets, not inside route paths.
 
+`mcp/<mcp-name>/` holds MCP servers: the same Ts.ED layout as `apis/`, without Swagger. The folder
+kind is new — `check-member.sh`, the CI paths filters, the Dockerfile and the release workflow know
+only `apis/` and `ui/` so far.
+
 ```text
 ui/<ui-name>/
   src/

@@ -1,5 +1,6 @@
 packages:
   - apis/*
+  - mcp/*
   - packages/*
   - ui/*
 

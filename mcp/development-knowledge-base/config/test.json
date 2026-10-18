@@ -1,0 +1,6 @@
+{
+    "server": {
+        "httpPort": 4004
+    },
+    "logger": {}
+}
