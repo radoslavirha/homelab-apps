@@ -1,6 +1,6 @@
 ---
 name: verifying-auth-in-browser
-description: Verify an OIDC login flow by actually running it in a browser against the real IdP, instead of reasoning about it. Use when changing anything in packages/ui-auth, a UI's auth wiring, an Authentik blueprint, or when a login, logout, silent-renew or redirect behaviour is claimed to work. Also use before writing "verified" about any auth change.
+description: Verify an OIDC login flow by actually running it in a browser against the real IdP, instead of reasoning about it. Use when changing anything in packages/ui-auth, a UI's auth wiring, an Authentik blueprint, or when a login, logout, silent-renew or redirect behaviour is claimed to work. Also use before writing "verified" about any auth change, and whenever an end-to-end test, UI or API, has to sign in as the test user `claude`.
 ---
 
 # Verify auth in a browser
@@ -22,6 +22,35 @@ The tests passed for all five. **Unit tests cannot see redirects, framing, cooki
 
 Do not write "verified", "works", or "fixed" about an auth change until you have run it. If you
 cannot run it, say which specific thing is unverified and why — never let it read as proven.
+
+## Who signs in
+
+The Authentik test user **`claude`**, for every check below. Its password and TOTP secret come from
+OpenBao through the operator's `claude-e2e` helper (`~/.local/bin/claude-e2e`), which hands them to
+**one** child process as `E2E_USERNAME`, `E2E_PASSWORD` and `E2E_TOTP_SECRET`:
+
+```bash
+claude-e2e run -- <cmd>
+```
+
+The design lives in the homelab repo, `docs/identity.md` § The E2E test user.
+
+- **Never ask the operator for credentials**, and never type them into the built-in browser pane. The
+  login happens inside `<cmd>`: `scripts/ui_login.cjs` or `scripts/authentik_token.py`, below.
+- **Never print them.** No `env` or `printenv` under `claude-e2e run`.
+- **Log in once per run, then reuse** the saved browser session or the token. Authentik accepts each
+  30-second TOTP time step once, so a second login inside the same window fails. Both scripts wait for
+  a fresh window, which means a login takes up to 30 s.
+- **On a failure, stop.** Never loop a login: every failed attempt counts toward the reputation
+  lockout, five of them lock `claude` out for 24 hours. A failed OpenBao login means it is sealed or
+  unreachable; tell the operator.
+- **Sandbox by default.** `claude` holds production groups for the few tests that need them. Touch
+  production only when the task names it, and only read unless the task says to change something.
+- Its Authentik groups decide the `roles` in every token. A test that needs a role `claude` lacks is a
+  request to the operator, not something to work around.
+
+Throwaway users are no longer cheap: MFA is mandatory, so a new user's first login is forced into
+enrolment. Use `claude`.
 
 ## How to run it
 
@@ -53,15 +82,37 @@ login. The `local` applications exist so that nobody has a reason to: the chart 
 
 ### 2. Driving it with Playwright
 
+This repo has no Playwright dependency. Install it once outside the repo:
+
 ```bash
-npx --yes playwright@latest install chromium
+npm install --prefix "$TMPDIR/pw" playwright
+"$TMPDIR/pw/node_modules/.bin/playwright" install chromium
 ```
+
+**Sign in once with the script, then start every page from the saved session.** Paths under
+`scripts/` are relative to this skill's directory:
+
+```bash
+NODE_PATH="$TMPDIR/pw/node_modules" claude-e2e run -- \
+  node scripts/ui_login.cjs <ui-base-url> "$TMPDIR/claude-state.json"
+```
+
+```js
+const ctx = await browser.newContext({ storageState: `${process.env.TMPDIR}/claude-state.json` });
+```
+
+- The script is `.cjs` because the repo root is `"type": "module"`, and `NODE_PATH` only feeds
+  `require()`.
+- The state file holds a live Authentik session. Keep it under `$TMPDIR`, never in the repo.
+- Reusing it costs exactly one top-level `prompt=none` hop to the IdP and no form. That was measured
+  on 2026-10-18 against sandbox qr-manager, and it is also check 3 below.
+- The script prints its IdP and sub-frame navigation counts: checks 2 and 6 in miniature.
 
 Authentik's flow UI is web components, so:
 
-- **Everything must be `:visible`.** The identification stage carries hidden `username`, `password`
-  and `code` inputs for autofill. `input[type="password"]` matches a hidden one and silently does
-  nothing. Use `input[name="password"]:visible`.
+- **Everything must be `:visible`.** The stages carry hidden `username`, `password` and `code` inputs
+  for autofill. `input[type="password"]` matches a hidden one and silently does nothing. Use
+  `input[name="uidField"]:visible`, `input[name="password"]:visible`, `input[name="code"]:visible`.
 - **`innerText` on `body` returns "Powered by authentik"** — the form is in shadow DOM. Do not use
   page text to decide whether a stage rendered; query for the input.
 - **`<ak-loading-overlay>` sits between stages and swallows pointer events**, so a click retries
@@ -108,6 +159,11 @@ page.on('framenavigated', f => f !== page.mainFrame() && frames.push(f.url()));
 Point Playwright at the deployed URL. Note the version actually running before drawing conclusions —
 `git show origin/main:ui/<ui>/package.json | grep version` against the image tag in `homelab`. Testing
 a fix that is not deployed yet proves nothing.
+
+**Open the trailing-slash URL.** `https://<host>/qr-manager` answers `301` to
+`http://<host>:8080/qr-manager/`: the container's own scheme and port, a page that never loads.
+Measured on 2026-10-18 in sandbox and production. A script that waits for the IdP there times out
+before any login, which looks like a broken sign-in page. Use `…/qr-manager/`.
 
 **Do not** try to serve a local build from the deployed hostname. It was attempted: it needs a
 self-signed cert, `--host-resolver-rules`, and disabling Chromium's Local Network Access checks, and
@@ -161,6 +217,17 @@ curl -sI -H 'Origin: https://<app-host>' https://auth.irha.cz/application/o/toke
 
 ### Headless login recipe
 
+`scripts/authentik_token.py` implements this recipe. It reads the UI's `config.json`, so the token is
+exactly the one that UI would get: same `iss`, `aud` and `roles`. stdout carries the token and nothing
+else; capture it, never echo it.
+
+```bash
+TOKEN=$(claude-e2e run -- python3 -I scripts/authentik_token.py https://apps.sandbox.server1.homelab.irha.cz/qr-manager/)
+curl -H "Authorization: Bearer $TOKEN" https://api.sandbox.server1.homelab.irha.cz/iot/qr-manager/qr-codes
+```
+
+The token lives 30 minutes and comes with no refresh token. Fetch one per run.
+
 Logging in without a browser goes through Authentik's flow executor API in four steps. It is
 genuinely useful for token and claim checks. It **cannot** see framing, cookie policy, or anything
 React does, which is exactly how the iframe mistake survived. Two details cost time once:
@@ -173,16 +240,18 @@ React does, which is exactly how the iframe mistake survived. Two details cost t
    a refusal.
 3. Walk the stages, `POST`ing JSON to the same executor URL with a cookie jar:
    `ak-stage-identification` ← `{"uid_field": "<username>"}`, then
-   `ak-stage-password` ← `{"password": "…"}`. **A `302` back to the executor means "stage advanced,
-   re-`GET` me"** — it is not a failure and not the final redirect. No CSRF header is needed.
-4. The terminal stage is `xak-flow-redirect`, whose `to` is the callback URL carrying `code=`.
-   A refusal instead ends on a `200` HTML page titled `Permission denied - authentik`.
+   `ak-stage-password` ← `{"password": "…"}`, then
+   `ak-stage-authenticator-validate` ← `{"code": "<6 digits>"}`. A code alone is enough, with no
+   device selection, while the user has a single TOTP device (measured 2026-10-18). **A `302` back to
+   the executor means "stage advanced, re-`GET` me"**. It is not a failure and not the final
+   redirect. No CSRF header is needed.
+4. The terminal stage is `xak-flow-redirect`. After the authentication flow its `to` is the authorize
+   URL again. Re-`GET` that with the same cookie jar: under implicit consent it answers `302` straight
+   to the callback carrying `code=`. A refusal instead ends on a `200` HTML page titled
+   `Permission denied - authentik`.
 
 Then `POST /application/o/token/` form-encoded with `grant_type=authorization_code`, `code`,
 `redirect_uri`, `client_id` and `code_verifier` — and no secret.
-
-Throwaway test users can be created and deleted through `/api/v3/core/users/` with an Authentik
-admin API token. Delete them afterwards.
 
 ## Recording what you find
 
