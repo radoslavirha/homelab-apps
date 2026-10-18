@@ -1,5 +1,5 @@
 lockfile_version: '1'
-generated_at: '2026-10-13T20:13:38.192241+00:00'
+generated_at: '2026-10-18T12:32:07.147752+00:00'
 apm_version: 0.31.0
 dependencies:
 - repo_url: radoslavirha/toolkit-hub
@@ -224,13 +224,22 @@ deployments:
   content_hash: sha256:7961ec428e4922b7b9d0e473018ba0763bd069daa9d04232a7bbd5c18c8d71b3
 - kind: project-relative
   target: claude
+  value: .claude/rules/tsed-api.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:93de04a1561398348c724246e632b7857483d257b4dda6ae9b3b502e496b2407
+- kind: project-relative
+  target: claude
   value: .claude/rules/tsed-testing.md
   runtime: null
   scope: project
   owners:
   - .
   active_owner: .
-  content_hash: sha256:44c028e02165e9160f8c973c9d07c45f4895f7131aa754de46409fc67449ef3c
+  content_hash: sha256:e20a5feed7f45136dc7b2084a7b4042caaa16f6773ec4833fc96a60cb02c5dd7
 - kind: project-relative
   target: claude
   value: .claude/skills/adding-a-workspace-member
@@ -248,7 +257,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:5fca30f4a17014ef4dcdda0a95953d024b4e6cc48cad3adbb003a287c3999b10
+  content_hash: sha256:fc686c0c1278256045e99878a0790e81ff738358311e273dec14f45abfd98a72
 - kind: project-relative
   target: claude
   value: .claude/skills/adding-a-workspace-member/reference/api.md
@@ -257,7 +266,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:11d2f1289cef7a6c687f418c0522aa29dc84670eb2f417309087f9156b4183fc
+  content_hash: sha256:89e7ded92ea80d9082ad96f79f7e303c91e53f8b979bfa76bf30a7ad3fac8b56
 - kind: project-relative
   target: claude
   value: .claude/skills/adding-a-workspace-member/reference/dockerfile.md
@@ -365,7 +374,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:f14ea985b412614c9ed8a6434faf4a557d041c6df839dcb680fac5412f06de72
+  content_hash: sha256:be44857c1904e91f4dfd2a57fd0788accbad49d18194496d58b958c47fe037ab
 - kind: project-relative
   target: claude
   value: .claude/skills/onboarding-to-homelab/scripts/validate-app.sh
@@ -374,7 +383,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:aebbc64a7bbb4861f6ed48a355b089a8ea47896d480b18a2c5d40314fc19ca55
+  content_hash: sha256:c8dbb46b8c7b2aa768ac7b9a9726cb0a18321f7835124aa772acc532ad9273fc
 - kind: project-relative
   target: claude
   value: .claude/skills/updating-docs
@@ -729,6 +738,7 @@ local_deployed_files:
 - .agents/skills/verify-auth-in-browser
 - .agents/skills/verify-auth-in-browser/SKILL.md
 - .claude/rules/react-testing.md
+- .claude/rules/tsed-api.md
 - .claude/rules/tsed-testing.md
 - .claude/skills/adding-a-workspace-member
 - .claude/skills/adding-a-workspace-member/SKILL.md
@@ -753,15 +763,16 @@ local_deployed_file_hashes:
   .agents/skills/update-docs/SKILL.md: sha256:7a1d94bcdfecfdb6dbabde23c41994664a6a343ddc04ed755b847ec60cdcd43e
   .agents/skills/verify-auth-in-browser/SKILL.md: sha256:d4f05055a8381ab1b04bad9d2fd19836269fc907a2d7fb97d07562b4b0b54f75
   .claude/rules/react-testing.md: sha256:7961ec428e4922b7b9d0e473018ba0763bd069daa9d04232a7bbd5c18c8d71b3
-  .claude/rules/tsed-testing.md: sha256:44c028e02165e9160f8c973c9d07c45f4895f7131aa754de46409fc67449ef3c
-  .claude/skills/adding-a-workspace-member/SKILL.md: sha256:5fca30f4a17014ef4dcdda0a95953d024b4e6cc48cad3adbb003a287c3999b10
-  .claude/skills/adding-a-workspace-member/reference/api.md: sha256:11d2f1289cef7a6c687f418c0522aa29dc84670eb2f417309087f9156b4183fc
+  .claude/rules/tsed-api.md: sha256:93de04a1561398348c724246e632b7857483d257b4dda6ae9b3b502e496b2407
+  .claude/rules/tsed-testing.md: sha256:e20a5feed7f45136dc7b2084a7b4042caaa16f6773ec4833fc96a60cb02c5dd7
+  .claude/skills/adding-a-workspace-member/SKILL.md: sha256:fc686c0c1278256045e99878a0790e81ff738358311e273dec14f45abfd98a72
+  .claude/skills/adding-a-workspace-member/reference/api.md: sha256:89e7ded92ea80d9082ad96f79f7e303c91e53f8b979bfa76bf30a7ad3fac8b56
   .claude/skills/adding-a-workspace-member/reference/dockerfile.md: sha256:6e1ed83f52ec474b4143337850502c43068fd185e3c2ce26e60120d2e759be07
   .claude/skills/adding-a-workspace-member/reference/package.md: sha256:d71faf8e295af4e95c94a6df3bde788632d15acd17f9b8ede9d6dc18c29b53ca
   .claude/skills/adding-a-workspace-member/reference/ui.md: sha256:663c9eb47e17ea58500a0bd0a8fad9c31cc66f83a9da6122b111fd234fad1a04
   .claude/skills/adding-a-workspace-member/scripts/check-member.sh: sha256:1d6995c4aaea624bbc6575b67a6a518aacd55132730e0b1e97f5a8f30de20a52
   .claude/skills/instrumenting-entry-points/SKILL.md: sha256:4cd515022a247de1bf66861c6820bcb017e8fc3d33204d257e8f79604016b478
-  .claude/skills/onboarding-to-homelab/SKILL.md: sha256:f14ea985b412614c9ed8a6434faf4a557d041c6df839dcb680fac5412f06de72
-  .claude/skills/onboarding-to-homelab/scripts/validate-app.sh: sha256:aebbc64a7bbb4861f6ed48a355b089a8ea47896d480b18a2c5d40314fc19ca55
+  .claude/skills/onboarding-to-homelab/SKILL.md: sha256:be44857c1904e91f4dfd2a57fd0788accbad49d18194496d58b958c47fe037ab
+  .claude/skills/onboarding-to-homelab/scripts/validate-app.sh: sha256:c8dbb46b8c7b2aa768ac7b9a9726cb0a18321f7835124aa772acc532ad9273fc
   .claude/skills/updating-docs/SKILL.md: sha256:6b247d0ed9c24da452ae2d65294fbded95bc8638003a5e4f750ac2a7693585a8
   .claude/skills/verifying-auth-in-browser/SKILL.md: sha256:72c00125734b3ec2f62285058155f030d86a0aa766a4f929358794897c4babbd
