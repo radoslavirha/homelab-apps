@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { createRemoteJWKSet, customFetch, errors } from 'jose';
 import type { FetchImplementation, RemoteJWKSet } from 'jose';
+import { AmbiguousKeyError } from '../AmbiguousKeyError.js';
 import { UnresolvableKeyError } from '../IKeySource.js';
 import type { IKeySource, KeyLookup, VerificationKey } from '../IKeySource.js';
 import type { JwksKey, TrustedIssuer } from '../schemas/auth.schema.js';
@@ -55,11 +56,14 @@ export class RemoteJwksSource implements IKeySource {
             // A key set that answered and simply has no such key is the token's
             // fault. A key set that could not be reached is not — and the two
             // must not collapse, or an IdP outage reads as a wave of forgeries.
-            if (
-                error instanceof errors.JWKSNoMatchingKey ||
-                error instanceof errors.JWKSMultipleMatchingKeys
-            ) {
+            if (error instanceof errors.JWKSNoMatchingKey) {
                 throw new UnresolvableKeyError(error.message);
+            }
+            // Several keys fit a header with no `kid` — ordinary while the IdP
+            // rotates. The error iterates over the matching keys, so it is
+            // handed on whole and the verifier lets the signature pick.
+            if (error instanceof errors.JWKSMultipleMatchingKeys) {
+                throw new AmbiguousKeyError(error.message, error);
             }
             throw error;
         }
