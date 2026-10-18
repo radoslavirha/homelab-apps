@@ -2,9 +2,12 @@ import { Platform, ServerConfiguration } from '@radoslavirha/tsed-platform';
 import { createShutdownHandler } from '@radoslavirha/tsed-health';
 import { openTelemetry } from '@radoslavirha/otel';
 import { Logger } from '@radoslavirha/tsed-logger';
+import { ObjectUtils } from '@radoslavirha/utils';
 import { injector } from '@tsed/di';
 import { Server } from './Server.js';
+import { toMcpSettings } from './mcp/toMcpSettings.js';
 import { ConfigService } from './services/ConfigService.js';
+import * as tools from './tools/index.js';
 
 /**
  * Signals that should drain and shut down gracefully.
@@ -24,16 +27,9 @@ try {
         rootModule: Server,
         ...config.server,
         api: config.api,
-        // The MCP endpoint is the server's own root: a client is given http://<host>:<port>/.
-        // Streamable HTTP, stateless — a new MCP server per POST and no sessions, so any
-        // replica answers any request. Name and version are what clients see in `serverInfo`.
-        mcp: {
-            path: '/',
-            name: config.api.service,
-            title: 'Development knowledge base',
-            description: config.api.description,
-            version: config.api.version
-        }
+        // One endpoint per McpServer, from `mcpServers`: Streamable HTTP, stateless — a new MCP
+        // server per POST and no sessions, so any replica answers any request.
+        mcp: toMcpSettings(config.config, config.api, ObjectUtils.values(tools))
     };
 
     const platform = await Platform.bootstrap(configuration);

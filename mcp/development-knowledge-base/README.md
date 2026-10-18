@@ -2,7 +2,7 @@
 
 MCP server for the development knowledge base: search and read it from any MCP client (Claude Code, Claude on the web or phone, ChatGPT, Cursor, a CI agent). It answers from `knowledge-base-api`.
 
-**Status: endpoint and upstream client.** The MCP endpoint answers at `/` (Streamable HTTP, stateless) but has no tools yet. The client to knowledge-base-api is wired; the three read-only tools come next.
+**Status: phase 1 — local, no login.** One MCP endpoint, `/kb/development` (Streamable HTTP, stateless), with three read-only tools answered from knowledge-base-api. The app can mount several endpoints — one per entry in `mcpServers` — for knowledge bases with other audiences later.
 
 ## Run it
 
@@ -14,13 +14,23 @@ Listens on port `4004`.
 
 | Method | Path | |
 |--------|------|---|
-| POST | `/` | The MCP endpoint: Streamable HTTP, JSON responses, no sessions. Negotiates protocol `2025-11-25` and the earlier versions through `initialize` |
-| GET, DELETE | `/` | `405` — a stateless endpoint has no event stream to open and no session to end |
+| POST | `/kb/development` | The MCP endpoint: Streamable HTTP, JSON responses, no sessions. Negotiates protocol `2025-11-25` and the earlier versions through `initialize` |
+| GET, DELETE | `/kb/development` | `405` — a stateless endpoint has no event stream to open and no session to end |
 | GET | `/health/live` | Liveness. Always `200` |
 | GET | `/health/ready` | Readiness. `503` while the process drains |
 | GET | `/health` | Full report: `{ status, checks }` (`application/health+json`) |
 
-Point an MCP client at `http://localhost:4004/` (the transport is HTTP, there is no stdio mode).
+Point an MCP client at `http://localhost:4004/kb/development` (the transport is HTTP, there is no stdio mode). To try it by hand: the MCP Inspector (`npx @modelcontextprotocol/inspector`, transport "Streamable HTTP", URL `http://localhost:4004/kb/development`), or any HTTP client posting JSON-RPC with `Content-Type: application/json` and `Accept: application/json, text/event-stream`.
+
+## Tools
+
+All three are read-only (`readOnlyHint`). A failure comes back as a tool result with `isError`, carrying the message.
+
+| Tool | Input | Returns |
+|------|-------|---------|
+| `list_knowledge_bases` | — | `knowledgeBases[]`: `id`, `description` (from config), `documents`, `lastIndexedAt` |
+| `search` | `query`; optional `kb`, `filter` (`key:value,…` on metadata), `limit` (1–20, default 8) | `hits[]`, best first: `kb`, `id`, `anchor`, `title`, `heading`, `snippet`, `date` |
+| `read` | `kb`, `id` (from a hit) | `kb`, `id`, `title`, `date`, `metadata`, `markdown` — the whole document. An unknown id says to search first |
 
 ## Configuration
 
@@ -29,6 +39,8 @@ Point an MCP client at `http://localhost:4004/` (the transport is HTTP, there is
 | Key | Description |
 |-----|-------------|
 | `server.httpPort` | Port to listen on |
+| `mcpServers.<McpServer>` | One entry per MCP endpoint the app mounts (`DEVELOPMENT_KB` today): `path` (kept by Traefik, so the public path too), `name`, `title`, optional `description` (defaults to the package's). Every key is required and paths must differ |
+| `knowledgeBases.<id>.description` | What a knowledge base holds, as `list_knowledge_bases` shows it. A knowledge base without one is listed with `description: null` |
 | `externalApis.KNOWLEDGE_BASE_API` | knowledge-base-api: `baseURL` (from a laptop, the LAN route `https://api.server1.homelab.irha.cz/kb/knowledge-base`), resilience, and `auth` — `token-exchange` with a `client_credentials` request for `development-kb-mcp` to Authentik's token endpoint, form-encoded, scope `openid profile email roles` (without `profile`, `aud` is the bare client id and the API refuses the token) |
 | `health` | Health endpoint configuration (optional) |
 | `logger` | Log level and options (optional) |

@@ -2,6 +2,13 @@
     "server": {
         "httpPort": 4004
     },
+    "mcpServers": {
+        "DEVELOPMENT_KB": {
+            "path": "/kb/development",
+            "name": "development-knowledge-base",
+            "title": "Development knowledge base"
+        }
+    },
     "externalApis": {
         "KNOWLEDGE_BASE_API": {
             "baseURL": "http://kb-api.test",
@@ -51,6 +58,11 @@
                 504,
                 408
             ]
+        }
+    },
+    "knowledgeBases": {
+        "dev": {
+            "description": "Development knowledge base for the homelab repositories: decisions with the alternatives that were rejected, specs and plans, cross-repository contracts (MQTT topics, REST endpoints, URLs, auth), gotchas, and a mirror of the repositories' own docs."
         }
     },
     "logger": {}

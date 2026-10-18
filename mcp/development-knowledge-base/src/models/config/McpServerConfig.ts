@@ -1,0 +1,32 @@
+import { CommonUtils } from '@radoslavirha/utils';
+import z from 'zod';
+
+/** One MCP endpoint: where it is mounted and what it tells clients about itself. */
+export const McpServerConfigSchema = z.object({
+    path: z.string().startsWith('/').describe('Mount path of the endpoint, e.g. `/kb/development`. Traefik keeps the path, so it is the public one too.'),
+    name: z.string().min(1).describe('Machine name clients see in `serverInfo.name`.'),
+    title: z.string().min(1).describe('Human-readable name clients show.'),
+    description: z.string().min(1).optional().describe('What the server is for. Defaults to the package description.')
+});
+
+export type McpServerConfig = z.infer<typeof McpServerConfigSchema>;
+
+/**
+ * One required entry per key, like `createExternalApisSchema`: a server the code mounts but the
+ * config forgot fails the boot, naming it. Two servers on one path would shadow each other, so
+ * paths must differ.
+ */
+export const createMcpServersSchema = <K extends string>(keys: readonly K[]) =>
+    z.object(Object.fromEntries(keys.map((key) => [key, McpServerConfigSchema])) as Record<K, typeof McpServerConfigSchema>)
+        .superRefine((servers, ctx) => {
+            const seen = new Map<string, string>();
+
+            for (const [key, server] of Object.entries(servers as Record<string, McpServerConfig>)) {
+                const other = seen.get(server.path);
+
+                if (CommonUtils.notUndefined(other)) {
+                    ctx.addIssue({ code: 'custom', path: [key, 'path'], message: `Path ${server.path} is already used by ${other}.` });
+                }
+                seen.set(server.path, key);
+            }
+        });

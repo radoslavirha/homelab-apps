@@ -17,10 +17,12 @@ const UPSTREAM = {
     }
 };
 
-const MINIMAL = { server: { httpPort: 4004 }, externalApis: { KNOWLEDGE_BASE_API: UPSTREAM } };
+const MCP_SERVERS = { DEVELOPMENT_KB: { path: '/kb/development', name: 'development-kb', title: 'Development knowledge base' } };
+
+const MINIMAL = { server: { httpPort: 4004 }, mcpServers: MCP_SERVERS, externalApis: { KNOWLEDGE_BASE_API: UPSTREAM } };
 
 describe('ConfigSchema', () => {
-    it('accepts the minimal config: the server and the upstream, everything else optional', () => {
+    it('accepts the minimal config: the server, the MCP servers and the upstream, everything else optional', () => {
         expect(ConfigSchema.safeParse(MINIMAL).success).toBe(true);
     });
 
@@ -40,8 +42,15 @@ describe('ConfigSchema', () => {
         expect(ConfigSchema.safeParse({ ...MINIMAL, upstream: { url: 'https://api.test' } }).success).toBe(true);
     });
 
+    it('requires the MCP servers, naming the missing one', () => {
+        const result = ConfigSchema.safeParse({ server: { httpPort: 4004 }, externalApis: { KNOWLEDGE_BASE_API: UPSTREAM } });
+
+        expect(result.success).toBe(false);
+        expect(result.error?.issues[0].path).toEqual(['mcpServers']);
+    });
+
     it('requires the upstream, naming it', () => {
-        const result = ConfigSchema.safeParse({ server: { httpPort: 4004 } });
+        const result = ConfigSchema.safeParse({ server: { httpPort: 4004 }, mcpServers: MCP_SERVERS });
 
         expect(result.success).toBe(false);
         expect(result.error?.issues[0].path).toEqual(['externalApis']);
