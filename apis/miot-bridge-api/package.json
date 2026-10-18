@@ -61,7 +61,7 @@
     "cookie-parser": "catalog:express",
     "express": "catalog:express",
     "mongoose": "catalog:",
-    "mqtt": "^5.16.0",
+    "mqtt": "^5.16.1",
     "zod": "catalog:"
   },
   "devDependencies": {

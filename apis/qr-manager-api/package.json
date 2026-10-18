@@ -59,7 +59,7 @@
     "cookie-parser": "catalog:express",
     "express": "catalog:express",
     "mongoose": "catalog:",
-    "nanoid": "^6.0.1",
+    "nanoid": "^6.0.2",
     "qrcode": "^1.5.4",
     "zod": "catalog:"
   },

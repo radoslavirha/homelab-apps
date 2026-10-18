@@ -28,7 +28,7 @@
     "@actions/github": "^9.1.1",
     "@changesets/changelog-github": "^1.0.1",
     "@changesets/cli": "^3.0.3",
-    "handlebars": "^4.7.9"
+    "handlebars": "^4.7.10"
   },
   "engines": {
     "node": ">= 24",
