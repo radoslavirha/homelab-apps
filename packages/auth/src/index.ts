@@ -19,6 +19,7 @@ export { VerificationReason } from './VerificationOutcome.js';
 export type { Principal, PrincipalKind } from './Principal.js';
 export type { VerificationOutcome } from './VerificationOutcome.js';
 export type { Credential, ITokenVerifier } from './ITokenVerifier.js';
+export { AmbiguousKeyError } from './AmbiguousKeyError.js';
 export { UnresolvableKeyError } from './IKeySource.js';
 export type { IKeySource, KeyLookup, VerificationKey } from './IKeySource.js';
 

@@ -20,7 +20,8 @@ export interface IKeySource {
      *
      * `kid` is optional because a JWS header may omit it — a static single-key
      * deployment has nothing to select between. An implementation holding more
-     * than one key and given no `kid` should reject rather than guess.
+     * than one key that fits and given no `kid` must not guess: it rejects with
+     * `AmbiguousKeyError` carrying every candidate, and the signature decides.
      *
      * **Rejects rather than returning undefined when the key cannot be
      * resolved**, and the *type* of the rejection carries the distinction the

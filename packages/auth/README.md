@@ -25,6 +25,7 @@ without a server.
 | `StaticKeySource` | Serves keys carried inline in the configuration — no network, no cache |
 | `RemoteJwksSource` | Serves keys from a remote JWKS: selected by `kid`, cached, bounded refresh, hard timeout |
 | `UnresolvableKeyError` | Marks a key failure as the *token's* fault, so it reports `invalid` rather than `indeterminate` |
+| `AmbiguousKeyError` | An `UnresolvableKeyError` carrying several candidate keys; the verifier tries each and the signature decides |
 | `Authenticator` | Routes a credential to the verifier the route asked for, and returns an allow/refuse decision |
 | `describeAuthConfig` | The boot-time summary: every trusted issuer, and where its keys come from |
 | `recordVerification` | The outcome counter |
@@ -52,6 +53,12 @@ algorithm is the credential's fault and reports `invalid`; a timeout or refused 
 source's fault and reports `indeterminate`. Key sources signal the first by throwing
 `UnresolvableKeyError`, so the verifier never has to know which sources exist. Getting this backwards
 files an attack under "the IdP might be down".
+
+**Several matching keys are tried, not refused.** During rotation an IdP publishes the retiring and the
+new key side by side, and a token with no `kid` matches both. The source throws `AmbiguousKeyError`
+with the candidates and the verifier tries each: a signature mismatch moves on to the next key, and
+any other failure (expired, wrong audience) is the verdict of the key that matched. `jose` itself only
+throws here, so the loop is ours.
 
 **A JWKS fetch is bounded three ways.** `timeoutMs` aborts a hanging endpoint — a hang is worse than a
 refusal, because it exhausts the connection pool and takes down routes that need no authentication at
