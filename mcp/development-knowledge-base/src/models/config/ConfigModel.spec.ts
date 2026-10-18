@@ -1,10 +1,26 @@
 import { describe, expect, it } from 'vitest';
 import { ConfigSchema } from './ConfigModel.js';
 
-const MINIMAL = { server: { httpPort: 4004 } };
+/** The upstream, as config/localhost.json has it: a client_credentials token from Authentik. */
+const UPSTREAM = {
+    baseURL: 'https://kb-api.test',
+    auth: {
+        strategy: 'token-exchange',
+        request: {
+            method: 'POST',
+            url: 'https://auth.test/application/o/token/',
+            headers: [{ name: 'Content-Type', value: 'application/x-www-form-urlencoded' }],
+            body: { grant_type: 'client_credentials', client_id: 'development-kb-mcp', client_secret: 'not-a-real-one', scope: 'openid profile email roles' }
+        },
+        tokenExtractor: 'access_token',
+        transport: { headers: [{ name: 'Authorization', credential: 'value', prefix: 'Bearer ' }] }
+    }
+};
+
+const MINIMAL = { server: { httpPort: 4004 }, externalApis: { KNOWLEDGE_BASE_API: UPSTREAM } };
 
 describe('ConfigSchema', () => {
-    it('accepts the minimal config: every section beyond the server is optional', () => {
+    it('accepts the minimal config: the server and the upstream, everything else optional', () => {
         expect(ConfigSchema.safeParse(MINIMAL).success).toBe(true);
     });
 
@@ -24,8 +40,15 @@ describe('ConfigSchema', () => {
         expect(ConfigSchema.safeParse({ ...MINIMAL, upstream: { url: 'https://api.test' } }).success).toBe(true);
     });
 
+    it('requires the upstream, naming it', () => {
+        const result = ConfigSchema.safeParse({ server: { httpPort: 4004 } });
+
+        expect(result.success).toBe(false);
+        expect(result.error?.issues[0].path).toEqual(['externalApis']);
+    });
+
     it('refuses a port that is not a number, naming the field', () => {
-        const result = ConfigSchema.safeParse({ server: { httpPort: 'not-a-port' } });
+        const result = ConfigSchema.safeParse({ ...MINIMAL, server: { httpPort: 'not-a-port' } });
 
         expect(result.success).toBe(false);
         expect(result.error?.issues[0].path).toEqual(['server', 'httpPort']);

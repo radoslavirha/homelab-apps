@@ -2,5 +2,56 @@
     "server": {
         "httpPort": 4004
     },
+    "externalApis": {
+        "KNOWLEDGE_BASE_API": {
+            "baseURL": "http://kb-api.test",
+            "auth": {
+                "strategy": "token-exchange",
+                "request": {
+                    "method": "POST",
+                    "url": "http://auth.test/application/o/token/",
+                    "headers": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/x-www-form-urlencoded"
+                        }
+                    ],
+                    "body": {
+                        "grant_type": "client_credentials",
+                        "client_id": "development-kb-mcp",
+                        "client_secret": "test-secret-not-a-real-one",
+                        "scope": "openid profile email roles"
+                    }
+                },
+                "tokenExtractor": "access_token",
+                "transport": {
+                    "headers": [
+                        {
+                            "name": "Authorization",
+                            "credential": "value",
+                            "prefix": "Bearer "
+                        }
+                    ]
+                }
+            },
+            "resilience": {
+                "timeout": {
+                    "ms": 10000
+                },
+                "retry": {
+                    "count": 1,
+                    "backoffMs": 500
+                },
+                "circuitBreaker": {}
+            },
+            "retriableStatusCodes": [
+                500,
+                502,
+                503,
+                504,
+                408
+            ]
+        }
+    },
     "logger": {}
 }

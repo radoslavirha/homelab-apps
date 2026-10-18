@@ -1126,12 +1126,18 @@ importers:
       '@radoslavirha/otel':
         specifier: workspace:*
         version: link:../../packages/otel
+      '@radoslavirha/tsed-common':
+        specifier: 'catalog:'
+        version: 0.7.1(@tsed/core@8.44.0)(@tsed/json-mapper@8.44.0(@tsed/core@8.44.0)(@tsed/schema@8.44.0(@tsed/core@8.44.0)(@tsed/hooks@8.44.0)(@tsed/openspec@8.44.0)))(@tsed/schema@8.44.0(@tsed/core@8.44.0)(@tsed/hooks@8.44.0)(@tsed/openspec@8.44.0))(zod@4.6.7)
       '@radoslavirha/tsed-configuration':
         specifier: 'catalog:'
         version: 0.9.4(@tsed/core@8.44.0)(@tsed/di@8.44.0(@tsed/core@8.44.0)(@tsed/hooks@8.44.0)(@tsed/logger@8.0.7))(@tsed/json-mapper@8.44.0(@tsed/core@8.44.0)(@tsed/schema@8.44.0(@tsed/core@8.44.0)(@tsed/hooks@8.44.0)(@tsed/openspec@8.44.0)))(@tsed/schema@8.44.0(@tsed/core@8.44.0)(@tsed/hooks@8.44.0)(@tsed/openspec@8.44.0))(zod@4.6.7)
       '@radoslavirha/tsed-health':
         specifier: workspace:*
         version: link:../../packages/tsed-health
+      '@radoslavirha/tsed-http-provider':
+        specifier: workspace:*
+        version: file:packages/tsed-http-provider(@radoslavirha/tsed-logger@0.7.9(@tsed/core@8.44.0)(@tsed/di@8.44.0(@tsed/core@8.44.0)(@tsed/hooks@8.44.0)(@tsed/logger@8.0.7))(@tsed/json-mapper@8.44.0(@tsed/core@8.44.0)(@tsed/schema@8.44.0(@tsed/core@8.44.0)(@tsed/hooks@8.44.0)(@tsed/openspec@8.44.0)))(@tsed/platform-http@8.44.0(@tsed/engines@8.44.0)(@tsed/logger@8.0.7)(@tsed/openspec@8.44.0)(@types/multer@2.3.0)))(@tsed/di@8.44.0(@tsed/core@8.44.0)(@tsed/hooks@8.44.0)(@tsed/logger@8.0.7))(@tsed/exceptions@8.44.0(@tsed/core@8.44.0))(axios@1.20.0(debug@4.4.3(supports-color@5.5.0))(supports-color@5.5.0))(debug@4.4.3(supports-color@5.5.0))(supports-color@5.5.0)(tslib@2.8.1)
       '@radoslavirha/tsed-logger':
         specifier: 'catalog:'
         version: 0.7.9(@tsed/core@8.44.0)(@tsed/di@8.44.0(@tsed/core@8.44.0)(@tsed/hooks@8.44.0)(@tsed/logger@8.0.7))(@tsed/json-mapper@8.44.0(@tsed/core@8.44.0)(@tsed/schema@8.44.0(@tsed/core@8.44.0)(@tsed/hooks@8.44.0)(@tsed/openspec@8.44.0)))(@tsed/platform-http@8.44.0(@tsed/engines@8.44.0)(@tsed/logger@8.0.7)(@tsed/openspec@8.44.0)(@types/multer@2.3.0))
@@ -3609,6 +3615,9 @@ packages:
       '@vitest/coverage-v8': 5.0.5
       vitest: 5.0.5
 
+  '@radoslavirha/http-provider@file:packages/http-provider':
+    resolution: {directory: packages/http-provider, type: directory}
+
   '@radoslavirha/logger@0.4.11':
     resolution: {integrity: sha512-RySImzXcbCRzeFUYTCBTsO66Q52Qjc3EHpBq6aEdio+ALOrMNdiQ3gK59nyWGg6u2hZHV/rvKGIwApJ7PL2vaQ==, tarball: https://npm.pkg.github.com/download/@radoslavirha/logger/0.4.11/c16664603f754a19554358c60c7aca5f1fea9663}
     engines: {node: '>= 24', pnpm: '>= 11.26'}
@@ -3620,6 +3629,9 @@ packages:
     os: [darwin, linux]
     peerDependencies:
       zod: 4.6.7
+
+  '@radoslavirha/resilience@file:packages/resilience':
+    resolution: {directory: packages/resilience, type: directory}
 
   '@radoslavirha/tsed-auth@file:packages/tsed-auth':
     resolution: {directory: packages/tsed-auth, type: directory}
@@ -3651,6 +3663,14 @@ packages:
       '@tsed/di': 8.44.0
       '@tsed/schema': 8.44.0
       zod: 4.6.7
+
+  '@radoslavirha/tsed-http-provider@file:packages/tsed-http-provider':
+    resolution: {directory: packages/tsed-http-provider, type: directory}
+    peerDependencies:
+      '@radoslavirha/tsed-logger': 'catalog:'
+      '@tsed/di': catalog:tsed
+      '@tsed/exceptions': catalog:tsed
+      axios: 'catalog:'
 
   '@radoslavirha/tsed-logger@0.7.9':
     resolution: {integrity: sha512-9Gw3C0oDEB02YEfl2qxe2JILCxzplkCAz1DGfaX6j4Jg0vrLka5fUjlQBGWiDM7tZKqQrk8VJbUkg51KuTPT/g==, tarball: https://npm.pkg.github.com/download/@radoslavirha/tsed-logger/0.7.9/8963f544cf072a9a6364e14517296a2c9ed84b20}
@@ -8737,6 +8757,20 @@ snapshots:
       - vite
       - webpack
 
+  '@radoslavirha/http-provider@file:packages/http-provider(debug@4.4.3(supports-color@5.5.0))(supports-color@5.5.0)(tslib@2.8.1)':
+    dependencies:
+      '@radoslavirha/config-typescript': 1.1.8(tslib@2.8.1)(typescript@6.0.3)
+      '@radoslavirha/resilience': file:packages/resilience(tslib@2.8.1)
+      '@radoslavirha/utils': 0.10.1
+      axios: 1.20.0(debug@4.4.3(supports-color@5.5.0))(supports-color@5.5.0)
+      jose: 6.2.12
+      typescript: 6.0.3
+      zod: 4.6.7
+    transitivePeerDependencies:
+      - debug
+      - supports-color
+      - tslib
+
   '@radoslavirha/logger@0.4.11':
     dependencies:
       '@radoslavirha/utils': 0.10.1
@@ -8747,6 +8781,15 @@ snapshots:
       '@radoslavirha/utils': 0.10.1
       fast-redact: 3.5.0
       zod: 4.6.7
+
+  '@radoslavirha/resilience@file:packages/resilience(tslib@2.8.1)':
+    dependencies:
+      '@radoslavirha/config-typescript': 1.1.8(tslib@2.8.1)(typescript@6.0.3)
+      cockatiel: 4.0.0
+      typescript: 6.0.3
+      zod: 4.6.7
+    transitivePeerDependencies:
+      - tslib
 
   '@radoslavirha/tsed-auth@file:packages/tsed-auth(c007e7260df872cad8a15bf4f98d3dcb)':
     dependencies:
@@ -8797,6 +8840,24 @@ snapshots:
     transitivePeerDependencies:
       - '@tsed/core'
       - '@tsed/json-mapper'
+
+  '@radoslavirha/tsed-http-provider@file:packages/tsed-http-provider(@radoslavirha/tsed-logger@0.7.9(@tsed/core@8.44.0)(@tsed/di@8.44.0(@tsed/core@8.44.0)(@tsed/hooks@8.44.0)(@tsed/logger@8.0.7))(@tsed/json-mapper@8.44.0(@tsed/core@8.44.0)(@tsed/schema@8.44.0(@tsed/core@8.44.0)(@tsed/hooks@8.44.0)(@tsed/openspec@8.44.0)))(@tsed/platform-http@8.44.0(@tsed/engines@8.44.0)(@tsed/logger@8.0.7)(@tsed/openspec@8.44.0)(@types/multer@2.3.0)))(@tsed/di@8.44.0(@tsed/core@8.44.0)(@tsed/hooks@8.44.0)(@tsed/logger@8.0.7))(@tsed/exceptions@8.44.0(@tsed/core@8.44.0))(axios@1.20.0(debug@4.4.3(supports-color@5.5.0))(supports-color@5.5.0))(debug@4.4.3(supports-color@5.5.0))(supports-color@5.5.0)(tslib@2.8.1)':
+    dependencies:
+      '@radoslavirha/config-typescript': 1.1.8(tslib@2.8.1)(typescript@6.0.3)
+      '@radoslavirha/http-provider': file:packages/http-provider(debug@4.4.3(supports-color@5.5.0))(supports-color@5.5.0)(tslib@2.8.1)
+      '@radoslavirha/redaction': 0.3.8(zod@4.6.7)
+      '@radoslavirha/resilience': file:packages/resilience(tslib@2.8.1)
+      '@radoslavirha/tsed-logger': 0.7.9(@tsed/core@8.44.0)(@tsed/di@8.44.0(@tsed/core@8.44.0)(@tsed/hooks@8.44.0)(@tsed/logger@8.0.7))(@tsed/json-mapper@8.44.0(@tsed/core@8.44.0)(@tsed/schema@8.44.0(@tsed/core@8.44.0)(@tsed/hooks@8.44.0)(@tsed/openspec@8.44.0)))(@tsed/platform-http@8.44.0(@tsed/engines@8.44.0)(@tsed/logger@8.0.7)(@tsed/openspec@8.44.0)(@types/multer@2.3.0))
+      '@radoslavirha/utils': 0.10.1
+      '@tsed/di': 8.44.0(@tsed/core@8.44.0)(@tsed/hooks@8.44.0)(@tsed/logger@8.0.7)
+      '@tsed/exceptions': 8.44.0(@tsed/core@8.44.0)
+      axios: 1.20.0(debug@4.4.3(supports-color@5.5.0))(supports-color@5.5.0)
+      typescript: 6.0.3
+      zod: 4.6.7
+    transitivePeerDependencies:
+      - debug
+      - supports-color
+      - tslib
 
   '@radoslavirha/tsed-logger@0.7.9(@tsed/core@8.44.0)(@tsed/di@8.44.0(@tsed/core@8.44.0)(@tsed/hooks@8.44.0)(@tsed/logger@8.0.7))(@tsed/json-mapper@8.44.0(@tsed/core@8.44.0)(@tsed/schema@8.44.0(@tsed/core@8.44.0)(@tsed/hooks@8.44.0)(@tsed/openspec@8.44.0)))(@tsed/platform-http@8.44.0(@tsed/engines@8.44.0)(@tsed/logger@8.0.7)(@tsed/openspec@8.44.0)(@types/multer@2.3.0))':
     dependencies:
