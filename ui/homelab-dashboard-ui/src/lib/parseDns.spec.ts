@@ -195,6 +195,15 @@ describe('parseDnsRecords paths config', () => {
         aRecord('traefik.server1.home', '10.0.0.1')
     ];
 
+    it('matches a paths key case-insensitively, like exclude', () => {
+        const cfg = AppConfigSchema.parse({
+            unifi: { site: 'default' },
+            serverPattern: '^server(\\d+)\\.home$',
+            paths: { 'Traefik.server1.home': '/dashboard' }
+        });
+        expect(parseDnsRecords(records, cfg)[0].services[0].url).toBe('http://traefik.server1.home/dashboard');
+    });
+
     const urlFor = (path: string): string => {
         const cfg = AppConfigSchema.parse({
             unifi: { site: 'default' },

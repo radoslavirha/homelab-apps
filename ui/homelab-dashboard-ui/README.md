@@ -22,7 +22,7 @@ host are server-side environment variables instead — see [Server-side environm
 | `serverPattern` | yes | JS regex; capture group 1 = server index (required, config validation fails without a capture group). No default — the domain suffix is a deployment fact (e.g. `^server(\d+)\.homelab\.irha\.cz$`). |
 | `scheme` | — | Protocol for tile URLs (`http` or `https`). Default: `http` |
 | `exclude` | — | Array of DNS hostnames to hide from the dashboard |
-| `paths` | — | Map of hostname/service-name → URL path suffix (e.g. `{ "traefik": "/dashboard" }`) |
+| `paths` | — | Map of hostname/service-name (case-insensitive) → URL path suffix (e.g. `{ "traefik": "/dashboard" }`) |
 
 ## Server-side environment
 

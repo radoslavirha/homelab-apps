@@ -17,11 +17,12 @@ function normalizeSuffix(suffix: string): string {
     return suffix === '' || /^[/?#]/.test(suffix) ? suffix : `/${suffix}`;
 }
 
-function resolvePath(hostname: string, paths: Record<string, string> | undefined): string {
-    if (!paths) return '';
-    if (Object.hasOwn(paths, hostname)) return normalizeSuffix(paths[hostname]);
-    const label = hostname.split('.')[0];
-    return Object.hasOwn(paths, label) ? normalizeSuffix(paths[label]) : '';
+/** `paths` keyed by lower-cased hostname or label — DNS names are case-insensitive. A Map, so keys like `__proto__` stay plain data. */
+type PathMap = Map<string, string>;
+
+function resolvePath(hostname: string, paths: PathMap): string {
+    const suffix = paths.get(hostname) ?? paths.get(hostname.split('.')[0]);
+    return suffix === undefined ? '' : normalizeSuffix(suffix);
 }
 
 /** Finds every enabled `A` record whose key matches `pattern` — the cluster anchors. */
@@ -51,7 +52,7 @@ function assignServices(
     pattern: RegExp,
     scheme: string,
     excluded: Set<string>,
-    paths: Record<string, string> | undefined
+    paths: PathMap
 ): Map<number, Service[]> {
     const ipToIndex = new Map(anchors.map(a => [a.ip, a.index]));
     const hostToIndex = new Map(anchors.map(a => [a.hostname, a.index]));
@@ -90,13 +91,15 @@ export function parseDnsRecords(records: DnsRecord[], cfg: AppConfig): Cluster[]
     const scheme = cfg.scheme ?? 'http';
     const excluded = new Set((cfg.exclude ?? []).map(h => h.toLowerCase()));
 
+    const paths: PathMap = new Map(Object.entries(cfg.paths ?? {}).map(([k, v]) => [k.toLowerCase(), v]));
+
     const anchors = findAnchors(records, pattern);
     if (anchors.length === 0) {
         // No anchors found — fall back to grouping A records by /24 subnet
-        return fallbackBySubnet(records, scheme, excluded, cfg.paths);
+        return fallbackBySubnet(records, scheme, excluded, paths);
     }
 
-    const clusterMap = assignServices(records, anchors, pattern, scheme, excluded, cfg.paths);
+    const clusterMap = assignServices(records, anchors, pattern, scheme, excluded, paths);
     const anchorByIndex = new Map(anchors.map(a => [a.index, a]));
 
     return [...clusterMap.entries()]
@@ -114,7 +117,7 @@ function fallbackBySubnet(
     records: DnsRecord[],
     scheme: string,
     excluded: Set<string>,
-    paths?: Record<string, string>
+    paths: PathMap
 ): Cluster[] {
     const groups = new Map<string, { index: number; services: Service[] }>();
     let idx = 1;
