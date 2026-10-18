@@ -5,9 +5,11 @@
 
 ## What it does
 
-An MCP server in front of `knowledge-base-api`, so that any MCP client can search and read the development knowledge base. **Today it is an empty Ts.ED server**: health endpoints only, no MCP endpoint, no upstream.
+An MCP server in front of `knowledge-base-api`, so that any MCP client can search and read the development knowledge base. **Today:** the MCP endpoint at `/` (via `@tsed/platform-mcp`, stateless Streamable HTTP; configured in `src/index.ts` from `ConfigService`) and the shared health endpoints; no tools and no upstream yet.
 
 ## Rules
+
+- **`@modelcontextprotocol/server` stays a direct dependency** (from the workspace catalog). `@tsed/platform-mcp` accepts any `>=2.0.0`, and pnpm resolved it to 2.0.0, which the transport (`@modelcontextprotocol/node`, needing `^2.3.0`) cannot load. The direct dependency keeps one copy at a version that works.
 
 - **Phase 1 has no inbound login, and no switch either.** It runs on a laptop and is never deployed in this state. Inbound auth arrives later as a required config key with no way to turn it off — the repository rule in the root AGENTS.md § Authentication.
 - **Never forward a caller's token upstream.** This server calls knowledge-base-api as its own client (`development-kb-mcp`), with a token it fetches itself.

@@ -23,7 +23,17 @@ try {
     const configuration: ServerConfiguration = {
         rootModule: Server,
         ...config.server,
-        api: config.api
+        api: config.api,
+        // The MCP endpoint is the server's own root: a client is given http://<host>:<port>/.
+        // Streamable HTTP, stateless — a new MCP server per POST and no sessions, so any
+        // replica answers any request. Name and version are what clients see in `serverInfo`.
+        mcp: {
+            path: '/',
+            name: config.api.service,
+            title: 'Development knowledge base',
+            description: config.api.description,
+            version: config.api.version
+        }
     };
 
     const platform = await Platform.bootstrap(configuration);

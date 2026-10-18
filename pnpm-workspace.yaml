@@ -5,6 +5,7 @@ packages:
   - ui/*
 
 catalog:
+  '@modelcontextprotocol/server': ^2.3.1
   '@radoslavirha/config-eslint': ^0.5.1
   '@radoslavirha/config-tsdown': 0.2.7
   '@radoslavirha/config-typescript': ^1.1.8
@@ -103,6 +104,7 @@ catalogs:
     '@tsed/platform-exceptions': ^8.44.0
     '@tsed/platform-express': ^8.44.0
     '@tsed/platform-http': ^8.44.0
+    '@tsed/platform-mcp': ^8.44.0
     '@tsed/platform-middlewares': ^8.44.0
     '@tsed/platform-params': ^8.44.0
     '@tsed/platform-response-filter': ^8.44.0

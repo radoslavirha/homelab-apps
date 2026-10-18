@@ -2,7 +2,7 @@
 
 MCP server for the development knowledge base: search and read it from any MCP client (Claude Code, Claude on the web or phone, ChatGPT, Cursor, a CI agent). It answers from `knowledge-base-api`.
 
-**Status: scaffold.** A running Ts.ED server with the shared health endpoints and nothing else. The MCP endpoint, the three read-only tools and the upstream client come next.
+**Status: endpoint only.** The MCP endpoint answers at `/` (Streamable HTTP, stateless) but has no tools yet. The three read-only tools and the upstream client come next.
 
 ## Run it
 
@@ -14,9 +14,13 @@ Listens on port `4004`.
 
 | Method | Path | |
 |--------|------|---|
+| POST | `/` | The MCP endpoint: Streamable HTTP, JSON responses, no sessions. Negotiates protocol `2025-11-25` and the earlier versions through `initialize` |
+| GET, DELETE | `/` | `405` — a stateless endpoint has no event stream to open and no session to end |
 | GET | `/health/live` | Liveness. Always `200` |
 | GET | `/health/ready` | Readiness. `503` while the process drains |
 | GET | `/health` | Full report: `{ status, checks }` (`application/health+json`) |
+
+Point an MCP client at `http://localhost:4004/` (the transport is HTTP, there is no stdio mode).
 
 ## Configuration
 
