@@ -42,6 +42,33 @@ function findAnchors(records: DnsRecord[], pattern: RegExp): Anchor[] {
 }
 
 /**
+ * Follows a CNAME chain through enabled records until it reaches an anchor
+ * hostname or an `A` record on an anchor IP. A loop or a dead end resolves to null.
+ */
+function resolveCname(
+    target: string,
+    hostToIndex: Map<string, number>,
+    ipToIndex: Map<string, number>,
+    byKey: Map<string, DnsRecord>
+): number | null {
+    const visited = new Set<string>();
+    let current = target.toLowerCase();
+
+    while (!visited.has(current)) {
+        visited.add(current);
+        const anchorIdx = hostToIndex.get(current);
+        if (anchorIdx !== undefined) return anchorIdx;
+        const next = byKey.get(current);
+        if (!next) return null;
+        if (next.record_type === 'A') return ipToIndex.get(next.value) ?? null;
+        if (next.record_type !== 'CNAME') return null;
+        current = next.value.toLowerCase();
+    }
+
+    return null;
+}
+
+/**
  * Assigns every enabled, non-anchor record to the cluster its IP (`A`) or its
  * target anchor (`CNAME`) resolves to.
  */
@@ -55,6 +82,8 @@ function assignServices(
 ): Map<number, Service[]> {
     const ipToIndex = new Map(anchors.map(a => [a.ip, a.index]));
     const hostToIndex = new Map(anchors.map(a => [a.hostname, a.index]));
+    const byKey = new Map<string, DnsRecord>();
+    for (const r of records) if (r.enabled !== false) byKey.set((r.key ?? '').toLowerCase(), r);
     const clusterMap = new Map<number, Service[]>();
     for (const a of [...anchors].sort((x, y) => x.index - y.index)) clusterMap.set(a.index, []);
 
@@ -67,7 +96,7 @@ function assignServices(
         if (r.record_type === 'A') {
             targetIdx = ipToIndex.get(r.value) ?? null;
         } else if (r.record_type === 'CNAME') {
-            targetIdx = hostToIndex.get(r.value.toLowerCase()) ?? null;
+            targetIdx = resolveCname(r.value, hostToIndex, ipToIndex, byKey);
         }
 
         if (targetIdx === null || !clusterMap.has(targetIdx)) continue;
