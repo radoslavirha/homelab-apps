@@ -12,4 +12,4 @@ An MCP server in front of `knowledge-base-api`, so that any MCP client can searc
 - **Phase 1 has no inbound login, and no switch either.** It runs on a laptop and is never deployed in this state. Inbound auth arrives later as a required config key with no way to turn it off — the repository rule in the root AGENTS.md § Authentication.
 - **Never forward a caller's token upstream.** This server calls knowledge-base-api as its own client (`development-kb-mcp`), with a token it fetches itself.
 - **Read-only.** The tools search and read; nothing writes to the knowledge base, which lives in git.
-- Lives under `mcp/`, a folder kind the workspace tooling does not fully know yet: `check-member.sh` rejects it, and it has no CI paths-filter entry, Dockerfile stage or `deploy.json` (see README).
+- **Built and tested in CI, not released.** It has its Dockerfile stages and paths-filter entry, but no `deploy.json` and no changeset until phase 2 gives it a login.

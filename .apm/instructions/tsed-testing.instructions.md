@@ -1,6 +1,6 @@
 ---
-description: "Ts.ED + Vitest testing conventions for this monorepo. Use when writing or reviewing unit/integration tests for APIs: services, handlers, mappers, controllers, repositories."
-applyTo: "apis/**/*.spec.ts"
+description: "Ts.ED + Vitest testing conventions for this monorepo. Use when writing or reviewing unit/integration tests for APIs and MCP servers: services, handlers, mappers, controllers, repositories."
+applyTo: "{apis,mcp}/**/*.spec.ts"
 ---
 
 # Ts.ED Testing Conventions

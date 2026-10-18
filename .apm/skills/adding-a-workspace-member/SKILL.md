@@ -1,11 +1,11 @@
 ---
 name: adding-a-workspace-member
-description: Adds a new API, UI or shared package to the pnpm monorepo by copying the closest existing member, then wiring it into the root Dockerfile, the CI paths filters, deploy.json and the agent docs, and verifying the result with a checker script. Also holds the root Dockerfile rules. Use when the user says "add new api", "add new ui", "add new package", "new workspace member", starts scaffolding under apis/, ui/ or packages/, or edits the root Dockerfile.
+description: Adds a new API, MCP server, UI or shared package to the pnpm monorepo by copying the closest existing member, then wiring it into the root Dockerfile, the CI paths filters, deploy.json and the agent docs, and verifying the result with a checker script. Also holds the root Dockerfile rules. Use when the user says "add new api", "add new mcp server", "add new ui", "add new package", "new workspace member", starts scaffolding under apis/, mcp/, ui/ or packages/, or edits the root Dockerfile.
 ---
 
 # Adding a workspace member
 
-New members are auto-discovered by the `apis/*`, `ui/*` and `packages/*` globs in
+New members are auto-discovered by the `apis/*`, `mcp/*`, `ui/*` and `packages/*` globs in
 `pnpm-workspace.yaml`. Everything **outside** the member's directory is not, and a miss there
 fails silently: no CI job, no image, no release. `scripts/check-member.sh` checks all of it.
 
@@ -16,8 +16,8 @@ fails silently: no CI job, no image, no release. `scripts/check-member.sh` check
 
 ## Inputs
 
-- **type**: `api` | `ui` | `package`
-- **name**: kebab-case directory name. APIs end in `-api`, UIs in `-ui` (`sensor-bridge-api`, `homelab-dashboard-ui`).
+- **type**: `api` | `mcp` | `ui` | `package`
+- **name**: kebab-case directory name. APIs end in `-api`, UIs in `-ui` (`sensor-bridge-api`, `homelab-dashboard-ui`). An MCP server is named for what it serves, under `mcp/` (`development-knowledge-base`).
 
 Ask for anything missing. Do not guess a name.
 
@@ -42,6 +42,7 @@ Member: <type>/<name>   Template: <template path>
 | --- | --- | --- |
 | api | `apis/qr-manager-api` | has its own MongoDB |
 | api | `apis/interactive-map-feeder-api` | no database, calls external HTTP APIs |
+| mcp | `mcp/development-knowledge-base` | an MCP server |
 | ui | `ui/qr-manager-ui` | signs users in (`@radoslavirha/ui-auth`) |
 | ui | `ui/homelab-dashboard-ui` | no sign-in |
 | package | the existing package closest in kind (`tsed-*` for Ts.ED glue, `ui-*` for React) | — |
@@ -71,6 +72,7 @@ resolved through DI in tests.
 Read the reference file for the type and do every step in it:
 
 - **API** → [reference/api.md](reference/api.md)
+- **MCP server** → [reference/api.md](reference/api.md) too; its *MCP servers* section says what differs
 - **UI** → [reference/ui.md](reference/ui.md)
 - **Package** → [reference/package.md](reference/package.md)
 

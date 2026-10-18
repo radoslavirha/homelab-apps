@@ -29,7 +29,6 @@ Listens on port `4004`.
 | `logger` | Log level and options (optional) |
 | `otel` | OpenTelemetry exporters (optional, all off locally) |
 
-## Not wired yet
+## Build and release
 
-- **No CI paths-filter entry.** `.github/paths-filter-apps.yaml` also drives the image build, which needs a Dockerfile stage this server does not have yet. Until then CI checks it only through the whole-workspace verify that a change to `pnpm-workspace.yaml` or the lockfile triggers.
-- No Dockerfile stage, no `deploy.json`, no changeset: it is not built as an image, released or deployed.
+CI lints, builds and tests it and builds its image (`development-knowledge-base` stage of the root `Dockerfile`) on every change under this folder. It is **not released or deployed**: there is no `deploy.json` and no changeset until phase 2 adds the login.

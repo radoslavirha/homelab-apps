@@ -5,7 +5,7 @@
 #   check-member.sh <member-path> [--template <template-member-path>]
 #   check-member.sh --all
 #
-#   <member-path>  apis/<name>, ui/<name> or packages/<name>
+#   <member-path>  apis/<name>, mcp/<name>, ui/<name> or packages/<name>
 #   --template     also fail on leftovers of the copied member's name
 #   --all          check every member (no template check)
 #
@@ -38,7 +38,7 @@ check_member() { # <member-path> [template-path]
     echo "== $path"
 
     if [ ! -d "$path" ]; then fail "$path is not a directory"; return; fi
-    case "$kind" in apis|ui|packages) ;; *) fail "$path is not under apis/, ui/ or packages/"; return ;; esac
+    case "$kind" in apis|mcp|ui|packages) ;; *) fail "$path is not under apis/, mcp/, ui/ or packages/"; return ;; esac
     if ! [[ "$name" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then fail "'$name' is not kebab-case"; fi
 
     local expected_name=$name
@@ -73,6 +73,9 @@ check_member() { # <member-path> [template-path]
         fi
         if [ -f "$path/deploy.json" ] && jq -e 'to_entries | length > 0 and all(.value.file and .value.yamlPath)' "$path/deploy.json" >/dev/null 2>&1; then
             pass "deploy.json names a values file + yamlPath per env ($(jq -r 'keys | join(", ")' "$path/deploy.json"))"
+        elif [ "$kind" = mcp ] && [ ! -e "$path/deploy.json" ]; then
+            # An MCP server is built before it is deployable: phase 1 has no inbound login.
+            warn "no deploy.json — not deployable yet; release.yaml refuses to release it until there is one"
         else
             fail "deploy.json missing or without {<env>: {file, yamlPath}} — release.yaml refuses to release the app"
         fi
@@ -82,16 +85,23 @@ check_member() { # <member-path> [template-path]
     fi
 
     if [ "$kind" = apis ]; then
+        check_files "$path" src/models/config/AuthMethod.enum.ts src/providers/AuthProvider.ts src/health/index.ts
+    fi
+
+    # MCP servers are Ts.ED servers like the APIs, minus what phase 1 does not have yet:
+    # inbound auth (AuthMethod, AuthProvider) and health checks of its own.
+    if [ "$kind" = apis ] || [ "$kind" = mcp ]; then
         check_files "$path" tsconfig.json eslint.config.mjs nodemon.json .swcrc vitest.config.ts \
             config/localhost.json config/test.json \
-            src/index.ts src/Server.ts src/models/config/ConfigModel.ts src/models/config/AuthMethod.enum.ts \
-            src/services/ConfigService.ts src/providers/AuthProvider.ts src/health/index.ts src/otel/instrument.ts
+            src/index.ts src/Server.ts src/models/config/ConfigModel.ts \
+            src/services/ConfigService.ts src/otel/instrument.ts
         local port dup
         port=$(jq -r '.server.httpPort // empty' "$path/config/localhost.json" 2>/dev/null)
         if [ -z "$port" ]; then
             fail "config/localhost.json has no server.httpPort"
         else
-            dup=$(for c in apis/*/config/localhost.json; do
+            dup=$(for c in apis/*/config/localhost.json mcp/*/config/localhost.json; do
+                [ -f "$c" ] || continue
                 [ "$c" = "$path/config/localhost.json" ] && continue
                 [ "$(jq -r '.server.httpPort // empty' "$c")" = "$port" ] && echo "${c%/config/localhost.json}"
             done)
@@ -130,7 +140,7 @@ check_member() { # <member-path> [template-path]
 }
 
 if [ "${1:-}" = "--all" ]; then
-    for m in apis/*/ ui/*/ packages/*/; do check_member "$m"; done
+    for m in apis/*/ mcp/*/ ui/*/ packages/*/; do [ -d "$m" ] && check_member "$m"; done
 elif [ -n "${1:-}" ]; then
     member=$1; template=
     if [ "${2:-}" = "--template" ]; then template=${3:-}; fi

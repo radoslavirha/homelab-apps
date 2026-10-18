@@ -31,6 +31,15 @@ each one rather than writing it from scratch.
 
 3. **No change** to `pnpm-workspace.yaml` — the `apis/*` glob picks it up.
 
+## MCP servers (`mcp/<name>`)
+
+Built like an API, with these differences:
+
+- **No Swagger** — the MCP endpoint is the server's own route at `/`.
+- **No inbound auth until it has a login** (`AuthMethod`, `AuthProvider`, `auth` config): an MCP server in its local-only phase has none, and no switch for it. It gets a required one before it is deployed.
+- **No `deploy.json` until it is deployable** — `check-member.sh` warns instead of failing; `release.yaml` refuses to release it without one.
+- Outside the directory it needs the same as an API: the Dockerfile stages, its `.github/paths-filter-apps.yaml` line (`mcp/<name>: mcp/<name>/**`), and `config/*.json` is gitignored by the `mcp/**` rule in the root `.gitignore`.
+
 ## Tests to start with
 
 Read `.apm/instructions/tsed-testing.instructions.md` first: providers come from DI

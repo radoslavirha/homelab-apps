@@ -84,7 +84,7 @@ jobs:
           apps_seen=0
           include="[]"
           missing_deploy=""
-          for app_dir in apis ui; do
+          for app_dir in apis mcp ui; do
             for pkg_json in "${app_dir}"/*/package.json; do
               [ -f "$pkg_json" ] || continue
               apps_seen=$((apps_seen + 1))
@@ -103,9 +103,9 @@ jobs:
             done
           done
 
-          # apis/ or ui/ moved and the matrix would quietly come out empty.
+          # apis/, mcp/ or ui/ moved and the matrix would quietly come out empty.
           if [ "$apps_seen" -eq 0 ]; then
-            fail "No app package.json found under apis/ or ui/. The repository layout changed - fix this workflow."
+            fail "No app package.json found under apis/, mcp/ or ui/. The repository layout changed - fix this workflow."
           fi
           if [ -n "$missing_deploy" ]; then
             fail "Released app(s) without a deploy.json:${missing_deploy}. Add one or drop the app from the release."

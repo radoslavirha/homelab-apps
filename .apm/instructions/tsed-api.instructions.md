@@ -1,6 +1,6 @@
 ---
-description: "Source conventions for the Ts.ED APIs: one class per file, DTO (de)serialization in endpoints and repositories, @radoslavirha/utils guards instead of raw checks. Use when writing or reviewing any TypeScript under apis/**/src."
-applyTo: "apis/**/src/**/*.ts"
+description: "Source conventions for the Ts.ED APIs and MCP servers: one class per file, DTO (de)serialization in endpoints and repositories, @radoslavirha/utils guards instead of raw checks. Use when writing or reviewing any TypeScript under apis/**/src or mcp/**/src."
+applyTo: "{apis,mcp}/**/src/**/*.ts"
 ---
 
 # Ts.ED API Source Conventions

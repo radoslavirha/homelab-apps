@@ -5,7 +5,8 @@ name: Agent bug finder
 on:
   schedule:
     # Each area once a night, an hour apart, before the resolver:
-    # 00:00-02:00 CEST / 23:00-01:00 CET.
+    # 23:00-02:00 CEST / 22:00-01:00 CET.
+    - cron: '0 21 * * *'  # mcp
     - cron: '0 22 * * *'  # apis
     - cron: '0 23 * * *'  # packages
     - cron: '0 0 * * *'  # ui
@@ -14,7 +15,7 @@ on:
       area:
         description: Area to review
         type: choice
-        options: [apis, packages, ui]
+        options: [apis, mcp, packages, ui]
 
 # A run that outlasts its slot queues the next one for that area instead of
 # overlapping it.
@@ -37,6 +38,7 @@ jobs:
           SCHEDULE: ${{ github.event.schedule }}
         run: |
           case "$AREA:$SCHEDULE" in
+            mcp:* | *:'0 21 * * *') area=mcp ;;
             apis:* | *:'0 22 * * *') area=apis ;;
             packages:* | *:'0 23 * * *') area=packages ;;
             ui:* | *:'0 0 * * *') area=ui ;;

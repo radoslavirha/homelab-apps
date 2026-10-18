@@ -100,6 +100,21 @@ COPY --from=build-qr-manager-api --chown=65532:65532 /prod/qr-manager-api /home/
 # No `node` here: the distroless ENTRYPOINT is the node binary, CMD is its argv.
 CMD ["--import", "/home/app/dist/otel/instrument.js", "dist/index.js"]
 
+# ─── development-knowledge-base (mcp/) ─────────────────────────────────────────────
+# An MCP server, built like the APIs. Phase 1 has no inbound login, so the image is built
+# in CI but not released or deployed until the login lands.
+FROM deps AS build-development-knowledge-base
+
+RUN --mount=type=secret,id=npmrc,target=/root/.npmrc \
+    pnpm --filter=development-knowledge-base run build && \
+    pnpm deploy --filter=development-knowledge-base --prod /prod/development-knowledge-base
+
+FROM runtime-base AS development-knowledge-base
+
+COPY --from=build-development-knowledge-base --chown=65532:65532 /prod/development-knowledge-base /home/app
+# No `node` here: the distroless ENTRYPOINT is the node binary, CMD is its argv.
+CMD ["--import", "/home/app/dist/otel/instrument.js", "dist/index.js"]
+
 # ─── homelab-dashboard-ui ──────────────────────────────────────────────────────
 FROM deps AS build-homelab-dashboard-ui
 
