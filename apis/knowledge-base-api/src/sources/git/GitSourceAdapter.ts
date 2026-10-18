@@ -164,15 +164,24 @@ export class GitSourceAdapter implements SourceAdapter {
         const documents: SourceDocument[] = new Array(blobs.length);
         let next = 0;
 
+        // The first failing worker aborts the others, so no read outlives the run.
+        const failure = new AbortController();
+        const workerSignal = CommonUtils.isNil(signal) ? failure.signal : AbortSignal.any([signal, failure.signal]);
+
         const worker = async (): Promise<void> => {
-            while (next < blobs.length) {
-                signal?.throwIfAborted();
+            try {
+                while (next < blobs.length) {
+                    workerSignal.throwIfAborted();
 
-                const index = next++;
-                const blob = blobs[index];
-                const text = GitSourceAdapter.text(await this.github.getBlob(repository, blob.sha, signal));
+                    const index = next++;
+                    const blob = blobs[index];
+                    const text = GitSourceAdapter.text(await this.github.getBlob(repository, blob.sha, workerSignal));
 
-                documents[index] = this.parser.parse(blob.path, text, commit, repository);
+                    documents[index] = this.parser.parse(blob.path, text, commit, repository);
+                }
+            } catch (error) {
+                failure.abort(error);
+                throw error;
             }
         };
 
