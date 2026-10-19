@@ -4,6 +4,13 @@ import { defineConfig, mergeConfig } from 'vitest/config';
 export default defineConfig(mergeConfig(defaultConfig, {
     oxc: false,
     test: {
+        // Console output (logger lines included) is printed only for a failing test.
+        silent: 'passed-only',
+        // Importing @radoslavirha/tsed-swagger loads `config`, and a library has no config/ directory.
+        env: {
+            SUPPRESS_NO_CONFIG_WARNING: '1',
+            SUPPRESS_STRICTNESS_CHECK: '1'
+        },
         coverage: {
             exclude: ['src/test/**'],
             thresholds: {

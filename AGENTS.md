@@ -263,6 +263,12 @@ ui/<ui-name>/
   `PlatformTest.get`, `vi.spyOn` on collaborators, `vi.spyOn(configService, 'config', 'get')` for
   config) and never `new` one; `expect.assertions(n)` at the top of every async test; no tests of
   decorators.
+- **A test run prints nothing but the reporter.** Every `vitest.config.ts` sets
+  `silent: 'passed-only'`, so the logger lines a passing test produces stay out of the output and a
+  failing test still shows its own. A warning that is not a log line (React `act()`, a library's
+  console notice) gets fixed at its source rather than left to that filter. Vitest switches to its
+  agent reporter under `CLAUDECODE` / `AI_AGENT`, which also hides passing tests' console output; to
+  see what a run would print, use `env -u CLAUDECODE -u AI_AGENT pnpm vitest run --silent=false`.
 
 ## Adding a workspace member
 

@@ -4,6 +4,8 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
     plugins: [react()],
     test: {
+        // Console output (logger lines included) is printed only for a failing test.
+        silent: 'passed-only',
         globals: true,
         environment: 'jsdom',
         setupFiles: ['./src/test-setup.ts'],

@@ -11,6 +11,7 @@ Tests run in jsdom. The vitest config for each UI package sets:
 
 ```ts
 test: {
+    silent: 'passed-only',
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/test-setup.ts'],

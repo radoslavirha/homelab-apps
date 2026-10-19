@@ -41,6 +41,8 @@ describe('<App />', () => {
         mockFetch();
         render(<App config={config} />);
         expect(screen.getByText('test-lab')).toBeInTheDocument();
+        // Let the fetch settle inside the test, not after it, where its state update escapes act().
+        await screen.findByText(/Loaded 3 DNS records/);
     });
 
     it('shows loading status while fetching', () => {

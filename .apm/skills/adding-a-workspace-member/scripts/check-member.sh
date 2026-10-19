@@ -130,6 +130,11 @@ check_member() { # <member-path> [template-path]
         else pass "vite dev port $vport is unique"; fi
     fi
 
+    if [ -f "$path/vitest.config.ts" ]; then
+        if grep -q "silent: 'passed-only'" "$path/vitest.config.ts"; then pass "vitest.config.ts prints console output only for failing tests"
+        else fail "vitest.config.ts must set test.silent: 'passed-only' — passing tests would leak their logs into the run"; fi
+    fi
+
     if [ -n "$template" ]; then
         local tname=${template%/}; tname=${tname#*/}
         local hits

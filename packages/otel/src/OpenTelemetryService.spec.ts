@@ -1,4 +1,4 @@
-import { diag } from '@opentelemetry/api';
+import { diag, DiagLogLevel } from '@opentelemetry/api';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { OTELConfig } from './OtelConfig.js';
 
@@ -48,7 +48,10 @@ describe('OpenTelemetryService', () => {
     });
 
     // `diag.setLogger` is global; leaving it set would make every later test log at DEBUG.
-    afterEach(() => diag.disable());
+    afterEach(() => {
+        vi.restoreAllMocks();
+        diag.disable();
+    });
 
     describe('init', () => {
         it('Should start the SDK when a signal is enabled', () => {
@@ -93,7 +96,6 @@ describe('OpenTelemetryService', () => {
             new OpenTelemetryService().init({
                 ...OPTIONS,
                 otel: {
-                    debug: true,
                     traces: { enabled: true, exporter },
                     logs: { enabled: true, exporter }
                 }
@@ -106,6 +108,24 @@ describe('OpenTelemetryService', () => {
             // Metrics were left out of the config, so the reader list must be explicitly
             // empty — NodeSDK treats an absent list as "fall back to env" and starts OTLP.
             expect(options.metricReaders).toEqual([]);
+        });
+
+        // `setLogger` is stubbed: the real console logger would print OTel's own diagnostics
+        // into the test output.
+        it('Should route OTel diagnostics to the console at DEBUG when debug is on', () => {
+            const setLogger = vi.spyOn(diag, 'setLogger').mockReturnValue(true);
+
+            new OpenTelemetryService().init({ ...OPTIONS, otel: { ...CONFIG, debug: true } });
+
+            expect(setLogger).toHaveBeenCalledExactlyOnceWith(expect.anything(), DiagLogLevel.DEBUG);
+        });
+
+        it('Should leave OTel diagnostics alone when debug is off', () => {
+            const setLogger = vi.spyOn(diag, 'setLogger').mockReturnValue(true);
+
+            new OpenTelemetryService().init(OPTIONS);
+
+            expect(setLogger).not.toHaveBeenCalled();
         });
 
         it('Should explicitly disable spans when traces are omitted', () => {
