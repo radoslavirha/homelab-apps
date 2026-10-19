@@ -35,9 +35,9 @@ each one rather than writing it from scratch.
 
 Built like an API, with these differences:
 
-- **No Swagger** — the MCP endpoint is the server's own route at `/`.
+- **No Swagger** — the MCP endpoints are the server's own routes, one per `mcpServers` entry.
 - **No inbound auth until it has a login** (`AuthMethod`, `AuthProvider`, `auth` config): an MCP server in its local-only phase has none, and no switch for it. It gets a required one before it is deployed.
-- **No `deploy.json` until it is deployable** — `check-member.sh` warns instead of failing; `release.yaml` refuses to release it without one.
+- **`deploy.json` is `{}` until it is deployable** — a bump of a workspace dependency versions every app, and `release.yaml` fails a released app with no `deploy.json` (and with it every other app in that release). `{}` publishes the image and updates no environment; `check-member.sh` warns on it.
 - Outside the directory it needs the same as an API: the Dockerfile stages, its `.github/paths-filter-apps.yaml` line (`mcp/<name>: mcp/<name>/**`), and `config/*.json` is gitignored by the `mcp/**` rule in the root `.gitignore`.
 
 ## Tests to start with

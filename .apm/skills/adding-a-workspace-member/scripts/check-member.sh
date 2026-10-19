@@ -73,9 +73,11 @@ check_member() { # <member-path> [template-path]
         fi
         if [ -f "$path/deploy.json" ] && jq -e 'to_entries | length > 0 and all(.value.file and .value.yamlPath)' "$path/deploy.json" >/dev/null 2>&1; then
             pass "deploy.json names a values file + yamlPath per env ($(jq -r 'keys | join(", ")' "$path/deploy.json"))"
-        elif [ "$kind" = mcp ] && [ ! -e "$path/deploy.json" ]; then
-            # An MCP server is built before it is deployable: phase 1 has no inbound login.
-            warn "no deploy.json — not deployable yet; release.yaml refuses to release it until there is one"
+        elif [ "$kind" = mcp ] && jq -e '. == {}' "$path/deploy.json" >/dev/null 2>&1; then
+            # An MCP server is built before it is deployable: phase 1 has no inbound login. A
+            # dependency bump still versions it, and release.yaml refuses a released app with no
+            # deploy.json, so `{}`: the image is published and no environment is updated.
+            warn "deploy.json is {} — released, deployed nowhere yet"
         else
             fail "deploy.json missing or without {<env>: {file, yamlPath}} — release.yaml refuses to release the app"
         fi
