@@ -1,5 +1,11 @@
 # qr-manager-api
 
+## 0.10.6
+
+### Patch Changes
+
+- [#338](https://github.com/radoslavirha/homelab-apps/pull/338) [`0accb0e`](https://github.com/radoslavirha/homelab-apps/commit/0accb0ec2d569606d179772fa0ae8b0a297cb4ad) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Ship the previous release's changes. That release was tagged, but its run failed before any image was built (`mcp/knowledge-base` had no `deploy.json`), so it was never deployed.
+
 ## 0.10.5
 
 ### Patch Changes
