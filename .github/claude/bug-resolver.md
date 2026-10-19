@@ -121,11 +121,12 @@ Stop instead — comment on the issue with your analysis and options, replace
   package's exported API)
 - it touches more than one workspace member (a dependency bump from "Upstream
   released" may touch several)
-- it touches packages/ui-auth or a UI's auth wiring: those changes must be verified
-  in a real browser against the real IdP (`.apm/skills/verifying-auth-in-browser`),
-  which this environment can't do
 
 # 5. Verify
+First decide whether the fix **needs E2E** — see "Needs E2E" below. Unit tests are still
+required either way; E2E is verification on top of them, done later by an agent running
+locally.
+
 Check what CI checks for the member you changed — lint, build and test:
 - Area `apis`, `mcp` or `ui`:
     pnpm --filter ./<member-path> lint
@@ -146,6 +147,26 @@ in its Background.
 If anything fails and you can't fix it within the scope above,
 handle it like the stop case in step 4.
 
+## Needs E2E
+This environment has no browser, no IdP credentials and no access to the homelab, so some
+fixes can pass every unit test and still be wrong. Those PRs get the `needs-e2e` label, and
+an agent running locally (with `claude-e2e` and a browser) verifies them before the owner
+merges. The fix needs E2E when its correctness depends on a real system that the tests mock or
+cannot reach. Typical cases:
+- Auth: `packages/ui-auth`, a UI's auth wiring, an Authentik blueprint, an API's
+  `AuthMethod`, trusted issuers, audience or JWKS config — anything about OAuth2/OIDC login,
+  logout, silent renew, redirects, tokens or roles. Verify with
+  `.apm/skills/verifying-auth-in-browser`.
+- Browser-only behaviour: redirects, cookies, framing, CORS, service workers, runtime
+  `config.json` loading, nginx config or `docker-entrypoint.d/` in a UI image.
+- Real-device or third-party behaviour that mocks only imitate: MQTT broker, miot devices,
+  external APIs, MongoDB or Postgres semantics a testcontainer doesn't cover.
+- The built container: Dockerfile stages, the `--import` preload, startup order.
+When in doubt, label it — a spurious `needs-e2e` costs the owner a glance, a missing one costs
+a broken deploy. Don't label a fix that unit tests fully prove (pure logic, mapping, validation).
+Never write "verified" or "works" about the E2E part: say what is **unverified** and the
+exact check that would prove it.
+
 # 6. Changeset
 Add a changeset for each member you changed — `patch` for a fix, `minor` for a
 feature — using the `name` from its package.json (apps are unscoped, e.g.
@@ -162,12 +183,17 @@ bumped automatically. Write the file by hand — `pnpm changeset` is interactive
 Commit message: `fix(<member>): <what was wrong>`, or `feat(<member>): <what it
 adds>` for a feature. Push the branch.
 Open the PR against main with `gh pr create --label agent-pr` — the label is how
-the owner's reviews reach the agent. Fill the repo's PR template
+the owner's reviews reach the agent. Add `--label needs-e2e` when "Needs E2E" applies.
+Fill the repo's PR template
 (.github/pull_request_template.md) like this:
   For #<N>
 
   #### Background
   One paragraph: the bug, its root cause, and why this fix is correct.
+
+  #### E2E (only when labeled `needs-e2e`)
+  - Unverified: what the unit tests can't prove, and why
+  - Check: the exact steps or commands that would prove it (skill, environment, user)
 
   #### Change List
   - The fix (file:line)
@@ -177,12 +203,12 @@ the owner's reviews reach the agent. Fill the repo's PR template
 
   Fixes #<N>
 
-Then comment on the issue with the PR link. Leave `agent-in-progress` on the
+Then comment on the issue with the PR link (and, for `needs-e2e`, that the fix awaits E2E). Leave `agent-in-progress` on the
 issue — merging the PR closes it.
 If the issue has an `## Origin` section pointing to an issue in another repo,
 also comment the PR link there.
 
 # Finish
-End with a short summary: area, issue picked and why, root cause, PR link, and
-anything you stopped on (with the label you applied, and any toolkit-hub issue
+End with a short summary: area, issue picked and why, root cause, PR link, whether it
+is labeled `needs-e2e` (and what is unverified), and anything you stopped on (with the label you applied, and any toolkit-hub issue
 you filed).
