@@ -5,6 +5,6 @@ apis/interactive-map-feeder-api: apis/interactive-map-feeder-api/**
 apis/knowledge-base-api: apis/knowledge-base-api/**
 apis/miot-bridge-api: apis/miot-bridge-api/**
 apis/qr-manager-api: apis/qr-manager-api/**
-mcp/development-knowledge-base: mcp/development-knowledge-base/**
+mcp/knowledge-base: mcp/knowledge-base/**
 ui/homelab-dashboard-ui: ui/homelab-dashboard-ui/**
 ui/qr-manager-ui: ui/qr-manager-ui/**

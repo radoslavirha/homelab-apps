@@ -5,7 +5,7 @@
 
 ## What it does
 
-An MCP server in front of `knowledge-base-api`, so that any MCP client can search and read the development knowledge base. **Today:** one MCP endpoint, `/development` (via `@tsed/platform-mcp`, stateless Streamable HTTP; built in `src/index.ts` from `ConfigService` by `toMcpSettings`) and the shared health endpoints, with three read-only tools (`src/tools/`) answered from knowledge-base-api through `KnowledgeBaseApiEndpoint`.
+An MCP server in front of `knowledge-base-api`, so that any MCP client can search and read its knowledge bases — one endpoint per audience, not one app per knowledge base. **Today:** one MCP endpoint, `/development` (via `@tsed/platform-mcp`, stateless Streamable HTTP; built in `src/index.ts` from `ConfigService` by `toMcpSettings`) and the shared health endpoints, with three read-only tools (`src/tools/`) answered from knowledge-base-api through `KnowledgeBaseApiEndpoint`.
 
 ## Rules
 

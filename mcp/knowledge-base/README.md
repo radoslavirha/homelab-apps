@@ -1,13 +1,13 @@
-# development-knowledge-base
+# knowledge-base
 
-MCP server for the development knowledge base: search and read it from any MCP client (Claude Code, Claude on the web or phone, ChatGPT, Cursor, a CI agent). It answers from `knowledge-base-api`.
+MCP server for the knowledge bases in `knowledge-base-api`: search and read them from any MCP client (Claude Code, Claude on the web or phone, ChatGPT, Cursor, a CI agent). One app, one MCP endpoint per audience — today the development knowledge base.
 
 **Status: phase 1 — local, no login.** One MCP endpoint, `/development` (Streamable HTTP, stateless), with three read-only tools answered from knowledge-base-api. The app can mount several endpoints — one per entry in `mcpServers` — for knowledge bases with other audiences later.
 
 ## Run it
 
 ```bash
-pnpm --filter ./mcp/development-knowledge-base start     # NODE_ENV=localhost, config/localhost.json
+pnpm --filter ./mcp/knowledge-base start     # NODE_ENV=localhost, config/localhost.json
 ```
 
 Listens on port `4004`.
@@ -52,4 +52,4 @@ The server calls knowledge-base-api as itself, never with a caller's token. http
 
 ## Build and release
 
-CI lints, builds and tests it and builds its image (`development-knowledge-base` stage of the root `Dockerfile`) on every change under this folder. It is **not released or deployed**: there is no `deploy.json` and no changeset until phase 2 adds the login.
+CI lints, builds and tests it and builds its image (`knowledge-base` stage of the root `Dockerfile`) on every change under this folder. It is **not released or deployed**: there is no `deploy.json` and no changeset until phase 2 adds the login.
