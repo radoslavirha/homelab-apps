@@ -5,6 +5,7 @@ import { KnowledgeBaseApiEndpoint } from '../endpoints/knowledge-base-api/Knowle
 import { KnowledgeBaseMapper } from '../mappers/KnowledgeBaseMapper.js';
 import type { SearchInput } from '../models/SearchInput.js';
 import type { SearchOutput } from '../models/SearchOutput.js';
+import { McpEndpointService } from '../services/McpEndpointService.js';
 
 /** Sections a search returns when the caller does not say: enough to choose what to `read`. */
 export const DEFAULT_SEARCH_LIMIT = 8;
@@ -14,13 +15,15 @@ export const DEFAULT_SEARCH_LIMIT = 8;
 export class SearchHandler {
     public constructor(
         private readonly api: KnowledgeBaseApiEndpoint,
-        private readonly mapper: KnowledgeBaseMapper
+        private readonly mapper: KnowledgeBaseMapper,
+        private readonly endpoint: McpEndpointService
     ) {}
 
+    /** Searches the endpoint's own knowledge base only; without `kb` the API would search every one the client may read. */
     public async execute(input: SearchInput): Promise<SearchOutput> {
         const response = await this.api.search(CommonUtils.buildModelStrict(SearchQueryDTO, {
             q: input.query,
-            kb: input.kb,
+            kb: this.endpoint.knowledgeBase(),
             filter: input.filter,
             limit: DefaultsUtil.number(input.limit, DEFAULT_SEARCH_LIMIT)
         }));

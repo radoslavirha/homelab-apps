@@ -2,11 +2,6 @@ import { Description, MinLength, Nullable, Property, Required } from '@tsed/sche
 
 @Description('A section of a document that matched, best first.')
 export class SearchHit {
-    @Description('Knowledge base it is in; pass it to `read`.')
-    @Required()
-    @Property()
-    public kb: string;
-
     @Description('Document id; pass it to `read` for the whole document.')
     @Required()
     @Property()

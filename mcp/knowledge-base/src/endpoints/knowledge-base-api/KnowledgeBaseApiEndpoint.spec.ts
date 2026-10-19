@@ -9,7 +9,6 @@ import { DocumentQueryDTO } from './dto/DocumentQueryDTO.js';
 import { DocumentResponseDTO } from './dto/DocumentResponseDTO.js';
 import { SearchQueryDTO } from './dto/SearchQueryDTO.js';
 import { SearchResponseDTO } from './dto/SearchResponseDTO.js';
-import { StatusResponseDTO } from './dto/StatusResponseDTO.js';
 import { KnowledgeBaseApiEndpoint } from './KnowledgeBaseApiEndpoint.js';
 
 const RESULT = {
@@ -38,23 +37,6 @@ describe('KnowledgeBaseApiEndpoint', () => {
     });
     afterEach(PlatformTest.reset);
     afterEach(() => vi.restoreAllMocks());
-
-    it('reads the status, keeping only the fields this server uses', async () => {
-        expect.assertions(3);
-
-        get.mockResolvedValue({
-            indexer: { enabled: true, intervalMs: 300000, running: false },
-            knowledgeBases: [{ id: 'dev', source: 'GIT', documents: 140, chunks: 1779, lastSuccessAt: '2026-10-16T15:09:25.000Z', areas: [] }]
-        });
-
-        const status = await endpoint.status();
-
-        expect(get).toHaveBeenCalledWith('/status');
-        expect(status).toBeInstanceOf(StatusResponseDTO);
-        expect(status.knowledgeBases).toEqual([
-            expect.objectContaining({ id: 'dev', documents: 140, chunks: 1779, lastSuccessAt: new Date('2026-10-16T15:09:25.000Z') })
-        ]);
-    });
 
     it('searches with the query as query-string parameters, leaving unset ones out', async () => {
         expect.assertions(3);

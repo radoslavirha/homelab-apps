@@ -1120,6 +1120,9 @@ importers:
       '@opentelemetry/api':
         specifier: catalog:otel
         version: 1.9.1
+      '@radoslavirha/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@radoslavirha/config-typescript':
         specifier: 'catalog:'
         version: 1.1.8(tslib@2.8.1)(typescript@6.0.3)

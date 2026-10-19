@@ -19,6 +19,7 @@
   "dependencies": {
     "@modelcontextprotocol/server": "catalog:",
     "@opentelemetry/api": "catalog:otel",
+    "@radoslavirha/auth": "workspace:*",
     "@radoslavirha/config-typescript": "catalog:",
     "@radoslavirha/otel": "workspace:*",
     "@radoslavirha/tsed-common": "catalog:",

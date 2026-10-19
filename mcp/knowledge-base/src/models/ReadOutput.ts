@@ -4,10 +4,6 @@ import { Description, MinLength, Nullable, Property, Required } from '@tsed/sche
 export class ReadOutput {
     @Required()
     @Property()
-    public kb: string;
-
-    @Required()
-    @Property()
     public id: string;
 
     @Nullable(String)

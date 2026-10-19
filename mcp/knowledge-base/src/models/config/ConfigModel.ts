@@ -9,19 +9,16 @@ import { McpServer } from './McpServer.enum.js';
 import { createMcpServersSchema } from './McpServerConfig.js';
 
 /**
- * Phase 1 has no inbound login; inbound auth arrives in phase 2 as a required key, with no way
- * to switch it off.
+ * Every endpoint carries its own required `auth`; there is no way to switch it off.
  */
 export const ConfigSchema = BaseConfig.extend({
+    // Required here, optional in BaseConfig: each endpoint's resource identifier is this plus its
+    // `path`, and platform-mcp never derives it from the request's Host header.
+    publicURL: z.url().describe('Public base URL of the app: scheme, host and the route prefix, no endpoint path — `https://mcp.irha.cz/kb` deployed, `http://localhost:4004` locally. An endpoint\'s resource identifier is this plus its `path`.'),
     externalApis: createExternalApisSchema(Object.values(ExternalApi))
         .describe('APIs this server calls — base URL, auth, resilience and logging per API.'),
     mcpServers: createMcpServersSchema(Object.values(McpServer))
-        .describe('The MCP endpoints this app mounts, by `McpServer` key.'),
-    // What `list_knowledge_bases` says each knowledge base holds; the API knows ids and counts,
-    // not what is in them. A knowledge base without an entry is listed without a description.
-    knowledgeBases: z.record(z.string(), z.object({
-        description: z.string().min(1).describe('What the knowledge base holds, written for an agent deciding whether to search it.')
-    })).default({}).describe('Descriptions of the knowledge bases, by id.'),
+        .describe('The MCP endpoints this app mounts, by `McpServer` key, each serving one knowledge base.'),
     // Every field is defaulted, so omitting `health` entirely is valid — additive, and
     // safe for a rolling deploy where an old pod reads a new ConfigMap or vice versa.
     health: HealthConfigSchema.optional().describe('Health endpoint configuration.'),
