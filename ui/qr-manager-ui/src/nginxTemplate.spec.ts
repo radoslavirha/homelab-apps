@@ -10,13 +10,17 @@ const root = resolve(__dirname, '..');
 let container = '';
 let base = '';
 
+// stderr is piped, not inherited, so `docker run` pulling the image does not print its progress
+// into the test output. A failing command still reports it, in the thrown error's message.
+const docker = (...args: string[]): string => execFileSync('docker', args, { stdio: 'pipe' }).toString().trim();
+
 describe('nginx.conf.template with the image default NGINX_BASE_PATH=/', () => {
     beforeAll(async () => {
         const html = mkdtempSync(join(tmpdir(), 'qr-ui-html-'));
         writeFileSync(join(html, 'index.html'), '<!doctype html><html><head><title>x</title></head><body></body></html>');
         writeFileSync(join(html, 'config.json'), '{"apiBaseURL":"http://api"}');
         execFileSync('chmod', ['-R', 'a+rX', html]);
-        container = execFileSync('docker', [
+        container = docker(
             'run', '-d', '-p', '127.0.0.1::8080',
             '-e', 'NGINX_BASE_PATH=/',
             '-v', `${join(root, 'nginx.conf.template')}:/etc/nginx/templates/default.conf.template:ro`,
@@ -24,8 +28,8 @@ describe('nginx.conf.template with the image default NGINX_BASE_PATH=/', () => {
             '-v', `${resolve(root, '../../packages/nginx-runtime/conf.d/healthz.conf')}:/etc/nginx/snippets/healthz.conf:ro`,
             '-v', `${html}:/usr/share/nginx/html:ro`,
             IMAGE
-        ]).toString().trim();
-        const port = execFileSync('docker', ['port', container, '8080']).toString().trim().split(':').pop();
+        );
+        const port = docker('port', container, '8080').split(':').pop();
         base = `http://127.0.0.1:${port}`;
         for (let i = 0; i < 50; i++) {
             try {
@@ -38,7 +42,7 @@ describe('nginx.conf.template with the image default NGINX_BASE_PATH=/', () => {
     }, 120_000);
 
     afterAll(() => {
-        if (container) execFileSync('docker', ['rm', '-f', container]);
+        if (container) docker('rm', '-f', container);
     });
 
     it('serves config.json', async () => {
