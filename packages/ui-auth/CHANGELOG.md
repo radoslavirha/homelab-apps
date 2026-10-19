@@ -1,5 +1,12 @@
 # @radoslavirha/ui-auth
 
+## 0.2.3
+
+### Patch Changes
+
+- Updated dependencies [[`ea42b4a`](https://github.com/radoslavirha/homelab-apps/commit/ea42b4a40b23387f03dbd7907d7e9c7167b84814)]:
+  - @radoslavirha/ui-runtime@0.3.3
+
 ## 0.2.2
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @radoslavirha/health
 
+## 0.1.5
+
+### Patch Changes
+
+- [#336](https://github.com/radoslavirha/homelab-apps/pull/336) [`8a91af3`](https://github.com/radoslavirha/homelab-apps/commit/8a91af3d580ad3357ed6f6aaace7f5f5a64e07ed) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Reject a `checkTimeoutMs` above 2^31 - 1 ms at boot instead of silently turning it into a 1 ms deadline.
+
 ## 0.1.4
 
 ### Patch Changes

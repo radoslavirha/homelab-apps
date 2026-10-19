@@ -1,5 +1,12 @@
 # qr-manager-api
 
+## 0.10.7
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @radoslavirha/tsed-health@0.3.4
+
 ## 0.10.6
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # knowledge-base-api
 
+## 0.2.3
+
+### Patch Changes
+
+- [#326](https://github.com/radoslavirha/homelab-apps/pull/326) [`7c286b3`](https://github.com/radoslavirha/homelab-apps/commit/7c286b3d174f12200420ea3a4151f7166338a60d) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - A failed file read during indexing now stops the other fetch workers instead of leaving them reading the rest of the tree.
+- Updated dependencies []:
+  - @radoslavirha/tsed-health@0.3.4
+
 ## 0.2.2
 
 ### Patch Changes
