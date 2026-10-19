@@ -4,23 +4,26 @@ import SuperTest from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { toMcpSettings } from './mcp/toMcpSettings.js';
 import { Server } from './Server.js';
+import { TEST_PUBLIC_URL, TEST_SERVER, userToken } from './test/fixtures.js';
 
 /** What a Streamable HTTP client sends: it must accept both a JSON answer and an event stream. */
 const MCP_HEADERS = { Accept: 'application/json, text/event-stream', 'Content-Type': 'application/json' };
 
 /** The endpoint as index.ts builds it, from fixed values instead of ConfigService. */
 const MCP = toMcpSettings(
-    { mcpServers: { DEVELOPMENT_KB: { path: '/development', kb: 'dev', name: 'test-server', title: 'Test title' } } },
+    { publicURL: TEST_PUBLIC_URL, mcpServers: { DEVELOPMENT_KB: TEST_SERVER } },
     { description: 'Test description', version: '9.9.9' },
     []
 );
 
 describe('Server (integration)', () => {
-    let request: SuperTest.Agent;
+    let request: SuperTest.Agent;   // anonymous
+    let api: SuperTest.Agent;       // a caller holding the endpoint's role
 
     beforeEach(PlatformTest.bootstrap(Server, { mcp: MCP }));
-    beforeEach(() => {
+    beforeEach(async () => {
         request = SuperTest.agent(PlatformTest.callback());
+        api = SuperTest.agent(PlatformTest.callback()).set('Authorization', `Bearer ${await userToken()}`);
     });
     afterEach(PlatformTest.reset);
     afterEach(() => vi.restoreAllMocks());
@@ -29,7 +32,7 @@ describe('Server (integration)', () => {
         it('answers initialize at its path with its name, version and the latest protocol version', async () => {
             expect.assertions(3);
 
-            const response = await request.post('/development').set(MCP_HEADERS).send({
+            const response = await api.post('/development').set(MCP_HEADERS).send({
                 jsonrpc: '2.0',
                 id: 1,
                 method: 'initialize',
@@ -44,7 +47,7 @@ describe('Server (integration)', () => {
         it('answers an older client in its own protocol version', async () => {
             expect.assertions(1);
 
-            const response = await request.post('/development').set(MCP_HEADERS).send({
+            const response = await api.post('/development').set(MCP_HEADERS).send({
                 jsonrpc: '2.0',
                 id: 1,
                 method: 'initialize',

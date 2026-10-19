@@ -1,5 +1,6 @@
 import { Serializer } from '@radoslavirha/tsed-common';
 import { ObjectUtils } from '@radoslavirha/utils';
+import { getInterceptorOptions } from '@tsed/di';
 import { BadGateway, GatewayTimeout } from '@tsed/exceptions';
 import { PlatformTest } from '@tsed/platform-http/testing';
 import SuperTest from 'supertest';
@@ -9,6 +10,8 @@ import { SearchResponseDTO } from '../endpoints/knowledge-base-api/dto/SearchRes
 import { KnowledgeBaseApiEndpoint } from '../endpoints/knowledge-base-api/KnowledgeBaseApiEndpoint.js';
 import { toMcpSettings } from '../mcp/toMcpSettings.js';
 import { Server } from '../Server.js';
+import { KnowledgeBaseRole } from '../models/config/KnowledgeBaseRole.enum.js';
+import { TEST_PUBLIC_URL, TEST_ROLES, TEST_SERVER, userToken } from '../test/fixtures.js';
 import * as tools from './index.js';
 
 const MCP_HEADERS = { Accept: 'application/json, text/event-stream', 'Content-Type': 'application/json' };
@@ -31,13 +34,13 @@ describe('Tools (integration, through MCP)', () => {
     // index.ts builds the endpoints and registers the tools the same way.
     beforeEach(PlatformTest.bootstrap(Server, {
         mcp: toMcpSettings(
-            { mcpServers: { DEVELOPMENT_KB: { path: '/development', kb: 'dev', name: 'test-server', title: 'Test title' } } },
+            { publicURL: TEST_PUBLIC_URL, mcpServers: { DEVELOPMENT_KB: TEST_SERVER } },
             { version: '9.9.9' },
             ObjectUtils.values(tools)
         )
     }));
-    beforeEach(() => {
-        request = SuperTest.agent(PlatformTest.callback());
+    beforeEach(async () => {
+        request = SuperTest.agent(PlatformTest.callback()).set('Authorization', `Bearer ${await userToken()}`);
         api = PlatformTest.get<KnowledgeBaseApiEndpoint>(KnowledgeBaseApiEndpoint);
     });
     afterEach(PlatformTest.reset);
@@ -52,6 +55,29 @@ describe('Tools (integration, through MCP)', () => {
         expect(listed.every((tool) => !Object.keys(tool.inputSchema.properties ?? {}).includes('kb'))).toBe(true);
         expect(listed.every((tool) => (tool.annotations as { readOnlyHint?: boolean }).readOnlyHint === true)).toBe(true);
         expect(listed.every((tool) => tool.inputSchema && tool.outputSchema)).toBe(true);
+    });
+
+    it('every tool declares the least role it needs: a tool without @RequireRole would be open to any caller', () => {
+        const declared = ObjectUtils.values(tools).flatMap((tool) => Object.getOwnPropertyNames(tool.prototype)
+            .filter((name) => name !== 'constructor')
+            .map((name) => [`${tool.name}.${name}`, getInterceptorOptions<KnowledgeBaseRole | undefined>(tool, name)]));
+
+        expect(declared.length).toBeGreaterThan(0);
+        expect(declared.filter(([, level]) => !Object.values(KnowledgeBaseRole).includes(level as KnowledgeBaseRole))).toEqual([]);
+    });
+
+    it('a caller holding another of the endpoint\'s roles, but not the tool\'s, is refused by the tool before the API is called', async () => {
+        expect.assertions(3);
+
+        const search = vi.spyOn(api, 'search');
+
+        // Passes the door (it holds an endpoint role) but lacks READER, which `search` declares.
+        request = SuperTest.agent(PlatformTest.callback()).set('Authorization', `Bearer ${await userToken({ claims: { roles: [TEST_ROLES.EDITOR] } })}`);
+        const result = await callTool('search', { query: 'q' });
+
+        expect(result.isError).toBe(true);
+        expect(JSON.stringify(result.content)).toContain('Insufficient permissions.');
+        expect(search).not.toHaveBeenCalled();
     });
 
     it('search: hits for the query in the endpoint\'s knowledge base, with the default limit when none is given', async () => {

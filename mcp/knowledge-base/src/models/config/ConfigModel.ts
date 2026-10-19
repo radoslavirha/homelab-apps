@@ -9,10 +9,12 @@ import { McpServer } from './McpServer.enum.js';
 import { createMcpServersSchema } from './McpServerConfig.js';
 
 /**
- * Phase 1 has no inbound login; inbound auth arrives in phase 2 as a required key, with no way
- * to switch it off.
+ * Every endpoint carries its own required `auth`; there is no way to switch it off.
  */
 export const ConfigSchema = BaseConfig.extend({
+    // Required here, optional in BaseConfig: each endpoint's resource identifier is this plus its
+    // `path`, and platform-mcp never derives it from the request's Host header.
+    publicURL: z.url().describe('Public base URL of the app: scheme, host and the route prefix, no endpoint path — `https://mcp.irha.cz/kb` deployed, `http://localhost:4004` locally. An endpoint\'s resource identifier is this plus its `path`.'),
     externalApis: createExternalApisSchema(Object.values(ExternalApi))
         .describe('APIs this server calls — base URL, auth, resilience and logging per API.'),
     mcpServers: createMcpServersSchema(Object.values(McpServer))

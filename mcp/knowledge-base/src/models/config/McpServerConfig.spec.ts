@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { TEST_SERVER } from '../../test/fixtures.js';
 import { createMcpServersSchema } from './McpServerConfig.js';
 
-const server = (path: string) => ({ path, kb: 'dev', name: 'n', title: 't' });
+const server = (path: string) => ({ ...TEST_SERVER, path });
 
 describe('createMcpServersSchema', () => {
     const schema = createMcpServersSchema(['DEVELOPMENT_KB', 'HOME_KB']);
@@ -30,7 +31,7 @@ describe('createMcpServersSchema', () => {
 
     it('requires the knowledge base an endpoint serves, naming the endpoint', () => {
         // The endpoint is its knowledge base; without one, a call would fall back to every KB the client may read.
-        const result = schema.safeParse({ DEVELOPMENT_KB: { path: '/development', name: 'n', title: 't' }, HOME_KB: server('/home') });
+        const result = schema.safeParse({ DEVELOPMENT_KB: { path: '/development', name: 'n', title: 't', auth: TEST_SERVER.auth }, HOME_KB: server('/home') });
 
         expect(result.success).toBe(false);
         expect(result.error?.issues[0].path).toEqual(['DEVELOPMENT_KB', 'kb']);

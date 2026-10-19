@@ -90,8 +90,9 @@ check_member() { # <member-path> [template-path]
         check_files "$path" src/models/config/AuthMethod.enum.ts src/providers/AuthProvider.ts src/health/index.ts
     fi
 
-    # MCP servers are Ts.ED servers like the APIs, minus what phase 1 does not have yet:
-    # inbound auth (AuthMethod, AuthProvider) and health checks of its own.
+    # MCP servers are Ts.ED servers like the APIs, minus AuthMethod/AuthProvider (their auth is
+    # per endpoint in `mcpServers`, checked by platform-mcp, not the controller guard) and minus
+    # health checks of their own.
     if [ "$kind" = apis ] || [ "$kind" = mcp ]; then
         check_files "$path" tsconfig.json eslint.config.mjs nodemon.json .swcrc vitest.config.ts \
             config/localhost.json config/test.json \
