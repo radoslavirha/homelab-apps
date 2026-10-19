@@ -121,11 +121,15 @@ Stop instead — comment on the issue with your analysis and options, replace
   package's exported API)
 - it touches more than one workspace member (a dependency bump from "Upstream
   released" may touch several)
+- it touches packages/ui-auth or a UI's auth wiring: those changes must be verified
+  in a real browser against the real IdP (`.apm/skills/verifying-auth-in-browser`),
+  which this environment can't do. Once the owner has answered and you do resolve it,
+  the PR gets `needs-e2e` (see "Needs E2E")
 
 # 5. Verify
 First decide whether the fix **needs E2E** — see "Needs E2E" below. Unit tests are still
 required either way; E2E is verification on top of them, done later by an agent running
-locally.
+locally. The label only marks the PR for it — it never replaces a stop in step 4.
 
 Check what CI checks for the member you changed — lint, build and test:
 - Area `apis`, `mcp` or `ui`:
@@ -149,9 +153,9 @@ handle it like the stop case in step 4.
 
 ## Needs E2E
 This environment has no browser, no IdP credentials and no access to the homelab, so some
-fixes can pass every unit test and still be wrong. Those PRs get the `needs-e2e` label, and
-an agent running locally (with `claude-e2e` and a browser) verifies them before the owner
-merges. The fix needs E2E when its correctness depends on a real system that the tests mock or
+fixes can pass every unit test and still be wrong. Those PRs get the `needs-e2e` label, so the
+owner sees which ones need more than code review: an agent running locally (with `claude-e2e`
+and a browser) verifies them before they merge. The fix needs E2E when its correctness depends on a real system that the tests mock or
 cannot reach. Typical cases:
 - Auth: `packages/ui-auth`, a UI's auth wiring, an Authentik blueprint, an API's
   `AuthMethod`, trusted issuers, audience or JWKS config — anything about OAuth2/OIDC login,
