@@ -11,8 +11,10 @@ export const HealthConfigSchema = z.object({
      *
      * Keep below `readinessProbe.timeoutSeconds`, so a slow dependency reports a body
      * kubelet can log instead of being cut off as a bodyless probe timeout.
+     *
+     * Capped at 2^31 - 1: Node turns any longer timer delay into 1 ms.
      */
-    checkTimeoutMs: z.number().int().min(1).default(2000),
+    checkTimeoutMs: z.number().int().min(1).max(2_147_483_647).default(2000),
     /**
      * Result reuse window. Concurrent and closely-spaced evaluations share one result.
      *
