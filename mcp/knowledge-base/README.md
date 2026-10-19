@@ -2,7 +2,7 @@
 
 MCP server for the knowledge bases in `knowledge-base-api`: search and read them from any MCP client (Claude Code, Claude on the web or phone, ChatGPT, Cursor, a CI agent). One app, one MCP endpoint per audience — today the development knowledge base.
 
-**Status: phase 2 — login, run locally.** One MCP endpoint, `/development` (Streamable HTTP, stateless), serving the `dev` knowledge base with two read-only tools answered from knowledge-base-api. Every endpoint requires a sign-in through Authentik (OAuth 2.1, the MCP authorization spec); there is no anonymous endpoint. An endpoint is its knowledge base: the one it serves is set in config, and a caller never names one. The app can mount several endpoints — one per entry in `mcpServers` — for knowledge bases with other audiences later.
+**Status: phase 2 — login; deployed to production on server1.** One MCP endpoint, `/development` (Streamable HTTP, stateless), serving the `dev` knowledge base with two read-only tools answered from knowledge-base-api. Every endpoint requires a sign-in through Authentik (OAuth 2.1, the MCP authorization spec); there is no anonymous endpoint. An endpoint is its knowledge base: the one it serves is set in config, and a caller never names one. The app can mount several endpoints — one per entry in `mcpServers` — for knowledge bases with other audiences later.
 
 ## Run it
 
@@ -73,4 +73,4 @@ The server calls knowledge-base-api as itself, never with a caller's token. http
 
 ## Build and release
 
-CI lints, builds and tests it and builds its image (`knowledge-base` stage of the root `Dockerfile`) on every change under this folder. It is **not deployed**: `deploy.json` is `{}`, so when a dependency bump releases it, the image is published and no environment is updated. Environments are added in the homelab phase.
+CI lints, builds and tests it and builds its image (`knowledge-base` stage of the root `Dockerfile`) on every change under this folder. A release deploys it to **production** on server1 (`deploy.json` → homelab `values-production.yaml`), at `https://mcp.irha.cz/kb/development` — Traefik strips `/kb`, and rewrites the Protected Resource Metadata path `/.well-known/oauth-protected-resource/kb/…` to the app's own. Production only: the knowledge bases exist nowhere else.
