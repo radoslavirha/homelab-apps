@@ -17,7 +17,7 @@ fails silently: no CI job, no image, no release. `scripts/check-member.sh` check
 ## Inputs
 
 - **type**: `api` | `mcp` | `ui` | `package`
-- **name**: kebab-case directory name. APIs end in `-api`, UIs in `-ui` (`sensor-bridge-api`, `homelab-dashboard-ui`). An MCP server is named for what it serves, under `mcp/` (`development-knowledge-base`).
+- **name**: kebab-case directory name. APIs end in `-api`, UIs in `-ui` (`sensor-bridge-api`, `homelab-dashboard-ui`). An MCP server is named for what it serves, under `mcp/` (`knowledge-base`).
 
 Ask for anything missing. Do not guess a name.
 
@@ -42,7 +42,7 @@ Member: <type>/<name>   Template: <template path>
 | --- | --- | --- |
 | api | `apis/qr-manager-api` | has its own MongoDB |
 | api | `apis/interactive-map-feeder-api` | no database, calls external HTTP APIs |
-| mcp | `mcp/development-knowledge-base` | an MCP server |
+| mcp | `mcp/knowledge-base` | an MCP server |
 | ui | `ui/qr-manager-ui` | signs users in (`@radoslavirha/ui-auth`) |
 | ui | `ui/homelab-dashboard-ui` | no sign-in |
 | package | the existing package closest in kind (`tsed-*` for Ts.ED glue, `ui-*` for React) | — |
