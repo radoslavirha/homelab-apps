@@ -128,6 +128,18 @@ describe('GitSourceAdapter', () => {
             await expect(adapter().changes(null)).rejects.toThrow(/truncated/);
         });
 
+        it('starts no further file reads once one read has failed', async () => {
+            expect.assertions(2);
+
+            vi.mocked(github.getBlob).mockImplementationOnce(() => Promise.reject(new RequestError('Server Error', 502, { request: { method: 'GET', url: 'x', headers: {} } })));
+
+            await expect(adapter().changes(null)).rejects.toThrow('Server Error');
+            // Let any worker still running finish what it would do next.
+            await new Promise((resolve) => setTimeout(resolve, 20));
+            // Two workers: the failed read and at most one other already in flight.
+            expect(vi.mocked(github.getBlob).mock.calls.length).toBeLessThanOrEqual(2);
+        });
+
         it('uses the configured branch when one is set', async () => {
             expect.assertions(1);
 
@@ -219,15 +231,23 @@ describe('GitSourceAdapter', () => {
 
     describe('a run that is stopped', () => {
         it('hands its signal to every GitHub call', async () => {
-            expect.assertions(3);
+            expect.assertions(4);
 
-            const { signal } = new AbortController();
+            const stop = new AbortController();
+            const { signal } = stop;
 
             await adapter().changes(null, signal);
 
             expect(github.getBranch).toHaveBeenCalledWith(REPOSITORY, 'main', signal);
             expect(github.getTree).toHaveBeenCalledWith(REPOSITORY, 'head', signal);
-            expect(github.getBlob).toHaveBeenCalledWith(REPOSITORY, 'sha-note', signal);
+            // Blob reads get a signal derived from the run's, so they stop with it.
+            const blobSignal = vi.mocked(github.getBlob).mock.calls[0][2];
+
+            expect(blobSignal?.aborted).toBe(false);
+
+            stop.abort();
+
+            expect(blobSignal?.aborted).toBe(true);
         });
 
         it('stops fetching files once aborted, and throws the reason', async () => {
