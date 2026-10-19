@@ -139,8 +139,8 @@ apis/<api-name>/
 There is no `v1/` folder and no API version prefix in routes — all controllers mount at `/`. Versioning is handled at the package level via Changesets, not inside route paths.
 
 `mcp/<mcp-name>/` holds MCP servers: the same Ts.ED layout as `apis/`, without Swagger. CI, the
-Dockerfile, the release workflow and `check-member.sh` treat them like apps; an MCP server without a
-`deploy.json` is built and tested but not released.
+Dockerfile, the release workflow and `check-member.sh` treat them like apps; an MCP server that is
+not deployable yet has `deploy.json` `{}`: released (image published) but deployed nowhere.
 
 ```text
 ui/<ui-name>/

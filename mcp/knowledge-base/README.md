@@ -52,4 +52,4 @@ The server calls knowledge-base-api as itself, never with a caller's token. http
 
 ## Build and release
 
-CI lints, builds and tests it and builds its image (`knowledge-base` stage of the root `Dockerfile`) on every change under this folder. It is **not released or deployed**: there is no `deploy.json` and no changeset until phase 2 adds the login.
+CI lints, builds and tests it and builds its image (`knowledge-base` stage of the root `Dockerfile`) on every change under this folder. It is **not deployed**: `deploy.json` is `{}`, so when a dependency bump releases it, the image is published and no environment is updated. Environments are added once phase 2 adds the login.

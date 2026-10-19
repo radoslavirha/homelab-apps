@@ -101,8 +101,8 @@ COPY --from=build-qr-manager-api --chown=65532:65532 /prod/qr-manager-api /home/
 CMD ["--import", "/home/app/dist/otel/instrument.js", "dist/index.js"]
 
 # ─── knowledge-base (mcp/) ─────────────────────────────────────────────────────────
-# An MCP server, built like the APIs. Phase 1 has no inbound login, so the image is built
-# in CI but not released or deployed until the login lands.
+# An MCP server, built like the APIs. Phase 1 has no inbound login, so the image is
+# published on release but deployed nowhere (deploy.json is {}) until the login lands.
 FROM deps AS build-knowledge-base
 
 RUN --mount=type=secret,id=npmrc,target=/root/.npmrc \
