@@ -141,7 +141,7 @@ Retained command messages are ignored (subscribed with `rh: 2`, and dropped if t
 
 Command payload: `{ deviceId: number, command: "service:property", operation: "GetProperty|SetProperty|Action", [value] }`
 
-A device that publishes several services of the same type (e.g. a multi-gang switch) gets the siid appended to that service's key: `switch-2:on`, `switch-3:on`. Unique service types keep the plain `service:property` key.
+A device that publishes several services of the same type (e.g. a multi-gang switch) gets the siid appended to that service's key: `switch-2:on`, `switch-3:on`. The same holds inside a service: a property or action type published more than once gets its iid appended (`switch:mode-2`, `switch:mode-6`, `filter:reset-filter-life-1`). Unique service and property/action types keep the plain `service:property` key.
 
 ## Notification Payload
 
