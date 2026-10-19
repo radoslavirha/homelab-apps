@@ -73,6 +73,27 @@ describe('parseDnsRecords', () => {
         expect(clusters[0].services).toHaveLength(1);
     });
 
+    it('groups a CNAME that points at another CNAME under the anchor it resolves to', () => {
+        const records = [
+            aRecord('server1.home', '192.168.1.10'),
+            cnameRecord('apps.server1.home', 'server1.home'),
+            cnameRecord('grafana.home', 'apps.server1.home')
+        ];
+        const clusters = parseDnsRecords(records, baseConfig);
+        expect(clusters[0].services.map(s => s.hostname)).toEqual(['apps.server1.home', 'grafana.home']);
+    });
+
+    it('drops a CNAME chain that loops or passes through a disabled record', () => {
+        const records = [
+            aRecord('server1.home', '192.168.1.10'),
+            cnameRecord('a.home', 'b.home'),
+            cnameRecord('b.home', 'a.home'),
+            cnameRecord('c.home', 'd.home'),
+            { ...cnameRecord('d.home', 'server1.home'), enabled: false }
+        ];
+        expect(parseDnsRecords(records, baseConfig)).toEqual([]);
+    });
+
     it('excludes records listed in config.exclude', () => {
         const records = [
             aRecord('server1.home', '192.168.1.10'),
