@@ -1,5 +1,19 @@
 # knowledge-base-api
 
+## 0.2.1
+
+### Patch Changes
+
+- [`099d0cd`](https://github.com/radoslavirha/homelab-apps/commit/099d0cd52cbb08f3bc850569b2fd5e6ab9b31f4b) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update packages
+
+- [`cdc8602`](https://github.com/radoslavirha/homelab-apps/commit/cdc8602df9612f207fabfc1821f1890239a34722) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Request log lines name the verified caller (`principalSubject`, `principalKind`, `principalIssuer`) and no longer carry request or response bodies — a `GET /search` line used to hold every result snippet.
+- Updated dependencies [[`20c61e5`](https://github.com/radoslavirha/homelab-apps/commit/20c61e558621cba57a2b2ae95d902d44ac35baab), [`099d0cd`](https://github.com/radoslavirha/homelab-apps/commit/099d0cd52cbb08f3bc850569b2fd5e6ab9b31f4b)]:
+  - @radoslavirha/auth@0.3.0
+  - @radoslavirha/otel@0.6.5
+  - @radoslavirha/tsed-auth@0.3.1
+  - @radoslavirha/tsed-health@0.3.3
+  - @radoslavirha/tsed-http-provider@0.2.10
+
 ## 0.2.0
 
 ### Minor Changes
