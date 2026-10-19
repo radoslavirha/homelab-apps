@@ -12,7 +12,9 @@
 #
 # Source files are non-spec code files of a workspace member, except
 # package.json (a dependency change needs a reinstall). Test helpers under
-# test/ or __tests__/ count as specs' side and are never reverted.
+# test/ or __tests__/ count as specs' side and are never reverted. A file moved
+# without a change (an exact rename, e.g. a renamed member folder) is neither:
+# there is nothing for a test to detect.
 #
 # Usage:
 #   bash scripts/check-regression-test.sh [base-branch]   # default: main
@@ -58,6 +60,7 @@ member_of() {
 specs=()
 sources=()     # "<status> <path>", status A, M or D
 while read -r status path; do
+    [[ "$status" != R* ]] || continue
     [[ -n "$(member_of "$path")" ]] || continue
     case "$path" in
         *.spec.ts | *.spec.tsx | *.spec.js | *.spec.jsx)
@@ -69,7 +72,8 @@ while read -r status path; do
             ;;
     esac
 done < <(
-    git diff --no-renames --name-status "$BASE"
+    # Only exact renames show as R; a moved and edited file stays D + A.
+    git diff --find-renames=100% --name-status "$BASE"
     git ls-files --others --exclude-standard | sed 's/^/A /'
 )
 
