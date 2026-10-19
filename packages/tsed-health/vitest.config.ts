@@ -4,6 +4,8 @@ import { defineConfig, mergeConfig } from 'vitest/config';
 export default defineConfig(mergeConfig(defaultConfig, {
     oxc: false,
     test: {
+        // Console output (logger lines included) is printed only for a failing test.
+        silent: 'passed-only',
         setupFiles: ['./src/test/setup.ts'],
         // Spins a real MongoDB for the Mongo check's integration spec. Mocking `readyState`
         // proves the mapping table but assumes the premise the whole design rests on —
