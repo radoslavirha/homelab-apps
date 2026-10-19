@@ -1,5 +1,14 @@
 # homelab-dashboard-ui
 
+## 0.8.4
+
+### Patch Changes
+
+- [`099d0cd`](https://github.com/radoslavirha/homelab-apps/commit/099d0cd52cbb08f3bc850569b2fd5e6ab9b31f4b) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update packages
+- Updated dependencies [[`099d0cd`](https://github.com/radoslavirha/homelab-apps/commit/099d0cd52cbb08f3bc850569b2fd5e6ab9b31f4b)]:
+  - @radoslavirha/ui-kit@1.1.2
+  - @radoslavirha/ui-runtime@0.3.2
+
 ## 0.8.3
 
 ### Patch Changes

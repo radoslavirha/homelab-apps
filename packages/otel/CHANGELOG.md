@@ -1,5 +1,11 @@
 # @radoslavirha/otel
 
+## 0.6.5
+
+### Patch Changes
+
+- [`099d0cd`](https://github.com/radoslavirha/homelab-apps/commit/099d0cd52cbb08f3bc850569b2fd5e6ab9b31f4b) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update packages
+
 ## 0.6.4
 
 ### Patch Changes
