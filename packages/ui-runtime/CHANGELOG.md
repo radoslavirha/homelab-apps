@@ -1,5 +1,11 @@
 # @radoslavirha/ui-runtime
 
+## 0.3.3
+
+### Patch Changes
+
+- [#311](https://github.com/radoslavirha/homelab-apps/pull/311) [`ea42b4a`](https://github.com/radoslavirha/homelab-apps/commit/ea42b4a40b23387f03dbd7907d7e9c7167b84814) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - useApiStatus restores degraded/unauthenticated after an offline→online blip instead of reporting ok.
+
 ## 0.3.2
 
 ### Patch Changes

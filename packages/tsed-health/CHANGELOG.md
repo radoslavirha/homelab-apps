@@ -1,5 +1,12 @@
 # @radoslavirha/tsed-health
 
+## 0.3.4
+
+### Patch Changes
+
+- Updated dependencies [[`8a91af3`](https://github.com/radoslavirha/homelab-apps/commit/8a91af3d580ad3357ed6f6aaace7f5f5a64e07ed)]:
+  - @radoslavirha/health@0.1.5
+
 ## 0.3.3
 
 ### Patch Changes

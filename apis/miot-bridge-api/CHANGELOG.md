@@ -1,5 +1,13 @@
 # miot-bridge
 
+## 0.29.3
+
+### Patch Changes
+
+- [#335](https://github.com/radoslavirha/homelab-apps/pull/335) [`23f8309`](https://github.com/radoslavirha/homelab-apps/commit/23f83092e3fad2014c778d368c0b3ba1d37b9083) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Properties and actions that repeat a type within one service are no longer overwritten in the simplified spec; they are keyed with their iid appended (e.g. `switch:mode-2`, `switch:mode-6`), so devices with such repeats get new command keys.
+- Updated dependencies []:
+  - @radoslavirha/tsed-health@0.3.4
+
 ## 0.29.2
 
 ### Patch Changes
