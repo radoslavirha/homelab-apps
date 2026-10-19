@@ -17,7 +17,7 @@ const UPSTREAM = {
     }
 };
 
-const MCP_SERVERS = { DEVELOPMENT_KB: { path: '/development', name: 'development-kb', title: 'Development knowledge base' } };
+const MCP_SERVERS = { DEVELOPMENT_KB: { path: '/development', kb: 'dev', name: 'development-kb', title: 'Development knowledge base' } };
 
 const MINIMAL = { server: { httpPort: 4004 }, mcpServers: MCP_SERVERS, externalApis: { KNOWLEDGE_BASE_API: UPSTREAM } };
 

@@ -2,7 +2,7 @@
 
 MCP server for the knowledge bases in `knowledge-base-api`: search and read them from any MCP client (Claude Code, Claude on the web or phone, ChatGPT, Cursor, a CI agent). One app, one MCP endpoint per audience — today the development knowledge base.
 
-**Status: phase 1 — local, no login.** One MCP endpoint, `/development` (Streamable HTTP, stateless), with three read-only tools answered from knowledge-base-api. The app can mount several endpoints — one per entry in `mcpServers` — for knowledge bases with other audiences later.
+**Status: phase 1 — local, no login.** One MCP endpoint, `/development` (Streamable HTTP, stateless), serving the `dev` knowledge base with two read-only tools answered from knowledge-base-api. An endpoint is its knowledge base: the one it serves is set in config, and a caller never names one. The app can mount several endpoints — one per entry in `mcpServers` — for knowledge bases with other audiences later.
 
 ## Run it
 
@@ -24,13 +24,12 @@ Point an MCP client at `http://localhost:4004/development` (the transport is HTT
 
 ## Tools
 
-All three are read-only (`readOnlyHint`). A failure comes back as a tool result with `isError`, carrying the message.
+Both are read-only (`readOnlyHint`) and work on the endpoint's own knowledge base; neither takes a `kb` (an extra `kb` argument is ignored). A failure comes back as a tool result with `isError`, carrying the message.
 
 | Tool | Input | Returns |
 |------|-------|---------|
-| `list_knowledge_bases` | — | `knowledgeBases[]`: `id`, `description` (from config), `documents`, `lastIndexedAt` |
-| `search` | `query`; optional `kb`, `filter` (`key:value,…` on metadata), `limit` (1–20, default 8) | `hits[]`, best first: `kb`, `id`, `anchor`, `title`, `heading`, `snippet`, `date` |
-| `read` | `kb`, `id` (from a hit) | `kb`, `id`, `title`, `date`, `metadata`, `markdown` — the whole document. An unknown id says to search first |
+| `search` | `query`; optional `filter` (`key:value,…` on metadata), `limit` (1–20, default 8) | `hits[]`, best first: `id`, `anchor`, `title`, `heading`, `snippet`, `date` |
+| `read` | `id` (from a hit) | `id`, `title`, `date`, `metadata`, `markdown` — the whole document. An unknown id says to search first |
 
 ## Configuration
 
@@ -39,8 +38,7 @@ All three are read-only (`readOnlyHint`). A failure comes back as a tool result 
 | Key | Description |
 |-----|-------------|
 | `server.httpPort` | Port to listen on |
-| `mcpServers.<McpServer>` | One entry per MCP endpoint the app mounts (`DEVELOPMENT_KB` today): `path` (in the app; the public route adds its prefix, `/kb`, and Traefik strips it), `name`, `title`, optional `description` (defaults to the package's). Every key is required and paths must differ |
-| `knowledgeBases.<id>.description` | What a knowledge base holds, as `list_knowledge_bases` shows it. A knowledge base without one is listed with `description: null` |
+| `mcpServers.<McpServer>` | One entry per MCP endpoint the app mounts (`DEVELOPMENT_KB` today): `path` (in the app; the public route adds its prefix, `/kb`, and Traefik strips it), `kb` (the knowledge base it serves, its id in knowledge-base-api, e.g. `dev`), `name`, `title`, optional `description` (what clients are told the endpoint holds; defaults to the package's). Every key is required and paths must differ |
 | `externalApis.KNOWLEDGE_BASE_API` | knowledge-base-api: `baseURL` (from a laptop, the LAN route `https://api.server1.homelab.irha.cz/kb/knowledge-base`), resilience, and `auth` — `token-exchange` with a `client_credentials` request for `development-kb-mcp` to Authentik's token endpoint, form-encoded, scope `openid profile email roles` (without `profile`, `aud` is the bare client id and the API refuses the token) |
 | `health` | Health endpoint configuration (optional) |
 | `logger` | Log level and options (optional) |

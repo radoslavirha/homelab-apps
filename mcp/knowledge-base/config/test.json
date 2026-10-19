@@ -5,8 +5,10 @@
     "mcpServers": {
         "DEVELOPMENT_KB": {
             "path": "/development",
+            "kb": "dev",
             "name": "development-knowledge-base",
-            "title": "Development knowledge base"
+            "title": "Development knowledge base",
+            "description": "Development knowledge base for the homelab repositories: decisions with the alternatives that were rejected, specs and plans, cross-repository contracts (MQTT topics, REST endpoints, URLs, auth), gotchas, and a mirror of the repositories' own docs."
         }
     },
     "externalApis": {
@@ -58,11 +60,6 @@
                 504,
                 408
             ]
-        }
-    },
-    "knowledgeBases": {
-        "dev": {
-            "description": "Development knowledge base for the homelab repositories: decisions with the alternatives that were rejected, specs and plans, cross-repository contracts (MQTT topics, REST endpoints, URLs, auth), gotchas, and a mirror of the repositories' own docs."
         }
     },
     "logger": {}

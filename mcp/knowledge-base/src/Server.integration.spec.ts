@@ -10,7 +10,7 @@ const MCP_HEADERS = { Accept: 'application/json, text/event-stream', 'Content-Ty
 
 /** The endpoint as index.ts builds it, from fixed values instead of ConfigService. */
 const MCP = toMcpSettings(
-    { mcpServers: { DEVELOPMENT_KB: { path: '/development', name: 'test-server', title: 'Test title' } } },
+    { mcpServers: { DEVELOPMENT_KB: { path: '/development', kb: 'dev', name: 'test-server', title: 'Test title' } } },
     { description: 'Test description', version: '9.9.9' },
     []
 );

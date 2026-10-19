@@ -16,12 +16,7 @@ export const ConfigSchema = BaseConfig.extend({
     externalApis: createExternalApisSchema(Object.values(ExternalApi))
         .describe('APIs this server calls — base URL, auth, resilience and logging per API.'),
     mcpServers: createMcpServersSchema(Object.values(McpServer))
-        .describe('The MCP endpoints this app mounts, by `McpServer` key.'),
-    // What `list_knowledge_bases` says each knowledge base holds; the API knows ids and counts,
-    // not what is in them. A knowledge base without an entry is listed without a description.
-    knowledgeBases: z.record(z.string(), z.object({
-        description: z.string().min(1).describe('What the knowledge base holds, written for an agent deciding whether to search it.')
-    })).default({}).describe('Descriptions of the knowledge bases, by id.'),
+        .describe('The MCP endpoints this app mounts, by `McpServer` key, each serving one knowledge base.'),
     // Every field is defaulted, so omitting `health` entirely is valid — additive, and
     // safe for a rolling deploy where an old pod reads a new ConfigMap or vice versa.
     health: HealthConfigSchema.optional().describe('Health endpoint configuration.'),

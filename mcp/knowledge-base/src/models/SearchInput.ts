@@ -7,10 +7,6 @@ export class SearchInput {
     @MaxLength(1000)
     public query: string;
 
-    @Description('Search one knowledge base only (an id from `list_knowledge_bases`). Default: all of them.')
-    @Property()
-    public kb?: string;
-
     @Description('Metadata filter, `key:value` pairs separated by commas: a repeated key means "or", different keys "and". E.g. `area:raw` (decision notes), `area:work` (specs and plans), `area:mirror` (repository docs), `repos:homelab`, `type:decision`.')
     @Property()
     public filter?: string;

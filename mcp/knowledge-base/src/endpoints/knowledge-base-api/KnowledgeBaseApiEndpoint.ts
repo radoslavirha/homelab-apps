@@ -6,11 +6,9 @@ import { DocumentQueryDTO } from './dto/DocumentQueryDTO.js';
 import { DocumentResponseDTO } from './dto/DocumentResponseDTO.js';
 import { SearchQueryDTO } from './dto/SearchQueryDTO.js';
 import { SearchResponseDTO } from './dto/SearchResponseDTO.js';
-import { StatusResponseDTO } from './dto/StatusResponseDTO.js';
 
 const SEARCH_PATH = '/search';
 const DOCUMENTS_PATH = '/documents';
-const STATUS_PATH = '/status';
 
 /**
  * knowledge-base-api's read routes. Base URL, auth, timeouts, retries and the circuit breaker come
@@ -27,13 +25,6 @@ const STATUS_PATH = '/status';
 export class KnowledgeBaseApiEndpoint {
     @InjectHttpClient(ExternalApi.KnowledgeBaseApi)
     private readonly client!: HttpClient;
-
-    /** The knowledge bases this server's client may read, with their counts and last build. */
-    public async status(): Promise<StatusResponseDTO> {
-        const response = await this.client.get<object>(STATUS_PATH);
-
-        return Serializer.deserialize(response, StatusResponseDTO);
-    }
 
     public async search(query: SearchQueryDTO): Promise<SearchResponseDTO> {
         const response = await this.client.get<object>(SEARCH_PATH, { params: KnowledgeBaseApiEndpoint.params(query, SearchQueryDTO) });

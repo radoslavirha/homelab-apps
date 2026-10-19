@@ -3,7 +3,7 @@ import { toMcpSettings } from './toMcpSettings.js';
 
 class SomeTool {}
 
-const SERVERS = { mcpServers: { DEVELOPMENT_KB: { path: '/development', name: 'development-kb', title: 'Development knowledge base' } } };
+const SERVERS = { mcpServers: { DEVELOPMENT_KB: { path: '/development', kb: 'dev', name: 'development-kb', title: 'Development knowledge base' } } };
 
 describe('toMcpSettings', () => {
     it('mounts one endpoint per MCP server, at its configured path, with the tools and the app version', () => {

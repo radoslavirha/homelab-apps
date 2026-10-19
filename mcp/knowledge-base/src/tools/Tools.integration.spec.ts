@@ -6,7 +6,6 @@ import SuperTest from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DocumentResponseDTO } from '../endpoints/knowledge-base-api/dto/DocumentResponseDTO.js';
 import { SearchResponseDTO } from '../endpoints/knowledge-base-api/dto/SearchResponseDTO.js';
-import { StatusResponseDTO } from '../endpoints/knowledge-base-api/dto/StatusResponseDTO.js';
 import { KnowledgeBaseApiEndpoint } from '../endpoints/knowledge-base-api/KnowledgeBaseApiEndpoint.js';
 import { toMcpSettings } from '../mcp/toMcpSettings.js';
 import { Server } from '../Server.js';
@@ -32,7 +31,7 @@ describe('Tools (integration, through MCP)', () => {
     // index.ts builds the endpoints and registers the tools the same way.
     beforeEach(PlatformTest.bootstrap(Server, {
         mcp: toMcpSettings(
-            { mcpServers: { DEVELOPMENT_KB: { path: '/development', name: 'test-server', title: 'Test title' } } },
+            { mcpServers: { DEVELOPMENT_KB: { path: '/development', kb: 'dev', name: 'test-server', title: 'Test title' } } },
             { version: '9.9.9' },
             ObjectUtils.values(tools)
         )
@@ -44,32 +43,18 @@ describe('Tools (integration, through MCP)', () => {
     afterEach(PlatformTest.reset);
     afterEach(() => vi.restoreAllMocks());
 
-    it('lists the three tools, read-only, each with an input and an output schema', async () => {
-        expect.assertions(3);
+    it('lists the two tools, read-only, each with an input and an output schema, neither taking a knowledge base', async () => {
+        expect.assertions(4);
 
-        const { tools: listed } = await call('tools/list') as { tools: { name: string; annotations: object; inputSchema: object; outputSchema?: object }[] };
+        const { tools: listed } = await call('tools/list') as { tools: { name: string; annotations: object; inputSchema: { properties?: object }; outputSchema?: object }[] };
 
-        expect(listed.map((tool) => tool.name).sort()).toEqual(['list_knowledge_bases', 'read', 'search']);
+        expect(listed.map((tool) => tool.name).sort()).toEqual(['read', 'search']);
+        expect(listed.every((tool) => !Object.keys(tool.inputSchema.properties ?? {}).includes('kb'))).toBe(true);
         expect(listed.every((tool) => (tool.annotations as { readOnlyHint?: boolean }).readOnlyHint === true)).toBe(true);
         expect(listed.every((tool) => tool.inputSchema && tool.outputSchema)).toBe(true);
     });
 
-    it('list_knowledge_bases: the readable knowledge bases, described from config', async () => {
-        expect.assertions(2);
-
-        vi.spyOn(api, 'status').mockResolvedValue(Serializer.deserialize({
-            knowledgeBases: [{ id: 'dev', documents: 140, chunks: 1779, lastSuccessAt: '2026-10-16T15:09:25.000Z' }]
-        }, StatusResponseDTO));
-
-        const result = await callTool('list_knowledge_bases');
-
-        expect(result.isError).toBeUndefined();
-        expect(result.structuredContent).toEqual({
-            knowledgeBases: [{ id: 'dev', description: expect.stringContaining('decisions'), documents: 140, lastIndexedAt: '2026-10-16T15:09:25.000Z' }]
-        });
-    });
-
-    it('search: hits for the query, with the default limit when none is given', async () => {
+    it('search: hits for the query in the endpoint\'s knowledge base, with the default limit when none is given', async () => {
         expect.assertions(3);
 
         const search = vi.spyOn(api, 'search').mockResolvedValue(Serializer.deserialize({
@@ -81,9 +66,9 @@ describe('Tools (integration, through MCP)', () => {
         const result = await callTool('search', { query: 'what is the note about?', filter: 'area:raw' });
 
         expect(result.isError).toBeUndefined();
-        expect(search).toHaveBeenCalledWith(expect.objectContaining({ q: 'what is the note about?', filter: 'area:raw', limit: 8 }));
+        expect(search).toHaveBeenCalledWith(expect.objectContaining({ q: 'what is the note about?', kb: 'dev', filter: 'area:raw', limit: 8 }));
         expect(result.structuredContent).toEqual({
-            hits: [{ kb: 'dev', id: DOCUMENT.externalId, anchor: `${DOCUMENT.externalId}#body`, title: 'A note', heading: 'Body', snippet: 'Body.', date: '2026-01-01' }]
+            hits: [{ id: DOCUMENT.externalId, anchor: `${DOCUMENT.externalId}#body`, title: 'A note', heading: 'Body', snippet: 'Body.', date: '2026-01-01' }]
         });
     });
 
@@ -103,6 +88,17 @@ describe('Tools (integration, through MCP)', () => {
         expect(result.structuredContent).toEqual({ hits: [expect.objectContaining({ heading: '', date: null })] });
     });
 
+    it('search: a caller cannot reach another knowledge base by naming one', async () => {
+        expect.assertions(1);
+
+        const search = vi.spyOn(api, 'search').mockResolvedValue(Serializer.deserialize({ mode: 'VECTOR', models: [], results: [] }, SearchResponseDTO));
+
+        const result = await callTool('search', { query: 'q', kb: 'home' });
+
+        // An argument the tool does not declare is ignored, not refused: the call succeeds, on `dev`.
+        expect({ isError: result.isError, kbs: search.mock.calls.map(([query]) => query.kb) }).toEqual({ isError: undefined, kbs: ['dev'] });
+    });
+
     it('search: refuses a limit above 20 before calling the API', async () => {
         expect.assertions(2);
 
@@ -114,17 +110,29 @@ describe('Tools (integration, through MCP)', () => {
         expect(search).not.toHaveBeenCalled();
     });
 
-    it('read: the whole document, with structured content its output schema accepts', async () => {
-        expect.assertions(2);
+    it('read: the whole document from the endpoint\'s knowledge base, with structured content its output schema accepts', async () => {
+        expect.assertions(3);
 
-        vi.spyOn(api, 'document').mockResolvedValue(Serializer.deserialize(DOCUMENT, DocumentResponseDTO));
+        const document = vi.spyOn(api, 'document').mockResolvedValue(Serializer.deserialize(DOCUMENT, DocumentResponseDTO));
 
-        const result = await callTool('read', { kb: 'dev', id: DOCUMENT.externalId });
+        const result = await callTool('read', { id: DOCUMENT.externalId });
 
         expect(result.isError).toBeUndefined();
+        expect(document).toHaveBeenCalledWith(expect.objectContaining({ id: DOCUMENT.externalId, kb: 'dev' }));
         expect(result.structuredContent).toEqual({
-            kb: 'dev', id: DOCUMENT.externalId, title: 'A note', date: '2026-01-01', metadata: { area: 'raw' }, markdown: '# A note\n\nBody.'
+            id: DOCUMENT.externalId, title: 'A note', date: '2026-01-01', metadata: { area: 'raw' }, markdown: '# A note\n\nBody.'
         });
+    });
+
+    it('read: a caller cannot reach another knowledge base by naming one', async () => {
+        expect.assertions(1);
+
+        const document = vi.spyOn(api, 'document').mockResolvedValue(Serializer.deserialize(DOCUMENT, DocumentResponseDTO));
+
+        const result = await callTool('read', { kb: 'home', id: DOCUMENT.externalId });
+
+        // An argument the tool does not declare is ignored, not refused: the call succeeds, on `dev`.
+        expect({ isError: result.isError, kbs: document.mock.calls.map(([query]) => query.kb) }).toEqual({ isError: undefined, kbs: ['dev'] });
     });
 
     it('read: a document that is only frontmatter has empty markdown, which the output schema accepts', async () => {
@@ -132,7 +140,7 @@ describe('Tools (integration, through MCP)', () => {
 
         vi.spyOn(api, 'document').mockResolvedValue(Serializer.deserialize({ ...DOCUMENT, content: '' }, DocumentResponseDTO));
 
-        const result = await callTool('read', { kb: 'dev', id: DOCUMENT.externalId });
+        const result = await callTool('read', { id: DOCUMENT.externalId });
 
         expect(result.isError).toBeUndefined();
         expect(result.structuredContent).toEqual(expect.objectContaining({ markdown: '' }));
@@ -146,10 +154,10 @@ describe('Tools (integration, through MCP)', () => {
 
         vi.spyOn(api, 'document').mockRejectedValue(new BadGateway('External API KNOWLEDGE_BASE_API responded with 404', upstream));
 
-        const result = await callTool('read', { kb: 'dev', id: 'raw/missing.md' });
+        const result = await callTool('read', { id: 'raw/missing.md' });
 
         expect(result.isError).toBe(true);
-        expect(JSON.stringify(result.content)).toContain('Take the kb and id from a search hit');
+        expect(JSON.stringify(result.content)).toContain('Take the id from a search hit');
     });
 
     it('read: an error that is no HTTP exception at all reaches the caller as it is', async () => {
@@ -157,7 +165,7 @@ describe('Tools (integration, through MCP)', () => {
 
         vi.spyOn(api, 'document').mockRejectedValue(new TypeError('Cannot read properties of undefined'));
 
-        const result = await callTool('read', { kb: 'dev', id: DOCUMENT.externalId });
+        const result = await callTool('read', { id: DOCUMENT.externalId });
 
         expect(result.isError).toBe(true);
         expect(JSON.stringify(result.content)).toContain('Cannot read properties of undefined');
@@ -168,7 +176,7 @@ describe('Tools (integration, through MCP)', () => {
 
         vi.spyOn(api, 'document').mockRejectedValue(new GatewayTimeout('External API KNOWLEDGE_BASE_API did not respond in time.'));
 
-        const result = await callTool('read', { kb: 'dev', id: DOCUMENT.externalId });
+        const result = await callTool('read', { id: DOCUMENT.externalId });
 
         expect(result.isError).toBe(true);
         expect(JSON.stringify(result.content)).toContain('did not respond in time');
