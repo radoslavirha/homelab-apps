@@ -30,6 +30,8 @@ export class SimplifiedMiotSpecV2Mapper extends MappingUtils {
 
         await this.mapArray(validServices, async (svc) => {
             const serviceKey = serviceKeyOf(svc);
+            const propertyKeyOf = this.buildMemberKeyResolver(svc.properties);
+            const actionKeyOf = this.buildMemberKeyResolver(svc.actions);
 
             await this.mapOptionalArray(
                 svc.properties,
@@ -42,7 +44,7 @@ export class SimplifiedMiotSpecV2Mapper extends MappingUtils {
                         })
                     );
 
-                    properties.set(`${serviceKey}:${p.type.split(':')[3]}`, CommonUtils.buildModelStrict(MiotProperty, {
+                    properties.set(`${serviceKey}:${propertyKeyOf(p)}`, CommonUtils.buildModelStrict(MiotProperty, {
                         source: MIOT_PROPERTY_SOURCE_VALUE_SPEC,
                         siid: svc.iid,
                         piid: p.iid,
@@ -55,7 +57,7 @@ export class SimplifiedMiotSpecV2Mapper extends MappingUtils {
             );
 
             await this.mapOptionalArray(svc.actions, async (a) => {
-                actions.set(`${serviceKey}:${a.type.split(':')[3]}`, CommonUtils.buildModelStrict(MiotAction, {
+                actions.set(`${serviceKey}:${actionKeyOf(a)}`, CommonUtils.buildModelStrict(MiotAction, {
                     siid: svc.iid,
                     aiid: a.iid,
                     in: a.in.map(piid => {
@@ -63,7 +65,7 @@ export class SimplifiedMiotSpecV2Mapper extends MappingUtils {
                         if (CommonUtils.isNil(inputProperty)) {
                             throw new Error(`Action '${a.type}' references non-existent input property with PIID ${piid} in service '${svc.type}'.`);
                         }
-                        return `${serviceKey}:${inputProperty.type.split(':')[3]}`;
+                        return `${serviceKey}:${propertyKeyOf(inputProperty)}`;
                     })
                 }));
             });
@@ -110,6 +112,23 @@ export class SimplifiedMiotSpecV2Mapper extends MappingUtils {
         return (svc) => {
             const type = svc.type.split(':')[3];
             return (counts.get(type) ?? 0) > 1 ? `${type}-${svc.iid}` : type;
+        };
+    }
+
+    /**
+     * Same problem one level down: a service may publish the same property (or action) type more than
+     * once (`mode` at piid 2 and 6). Only repeated types get the iid appended (`mode-6`), so keys of
+     * members with a unique type are unchanged.
+     */
+    private buildMemberKeyResolver(members: { iid: number; type: string }[] | undefined): (member: { iid: number; type: string }) => string {
+        const counts = new Map<string, number>();
+        for (const member of members ?? []) {
+            const type = member.type.split(':')[3];
+            counts.set(type, (counts.get(type) ?? 0) + 1);
+        }
+        return (member) => {
+            const type = member.type.split(':')[3];
+            return (counts.get(type) ?? 0) > 1 ? `${type}-${member.iid}` : type;
         };
     }
 }

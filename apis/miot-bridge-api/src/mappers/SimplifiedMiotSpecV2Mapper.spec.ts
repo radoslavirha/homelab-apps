@@ -125,6 +125,40 @@ describe('SimplifiedMiotSpecV2Mapper', () => {
         });
     });
 
+    describe('repeated property and action types within one service', () => {
+        const access = [MiotSpecV2PropertyAccess.Read, MiotSpecV2PropertyAccess.Write];
+        const property = (iid: number, type: string) => ({ iid, type: `urn:miot-spec-v2:property:${type}:00000008:xinji-sw1a02:1`, description: type, format: 'uint8', access });
+        const action = (iid: number, inputs: number[] = []) => ({ iid, type: 'urn:miot-spec-v2:action:reset-filter-life:00002803:xiaomi-ua3:1', description: 'Reset', in: inputs, out: [] });
+        const deviceOf = (service: Record<string, unknown>) => ({
+            type: 'urn:miot-spec-v2:device:switch:0000A003:xinji-sw1a02:1',
+            description: 'Switch',
+            services: [{ iid: 2, type: 'urn:miot-spec-v2:service:switch:0000780C:xinji-sw1a02:1', description: 'Switch', ...service }]
+        }) as unknown as MiotSpecV2;
+
+        it('Should keep both properties of one service that share a property type addressable', async () => {
+            expect.assertions(3);
+            const spec = await mapper.map(deviceOf({ properties: [property(2, 'mode'), property(6, 'mode'), property(1, 'on')] }));
+
+            expect(spec.properties.get('switch:mode-2')?.piid).toBe(2);
+            expect(spec.properties.get('switch:mode-6')?.piid).toBe(6);
+            expect(spec.properties.get('switch:on')?.piid).toBe(1);
+        });
+
+        it('Should keep every action of one service that share an action type addressable', async () => {
+            expect.assertions(1);
+            const spec = await mapper.map(deviceOf({ properties: [], actions: [action(1), action(2), action(3)] }));
+
+            expect([...spec.actions.values()].map(a => a.aiid)).toEqual(expect.arrayContaining([1, 2, 3]));
+        });
+
+        it('Should point an action input at the disambiguated key of its property', async () => {
+            expect.assertions(1);
+            const spec = await mapper.map(deviceOf({ properties: [property(2, 'mode'), property(6, 'mode')], actions: [action(1, [6])] }));
+
+            expect([...spec.actions.values()][0].in).toEqual(['switch:mode-6']);
+        });
+    });
+
     it('Should skip an override whose service does not exist in the spec', async () => {
         const orphan = { ...override(OVERRIDE_PROPERTY), siid: 99 } as ModelPropertyOverride;
 
