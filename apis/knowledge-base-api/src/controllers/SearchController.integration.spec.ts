@@ -1,8 +1,10 @@
 import { mintTestToken } from '@radoslavirha/tsed-auth';
+import { Logger } from '@radoslavirha/tsed-logger';
+import { CommonUtils } from '@radoslavirha/utils';
 import { PlatformTest } from '@tsed/platform-http/testing';
 import type SuperTest from 'supertest';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { ROLE_ADMIN } from '../models/Roles.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ROLE_ADMIN, ROLE_READER } from '../models/Roles.js';
 import { SearchMode } from '../models/SearchMode.enum.js';
 import { bootstrapIndexed } from '../test/bootstrapIndexed.js';
 import type { FakeOllamaEndpoint } from '../test/FakeOllamaEndpoint.js';
@@ -216,6 +218,74 @@ describe('SearchController (integration)', () => {
             expect.assertions(1);
 
             expect((await search({ q: 'x', model: 'other:1b' })).status).toBe(400);
+        });
+    });
+
+    describe('request log', () => {
+        type LogRecord = Record<string, unknown>;
+
+        let written: LogRecord[];
+
+        /**
+         * The request line for `url`, as the shared Winston instance received it — after the
+         * `metaProvider` fields are merged in. Polled: Ts.ED writes it on the response's `finish`,
+         * which can land after supertest has the response.
+         */
+        const requestLine = async (url: string): Promise<LogRecord> =>
+            vi.waitFor(() => {
+                const line = written.find((record) => record.scope === 'HTTP_REQUEST' && record.url === url);
+
+                if (CommonUtils.isUndefined(line)) {
+                    throw new Error(`No request line for ${url} yet.`);
+                }
+
+                return line;
+            });
+
+        beforeEach(() => {
+            written = [];
+            const winston = (PlatformTest.get<Logger>(Logger) as unknown as { logger: { log: (record: LogRecord) => unknown } }).logger;
+
+            vi.spyOn(winston, 'log').mockImplementation((record: LogRecord) => written.push(record));
+        });
+        afterEach(() => vi.restoreAllMocks());
+
+        it('names the caller and keeps the query, but carries no body and no credential', async () => {
+            expect.assertions(8);
+
+            const token = await mintTestToken({ subject: 'ak-development-kb-mcp-client_credentials', claims: { roles: [ROLE_READER] } });
+            const response = await search({ q: 'Why does a pod keep the old environment after a ConfigMap edit?' }, token);
+            const line = await requestLine('/search');
+
+            expect(response.body.results[0].snippet).not.toHaveLength(0);
+            expect(line).toMatchObject({
+                message: 'Request completed',
+                method: 'GET',
+                status: 200,
+                duration: expect.any(Number),
+                principalSubject: 'ak-development-kb-mcp-client_credentials',
+                principalKind: 'human',
+                principalIssuer: 'https://issuer.test/'
+            });
+            expect(line.query).toContain('ConfigMap edit');
+            expect(line).not.toHaveProperty('response');
+            expect(line).not.toHaveProperty('request');
+            expect(JSON.stringify(line)).not.toContain(response.body.results[0].snippet);
+            expect(JSON.stringify(line)).not.toContain(token);
+            expect(line.headers).toContain('"authorization":"***"');
+        });
+
+        it('names nobody on a refused credential, and does not log it', async () => {
+            expect.assertions(3);
+
+            const [, authorization] = (await refusedCredentials())[0];
+
+            await request.get('/search').query({ q: 'pods' }).set('Authorization', authorization);
+            const line = await requestLine('/search');
+
+            expect(line).toMatchObject({ message: 'Request failed', status: 401 });
+            expect(Object.keys(line).filter((key) => key.startsWith('principal'))).toEqual([]);
+            expect(JSON.stringify(line)).not.toContain(authorization.replace('Bearer ', ''));
         });
     });
 });

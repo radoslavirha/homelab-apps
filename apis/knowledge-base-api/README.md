@@ -72,6 +72,7 @@ Git documents get `metadata` from their frontmatter plus `area` (first path segm
 | `externalApis.OLLAMA` | Indexing: base URL, timeout, retry, circuit breaker. A batch of chunks on a CPU needs a long budget (60 s) |
 | `externalApis.OLLAMA_SEARCH` | The same Ollama for a question at search time: a short timeout (5 s), no retry. Past it, search answers from full-text. A timeout does not trip the circuit breaker, so a slow Ollama costs every search this timeout |
 | `auth.IDP` | Trusted issuers |
+| `logger` | `@radoslavirha/tsed-logger` options: `level`, `requests.headers`, `requests.query`, `requests.ignorePaths`, … `requests.request` and `requests.response` are forced off in code — a value here is ignored |
 
 A cross-field mistake (a KB naming an undeclared model, a git KB without `github`) fails the boot.
 
@@ -86,6 +87,8 @@ A cross-field mistake (a KB naming an undeclared model, a git KB without `github
 | `knowledge_base.searches` | `knowledge_base.search.mode` (`vector`\|`hybrid`\|`fulltext`) | `fulltext` rising means the embedder is unreachable |
 
 Spans: `index knowledge bases` (root) › `index knowledge base` › `embed chunks`; Postgres queries (`@opentelemetry/instrumentation-pg`, parameters never recorded) and GitHub calls (`@opentelemetry/instrumentation-undici`) underneath.
+
+Logs: one JSON line per request (`scope: HTTP_REQUEST`, `Request completed`, or `Request failed` at `error` for `≥ 400`) with `reqId`, `method`, `url`, `status`, `duration`, `query` (the question is in `q`) and the request headers, credential headers (`authorization`, `cookie`, `x-api-key`, …) redacted. **No request or response body** — a response is knowledge-base content, and one `GET /search` line used to carry every snippet. Every line written while a request is handled names the verified caller: `principalSubject` (the token's `sub`, e.g. `ak-development-kb-mcp-client_credentials`), `principalKind` and `principalIssuer`. A `403` line has them, a `401` line does not; no token or other claim is logged. Indexing runs log without a caller, `POST /reindex` ones included.
 
 ## Health
 
