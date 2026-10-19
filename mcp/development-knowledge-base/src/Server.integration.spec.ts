@@ -10,7 +10,7 @@ const MCP_HEADERS = { Accept: 'application/json, text/event-stream', 'Content-Ty
 
 /** The endpoint as index.ts builds it, from fixed values instead of ConfigService. */
 const MCP = toMcpSettings(
-    { mcpServers: { DEVELOPMENT_KB: { path: '/kb/development', name: 'test-server', title: 'Test title' } } },
+    { mcpServers: { DEVELOPMENT_KB: { path: '/development', name: 'test-server', title: 'Test title' } } },
     { description: 'Test description', version: '9.9.9' },
     []
 );
@@ -29,7 +29,7 @@ describe('Server (integration)', () => {
         it('answers initialize at its path with its name, version and the latest protocol version', async () => {
             expect.assertions(3);
 
-            const response = await request.post('/kb/development').set(MCP_HEADERS).send({
+            const response = await request.post('/development').set(MCP_HEADERS).send({
                 jsonrpc: '2.0',
                 id: 1,
                 method: 'initialize',
@@ -44,7 +44,7 @@ describe('Server (integration)', () => {
         it('answers an older client in its own protocol version', async () => {
             expect.assertions(1);
 
-            const response = await request.post('/kb/development').set(MCP_HEADERS).send({
+            const response = await request.post('/development').set(MCP_HEADERS).send({
                 jsonrpc: '2.0',
                 id: 1,
                 method: 'initialize',
@@ -57,11 +57,11 @@ describe('Server (integration)', () => {
         it('opens no event stream and keeps no session: GET and DELETE are 405', async () => {
             expect.assertions(3);
 
-            const get = await request.get('/kb/development').set(MCP_HEADERS);
+            const get = await request.get('/development').set(MCP_HEADERS);
 
             expect(get.status).toBe(405);
             expect(get.headers.allow).toBe('POST');
-            expect((await request.delete('/kb/development').set(MCP_HEADERS)).status).toBe(405);
+            expect((await request.delete('/development').set(MCP_HEADERS)).status).toBe(405);
         });
     });
 

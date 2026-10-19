@@ -3,7 +3,7 @@ import z from 'zod';
 
 /** One MCP endpoint: where it is mounted and what it tells clients about itself. */
 export const McpServerConfigSchema = z.object({
-    path: z.string().startsWith('/').describe('Mount path of the endpoint, e.g. `/kb/development`. Traefik keeps the path, so it is the public one too.'),
+    path: z.string().startsWith('/').describe('Mount path of the endpoint in the app, e.g. `/development`. The public URL adds the route prefix (`/kb`), which Traefik strips before the request arrives.'),
     name: z.string().min(1).describe('Machine name clients see in `serverInfo.name`.'),
     title: z.string().min(1).describe('Human-readable name clients show.'),
     description: z.string().min(1).optional().describe('What the server is for. Defaults to the package description.')

@@ -3,12 +3,12 @@ import { toMcpSettings } from './toMcpSettings.js';
 
 class SomeTool {}
 
-const SERVERS = { mcpServers: { DEVELOPMENT_KB: { path: '/kb/development', name: 'development-kb', title: 'Development knowledge base' } } };
+const SERVERS = { mcpServers: { DEVELOPMENT_KB: { path: '/development', name: 'development-kb', title: 'Development knowledge base' } } };
 
 describe('toMcpSettings', () => {
     it('mounts one endpoint per MCP server, at its configured path, with the tools and the app version', () => {
         expect(toMcpSettings(SERVERS, { description: 'From package.json', version: '1.2.3' }, [SomeTool])).toEqual([{
-            path: '/kb/development',
+            path: '/development',
             name: 'development-kb',
             title: 'Development knowledge base',
             description: 'From package.json',

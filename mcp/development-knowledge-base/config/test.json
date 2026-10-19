@@ -4,7 +4,7 @@
     },
     "mcpServers": {
         "DEVELOPMENT_KB": {
-            "path": "/kb/development",
+            "path": "/development",
             "name": "development-knowledge-base",
             "title": "Development knowledge base"
         }

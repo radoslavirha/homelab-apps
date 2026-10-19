@@ -23,7 +23,7 @@ describe('Tools (integration, through MCP)', () => {
 
     /** One JSON-RPC call to the MCP endpoint; resolves to its `result`. */
     const call = async (method: string, params?: object): Promise<Record<string, unknown>> => {
-        const response = await request.post('/kb/development').set(MCP_HEADERS).send({ jsonrpc: '2.0', id: ++id, method, params });
+        const response = await request.post('/development').set(MCP_HEADERS).send({ jsonrpc: '2.0', id: ++id, method, params });
 
         return response.body.result;
     };
@@ -32,7 +32,7 @@ describe('Tools (integration, through MCP)', () => {
     // index.ts builds the endpoints and registers the tools the same way.
     beforeEach(PlatformTest.bootstrap(Server, {
         mcp: toMcpSettings(
-            { mcpServers: { DEVELOPMENT_KB: { path: '/kb/development', name: 'test-server', title: 'Test title' } } },
+            { mcpServers: { DEVELOPMENT_KB: { path: '/development', name: 'test-server', title: 'Test title' } } },
             { version: '9.9.9' },
             ObjectUtils.values(tools)
         )
