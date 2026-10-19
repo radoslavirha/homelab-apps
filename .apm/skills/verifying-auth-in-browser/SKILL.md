@@ -253,6 +253,21 @@ React does, which is exactly how the iframe mistake survived. Two details cost t
 Then `POST /application/o/token/` form-encoded with `grant_type=authorization_code`, `code`,
 `redirect_uri`, `client_id` and `code_verifier` — and no secret.
 
+## PRs labeled `needs-e2e`
+
+The nightly bug resolver cannot sign in or open a browser, so it labels every PR whose fix it
+could not prove — auth changes first among them — `needs-e2e` and writes an **E2E** section in
+the PR description: what is unverified and the check to run. That label is the queue for a local
+agent running this skill:
+
+```bash
+gh pr list -R radoslavirha/homelab-apps --label needs-e2e
+```
+
+Check out the PR branch, run the checks it names, and comment the result with the command that
+produced it. Remove `needs-e2e` only when every listed check passed; if one failed, leave the
+label and say which.
+
 ## Recording what you find
 
 A surprise goes into the Authentik integration contract's *What is NOT verified* section, in the
