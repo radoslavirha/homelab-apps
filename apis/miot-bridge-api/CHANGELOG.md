@@ -1,5 +1,16 @@
 # miot-bridge
 
+## 0.30.0
+
+### Minor Changes
+
+- [#351](https://github.com/radoslavirha/homelab-apps/pull/351) [`0bad63d`](https://github.com/radoslavirha/homelab-apps/commit/0bad63df1729524d08a3f4418cacb048117a6a71) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Stop commands timing out on a stale stamp: the device clock is tracked by time instead of counted per call, and a new device instance handshakes on its first command. `stamp` and `stampUpdatedAt` are removed from the device record, the `/devices` responses and the default `redactPaths`; documents registered earlier keep the two fields in MongoDB, unread. This removes the 10 s timeout plus re-handshake that hit polling every few minutes and the first command after every restart. The `miot action` span now carries the device's answer (`miot.action.result`, and its code on `rpc.response.status_code`).
+
+### Patch Changes
+
+- Updated dependencies [[`0bad63d`](https://github.com/radoslavirha/homelab-apps/commit/0bad63df1729524d08a3f4418cacb048117a6a71)]:
+  - @radoslavirha/miot-device@0.8.0
+
 ## 0.29.3
 
 ### Patch Changes
