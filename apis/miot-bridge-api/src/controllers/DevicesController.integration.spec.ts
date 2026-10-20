@@ -120,7 +120,6 @@ describe('DevicesController (integration)', () => {
             const storage = PlatformTest.get<DeviceStorageService>(DeviceStorageService);
             const discover = vi.spyOn(discovery, 'discover').mockResolvedValue({
                 deviceId: 442,
-                stamp: 1,
                 specUrl: 'u',
                 rawSpec: CommonUtils.buildModelCore(MiotSpecV2, { type: 't', description: 'd', services: [] }),
                 deviceSpec: undefined as never
@@ -137,7 +136,7 @@ describe('DevicesController (integration)', () => {
     });
 
     describe('DELETE /devices/:id', () => {
-        const device = { id: 'storage-1', deviceId: 442, address: '192.168.1.10', token: 'a'.repeat(32), stamp: 1, stampUpdatedAt: 0 } as DeviceCache;
+        const device = { id: 'storage-1', deviceId: 442, address: '192.168.1.10', token: 'a'.repeat(32) } as DeviceCache;
         let storage: DeviceStorageService;
 
         beforeEach(() => {
@@ -188,8 +187,6 @@ describe('DevicesController (integration)', () => {
             deviceId: 1,
             address: '10.0.0.2',
             token: TOKEN,
-            stamp: 5,
-            stampUpdatedAt: 1,
             model: 'm',
             specURL: 'u',
             createdAt: new Date(),

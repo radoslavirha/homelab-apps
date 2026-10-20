@@ -20,7 +20,6 @@ export interface DeviceAddressInput {
 
 export interface DeviceDiscoveryResult {
     deviceId: number;
-    stamp: number;
     /** Resolved spec URL for this device type. */
     specUrl: string;
     /** Raw mapped domain spec — ready to persist in cache. */
@@ -48,7 +47,7 @@ export class DeviceDiscoveryService {
         // Same seam and same reason as the command path: a wrong address here is ten silent
         // seconds of `dgram` timeout, and this span is the only thing that names what was
         // being waited on.
-        const { deviceId, stamp } = await withMiotCallSpan(
+        const { deviceId } = await withMiotCallSpan(
             { method: MIOT_METHOD_HANDSHAKE, device: { address: request.address } },
             () =>
                 new MiotDevice({
@@ -65,7 +64,6 @@ export class DeviceDiscoveryService {
 
         return {
             deviceId,
-            stamp,
             specUrl: this.miotSpecEndpoint.specUrl(rawDto.type),
             rawSpec,
             deviceSpec

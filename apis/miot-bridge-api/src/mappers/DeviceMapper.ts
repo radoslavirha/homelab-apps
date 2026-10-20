@@ -18,8 +18,6 @@ export class DeviceMapper extends MappingUtils {
             deviceId: device.deviceId,
             address: device.address,
             token: device.token,
-            stamp: device.stamp,
-            stampUpdatedAt: device.stampUpdatedAt,
             model: device.model,
             specURL: device.specURL,
             createdAt: device.createdAt,

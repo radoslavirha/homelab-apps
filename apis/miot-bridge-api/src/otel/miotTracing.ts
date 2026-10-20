@@ -13,10 +13,11 @@ import {
     ATTR_RPC_SYSTEM_NAME,
     RPC_SYSTEM_NAME_VALUE_JSONRPC
 } from '@opentelemetry/semantic-conventions/incubating';
-import { MiotError, MIOT_DEFAULT_PORT, MIOT_ERROR_DEVICE_ERROR, type MiotMethod } from '@radoslavirha/miot-device';
+import { MiotError, MIOT_DEFAULT_PORT, MIOT_ERROR_DEVICE_ERROR, type ActionResult, type MiotMethod } from '@radoslavirha/miot-device';
 import { getMeter, withClientSpan } from '@radoslavirha/otel';
 import { CommonUtils } from '@radoslavirha/utils';
 import {
+    ATTR_MIOT_ACTION_RESULT,
     ATTR_MIOT_DEVICE_ID,
     ATTR_MIOT_PROPERTY_SOURCE,
     ATTR_MIOT_STAMP_REFRESHED,
@@ -24,6 +25,7 @@ import {
     METRIC_MIOT_CLIENT_CALL_DURATION,
     METRIC_MIOT_PROPERTY_REJECTIONS,
     METRIC_MIOT_PROPERTY_UNRESOLVED,
+    MIOT_ACTION_RESULT_MAX_LENGTH,
     MIOT_CALL_DURATION_BUCKETS,
     MIOT_ERROR_TYPE_VALUE_REJECTED_LOCALLY,
     MIOT_METER_NAME,
@@ -155,6 +157,19 @@ export function withMiotCallSpan<T>(options: MiotCallSpanOptions, fn: (span: Spa
             }
         }
     );
+}
+
+/**
+ * Records the device's answer to an action on the action's span.
+ *
+ * Called with the result of a call that succeeded, inside {@link withMiotCallSpan}: an action the
+ * device acknowledged and then did not perform is otherwise indistinguishable from one it did.
+ */
+export function recordMiotActionResult(span: Span, action: ActionResult): void {
+    span.setAttributes({
+        [ATTR_RPC_RESPONSE_STATUS_CODE]: CommonUtils.notUndefined(action.code) ? String(action.code) : undefined,
+        [ATTR_MIOT_ACTION_RESULT]: JSON.stringify(action.result ?? null).slice(0, MIOT_ACTION_RESULT_MAX_LENGTH)
+    });
 }
 
 /**

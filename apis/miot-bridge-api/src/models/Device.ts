@@ -24,12 +24,6 @@ export class Device extends BaseModel {
     public token: string;
 
     @Required()
-    @Property(Number)
-    @Description('Device stamp value from handshake.')
-    @Groups(GROUP_NEVER_SIMPLIFIED_SPEC)
-    public stamp: number;
-
-    @Required()
     @Property(String)
     @Description('Device model identifier.')
     @Example('xiaomi.vacuum.c102gl')
@@ -40,9 +34,4 @@ export class Device extends BaseModel {
     @Description('Full URL to the MIoT spec on miot-spec.org.')
     @Example('https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:vacuum:0000A006:xiaomi-c102gl:2')
     public specURL: string;
-
-    @Property(Number)
-    @Description('Unix timestamp (ms) of when the stamp was last refreshed. 0 means unknown (treat as stale).')
-    @Groups(GROUP_NEVER_SIMPLIFIED_SPEC)
-    public stampUpdatedAt: number = 0;
 }

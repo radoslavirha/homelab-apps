@@ -15,10 +15,8 @@ const document = (): DeviceMongoDTO => {
     mongo.deviceId = 123456789;
     mongo.address = '192.168.1.50';
     mongo.token = 'ffffffffffffffffffffffffffffffff';
-    mongo.stamp = 42;
     mongo.modelName = 'xiaomi.vacuum.c102gl';
     mongo.specURL = 'https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:vacuum:0000A006:xiaomi-c102gl:1';
-    mongo.stampUpdatedAt = 1760000000000;
     // Stored as the plain JSON miot-spec.org returned.
     mongo.rawSpec = ObjectUtils.cloneDeep(VACUUM_SPEC);
     return mongo;
@@ -48,10 +46,8 @@ describe('MongoDeviceMapper', () => {
                 deviceId: mongo.deviceId,
                 address: mongo.address,
                 token: mongo.token,
-                stamp: mongo.stamp,
                 model: 'xiaomi.vacuum.c102gl',
-                specURL: mongo.specURL,
-                stampUpdatedAt: mongo.stampUpdatedAt
+                specURL: mongo.specURL
             });
             expect(device.rawSpec).toBeInstanceOf(MiotSpecV2);
             expect(device.rawSpec.services[0].properties?.[0]).toMatchObject({
@@ -60,14 +56,18 @@ describe('MongoDeviceMapper', () => {
             });
         });
 
-        it('reads a document stored before stampUpdatedAt existed as never refreshed', async () => {
-            expect.assertions(1);
-            const mongo = document();
-            delete mongo.stampUpdatedAt;
+        // Documents registered before the stamp was dropped still carry `stamp` and
+        // `stampUpdatedAt`. The stamp is the device's clock and goes stale the moment it is stored,
+        // so nothing may read it back, and a write must not carry it forward.
+        it('drops the stamp a document stored before its removal still carries', async () => {
+            expect.assertions(2);
+            const mongo = Object.assign(document(), { stamp: 42, stampUpdatedAt: 1760000000000 });
 
             const device = await mapper.mongoToModel(mongo);
+            const payload = await mapper.buildMongoUpdate(device);
 
-            expect(device.stampUpdatedAt).toBe(0);
+            expect(device).not.toHaveProperty('stamp');
+            expect(payload).not.toHaveProperty('stamp');
         });
     });
 
@@ -78,7 +78,7 @@ describe('MongoDeviceMapper', () => {
 
             const payload = await mapper.buildMongoCreate(device);
 
-            expect(payload).toMatchObject({ modelName: 'xiaomi.vacuum.c102gl', deviceId: 123456789, stamp: 42, stampUpdatedAt: 1760000000000 });
+            expect(payload).toMatchObject({ modelName: 'xiaomi.vacuum.c102gl', deviceId: 123456789 });
             expect(payload).not.toHaveProperty('model');
             expect(payload.rawSpec).toEqual(VACUUM_SPEC);
         });

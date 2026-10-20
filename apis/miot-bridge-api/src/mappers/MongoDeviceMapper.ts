@@ -1,5 +1,5 @@
 import { Injectable, Inject, Scope, ProviderScope } from '@tsed/di';
-import { CommonUtils, DefaultsUtil } from '@radoslavirha/utils';
+import { CommonUtils } from '@radoslavirha/utils';
 import { Serializer } from '@radoslavirha/tsed-common';
 import { MongoMapper, MongoCreate, MongoUpdate } from '@radoslavirha/tsed-mongoose';
 import { DeviceCache } from '../models/DeviceCache.js';
@@ -26,11 +26,9 @@ export class MongoDeviceMapper extends MongoMapper<DeviceMongoDTO, DeviceCache> 
             deviceId: mongo.deviceId,
             address: mongo.address,
             token: mongo.token,
-            stamp: mongo.stamp,
             model: mongo.modelName,
             specURL: mongo.specURL,
-            rawSpec: await this.miotSpecV2Mapper.mapDTOToModel(specDto),
-            stampUpdatedAt: DefaultsUtil.number(mongo.stampUpdatedAt, 0)
+            rawSpec: await this.miotSpecV2Mapper.mapDTOToModel(specDto)
         });
     }
 
@@ -40,11 +38,9 @@ export class MongoDeviceMapper extends MongoMapper<DeviceMongoDTO, DeviceCache> 
             deviceId: entity.deviceId,
             address: entity.address,
             token: entity.token,
-            stamp: entity.stamp,
             modelName: entity.model,
             specURL: entity.specURL,
-            rawSpec: Serializer.serialize(rawSpec, MiotSpecV2DTO),
-            stampUpdatedAt: DefaultsUtil.number(entity.stampUpdatedAt, 0)
+            rawSpec: Serializer.serialize(rawSpec, MiotSpecV2DTO)
         });
     }
 
@@ -54,11 +50,9 @@ export class MongoDeviceMapper extends MongoMapper<DeviceMongoDTO, DeviceCache> 
             deviceId: entity.deviceId,
             address: entity.address,
             token: entity.token,
-            stamp: entity.stamp,
             modelName: entity.model,
             specURL: entity.specURL,
-            rawSpec: Serializer.serialize(rawSpec, MiotSpecV2DTO),
-            stampUpdatedAt: DefaultsUtil.number(entity.stampUpdatedAt, 0)
+            rawSpec: Serializer.serialize(rawSpec, MiotSpecV2DTO)
         });
     }
 }
