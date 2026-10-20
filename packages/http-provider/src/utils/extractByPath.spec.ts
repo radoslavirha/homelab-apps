@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { extractByPath } from './extractByPath.js';
+import { extractByPath, extractNumberByPath } from './extractByPath.js';
 
 describe('extractByPath', () => {
     it('extracts a top-level string field', () => {
@@ -24,5 +24,31 @@ describe('extractByPath', () => {
 
     it('throws when path is undefined', () => {
         expect(() => extractByPath({ a: undefined }, 'a')).toThrow('not a string');
+    });
+});
+
+describe('extractNumberByPath', () => {
+    it('extracts a number', () => {
+        expect(extractNumberByPath({ data: { expires_in: 600 } }, 'data.expires_in')).toBe(600);
+    });
+
+    it('parses a numeric string', () => {
+        expect(extractNumberByPath({ expires_in: '600' }, 'expires_in')).toBe(600);
+    });
+
+    it('throws for a blank string', () => {
+        expect(() => extractNumberByPath({ expires_in: '  ' }, 'expires_in')).toThrow('not a number');
+    });
+
+    it('throws for a non-numeric string', () => {
+        expect(() => extractNumberByPath({ expires_in: 'soon' }, 'expires_in')).toThrow('not a number');
+    });
+
+    it('throws for a non-finite number', () => {
+        expect(() => extractNumberByPath({ expires_in: Infinity }, 'expires_in')).toThrow('not a number');
+    });
+
+    it('throws when the path is missing', () => {
+        expect(() => extractNumberByPath({}, 'expires_in')).toThrow('not a number');
     });
 });

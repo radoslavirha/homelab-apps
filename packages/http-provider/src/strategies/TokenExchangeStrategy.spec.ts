@@ -93,6 +93,20 @@ describe('TokenExchangeStrategy', () => {
             expect(mock.history['post']).toHaveLength(1);
         });
 
+        it('applies the default 30 second margin when expiryMargin is omitted', async () => {
+            expect.assertions(3);
+            mock.onPost(TOKEN_URL).replyOnce(200, { access_token: 'tok1', expires_in: 600 });
+            mock.onPost(TOKEN_URL).reply(200, { access_token: 'tok2', expires_in: 600 });
+            const strategy = new TokenExchangeStrategy({ ...POST_CONFIG, expiresIn: 'expires_in' });
+
+            await strategy.getCredentials();
+            vi.advanceTimersByTime(560_000);
+            expect(await strategy.getCredentials()).toEqual({ accessToken: 'tok1' });
+            vi.advanceTimersByTime(11_000);
+            expect(await strategy.getCredentials()).toEqual({ accessToken: 'tok2' });
+            expect(mock.history['post']).toHaveLength(2);
+        });
+
         it('rejects when the lifetime is missing from the response', async () => {
             expect.assertions(1);
             mock.onPost(TOKEN_URL).reply(200, { access_token: 'tok1' });
