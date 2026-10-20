@@ -1,7 +1,8 @@
-import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const template = readFileSync(resolve(__dirname, '../nginx.conf.template'), 'utf8');
 
@@ -54,6 +55,64 @@ describe('nginx.conf.template Unifi proxy scope', () => {
 
         it('refuses a UNIFI_HOST that carries a path', () => {
             expect(guard('https://gw.example/unifi').status).not.toBe(0);
+        });
+    });
+
+    describe('static SPA files', () => {
+        const docker = (...args: string[]): string => execFileSync('docker', args, { stdio: 'pipe' }).toString().trim();
+        let container = '';
+        let base = '';
+
+        beforeAll(async () => {
+            const html = mkdtempSync(join(tmpdir(), 'dashboard-ui-html-'));
+            mkdirSync(join(html, 'assets'));
+            writeFileSync(join(html, 'index.html'), '<!doctype html><html><head></head><body></body></html>');
+            writeFileSync(join(html, 'assets', 'index-n3w.js'), 'export {};');
+            execFileSync('chmod', ['-R', 'a+rX', html]);
+            const root = resolve(__dirname, '..');
+            container = docker(
+                'run', '-d', '-p', '127.0.0.1::8080',
+                '-e', 'UNIFI_HOST=https://192.0.2.1', '-e', 'SECRET_UNIFI_API_KEY=k',
+                '-v', `${join(root, 'nginx.conf.template')}:/etc/nginx/templates/default.conf.template:ro`,
+                '-v', `${join(root, 'docker-entrypoint.d/09-normalize-unifi-host.envsh')}:/docker-entrypoint.d/09-normalize-unifi-host.envsh:ro`,
+                '-v', `${join(root, 'docker-entrypoint.d/10-require-unifi-env.sh')}:/docker-entrypoint.d/10-require-unifi-env.sh:ro`,
+                '-v', `${resolve(root, '../../packages/nginx-runtime/conf.d/healthz.conf')}:/etc/nginx/snippets/healthz.conf:ro`,
+                '-v', `${html}:/usr/share/nginx/html:ro`,
+                'nginxinc/nginx-unprivileged:1.31-alpine'
+            );
+            base = `http://127.0.0.1:${docker('port', container, '8080').split(':').pop()}`;
+            for (let i = 0; i < 50; i++) {
+                try {
+                    await fetch(`${base}/healthz`);
+                    return;
+                } catch {
+                    await new Promise(r => setTimeout(r, 200));
+                }
+            }
+        }, 120_000);
+
+        afterAll(() => {
+            if (container) docker('rm', '-f', container);
+        });
+
+        it('answers 404 for a hashed asset from a previous build instead of index.html', async () => {
+            expect.assertions(2);
+            const response = await fetch(`${base}/assets/index-0ld.js`);
+            expect(await response.text()).not.toContain('<!doctype html><html><head></head>');
+            expect(response.status).toBe(404);
+        });
+
+        it('serves an existing hashed asset as immutable', async () => {
+            expect.assertions(2);
+            const response = await fetch(`${base}/assets/index-n3w.js`);
+            expect(response.status).toBe(200);
+            expect(response.headers.get('cache-control')).toMatch(/immutable/);
+        });
+
+        it('makes browsers revalidate index.html so it never points at old asset hashes', async () => {
+            expect.assertions(1);
+            const response = await fetch(`${base}/`);
+            expect(response.headers.get('cache-control') ?? '').toMatch(/no-cache|no-store/);
         });
     });
 });
