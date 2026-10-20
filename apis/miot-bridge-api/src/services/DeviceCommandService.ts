@@ -23,7 +23,7 @@ import {
     type MiotMethod
 } from '@radoslavirha/miot-device';
 import { Logger, type BaseLogger } from '@radoslavirha/tsed-logger';
-import { recordMiotLocalRejection, recordPropertyRejection, recordPropertyUnresolved, withMiotCallSpan } from '../otel/miotTracing.js';
+import { recordMiotActionResult, recordMiotLocalRejection, recordPropertyRejection, recordPropertyUnresolved, withMiotCallSpan } from '../otel/miotTracing.js';
 import {
     ATTR_MIOT_AIID,
     ATTR_MIOT_COMMAND,
@@ -282,7 +282,7 @@ export class DeviceCommandService {
                             [ATTR_MIOT_AIID]: identifierAttribute(request.aiid)
                         }
                     },
-                    () => miotDevice.callAction(request.siid, request.aiid!, request.value)
+                    async (span) => recordMiotActionResult(span, await miotDevice.callAction(request.siid, request.aiid!, request.value))
                 );
                 break;
             default:
@@ -367,7 +367,7 @@ export class DeviceCommandService {
                             [ATTR_MIOT_COMMAND]: request.command
                         }
                     },
-                    () => miotDevice.callAction(resolved.action.siid, resolved.action.aiid, request.value)
+                    async (span) => recordMiotActionResult(span, await miotDevice.callAction(resolved.action.siid, resolved.action.aiid, request.value))
                 );
                 break;
         }

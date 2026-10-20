@@ -15,7 +15,7 @@
 
 Communication between API and device uses [Xiaomi Mi Home Binary Protocol (miot)](https://github.com/OpenMiHome/mihome-binary-protocol/blob/master/doc/PROTOCOL.md).
 
-The tricky part is the packet `Stamp`: a counter the device increments after every call. The client must cache it and send the increased value on every call, or the device refuses. The current `Stamp` comes from a handshake; `MiotDevice` caches it and re-handshakes reactively when a command fails, then retries (`miot.stamp.refreshed` on the span).
+The tricky part is the packet `Stamp`. It is **the device's clock in seconds since boot, not a counter**: hello probes 17 s apart read 35501 and 35518 while the poller kept sending packets in between. A packet whose stamp is behind that clock is dropped without an answer, and the call waits out the 10 s timeout. `DeviceClock` in `packages/miot-device` sends the last stamp the device reported (handshake, or a response header ahead of the estimate) plus the whole seconds elapsed locally since, plus one; packets within one second share a stamp. `MiotDevice` re-handshakes reactively when a command fails, then retries (`miot.stamp.refreshed` on the span). The stamp is never stored: it goes stale the moment it is written, so a new instance from `MiotDeviceRegistry` handshakes on its first command.
 
 ## Miot spec
 

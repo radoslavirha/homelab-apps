@@ -1,4 +1,5 @@
 import { CommonUtils } from '@radoslavirha/utils';
+import { DeviceClock } from './DeviceClock.js';
 import { MiotTransport } from './MiotTransport.js';
 import {
     MiotError,
@@ -9,14 +10,15 @@ import {
     type MiotMethod
 } from './MiotError.js';
 import { NOOP_LOGGER } from './noopLogger.js';
-import type { DiscoverResult, GetPropertiesResult, ILogger, MiotDeviceOptions, StampState } from './types.js';
+import type { ActionResult, DiscoverResult, GetPropertiesResult, ILogger, MiotDeviceOptions, StampState } from './types.js';
 
 /**
  * Stateful MIoT device client.
  *
  * Each instance represents a single physical device. The instance owns the
- * stamp lifecycle: it caches the last-used stamp in memory and reactively
- * re-handshakes on command failure.
+ * stamp lifecycle: it tracks the device's clock (see {@link DeviceClock}) from
+ * the handshake and the response headers, derives each packet's stamp from it,
+ * and reactively re-handshakes on command failure.
  *
  * ### Typical single-node usage
  * ```ts
@@ -27,15 +29,15 @@ import type { DiscoverResult, GetPropertiesResult, ILogger, MiotDeviceOptions, S
  *
  * ### Multi-node usage (stamp backed by Redis / DB)
  * Supply an {@link IStampStore} implementation via `options.stampStore`.
- * The store is consulted before each command and updated after every stamp
- * refresh, keeping all nodes in sync.
+ * The store is consulted when this instance has no clock reading, and updated
+ * after every successful command.
  */
 export class MiotDevice {
     private readonly transport: MiotTransport;
     private readonly options: MiotDeviceOptions;
     private readonly logger: ILogger;
     private _deviceId: number | undefined;
-    private _stampState: StampState | undefined;
+    private readonly clock = new DeviceClock();
     /** Tail of the command queue; see `runWithStamp`. */
     private _queue: Promise<void> = Promise.resolve();
 
@@ -59,8 +61,8 @@ export class MiotDevice {
         this.logger.debug(`Discovering device`, { address: this.options.address });
         const result = await this.transport.handshake();
         this._deviceId = result.deviceId;
-        this._stampState = { stamp: result.stamp, updatedAt: Date.now() };
-        await this.persistStamp(this._stampState);
+        this.clock.sync(result.stamp);
+        await this.persistStamp();
         this.logger.debug(`Device discovered`, { deviceId: result.deviceId, stamp: result.stamp });
         return result;
     }
@@ -77,28 +79,23 @@ export class MiotDevice {
     }
 
     async getProperty(siid: number, piid: number): Promise<string | number | undefined> {
-        return this.runWithStamp(MIOT_METHOD_GET_PROPERTIES, async (stamp, deviceId) => {
-            const value = await this.transport.getProperty(deviceId, stamp, siid, piid);
-            return { result: value };
-        });
+        return this.runWithStamp(MIOT_METHOD_GET_PROPERTIES, (deviceId) => this.transport.getProperty(deviceId, this.clock, siid, piid));
     }
 
     async setProperty(siid: number, piid: number, value: string | number): Promise<void> {
-        await this.runWithStamp(MIOT_METHOD_SET_PROPERTIES, async (stamp, deviceId) => {
-            await this.transport.setProperty(deviceId, stamp, siid, piid, value);
-            return { result: undefined };
-        });
-    }
-
-    async callAction(siid: number, aiid: number, args?: unknown): Promise<void> {
-        await this.runWithStamp(MIOT_METHOD_ACTION, async (stamp, deviceId) => {
-            await this.transport.callAction(deviceId, stamp, siid, aiid, args);
-            return { result: undefined };
-        });
+        await this.runWithStamp(MIOT_METHOD_SET_PROPERTIES, (deviceId) => this.transport.setProperty(deviceId, this.clock, siid, piid, value));
     }
 
     /**
-     * Reads multiple properties, one UDP call per property, under a single stamp cycle.
+     * Executes an action. Resolves with the device's answer: a device that acknowledges an action
+     * and then ignores it is only visible in that answer, so it is the caller's to record.
+     */
+    async callAction(siid: number, aiid: number, args?: unknown): Promise<ActionResult> {
+        return this.runWithStamp(MIOT_METHOD_ACTION, (deviceId) => this.transport.callAction(deviceId, this.clock, siid, aiid, args));
+    }
+
+    /**
+     * Reads multiple properties, one UDP call per property, under a single stamp-refresh retry.
      *
      * Kept as a set-shaped call rather than folded into {@link getProperty} because the caller
      * wants the per-property `code`: `getProperty` raises on a non-zero one, which is the wrong
@@ -108,27 +105,29 @@ export class MiotDevice {
      * @param props - Properties to read, identified by siid + piid.
      */
     async getProperties(props: Array<{ siid: number; piid: number }>): Promise<GetPropertiesResult[]> {
-        return this.runWithStamp(MIOT_METHOD_GET_PROPERTIES, async (stamp, deviceId) => {
-            const { results, finalStamp } = await this.transport.getProperties(deviceId, stamp, props);
-            return { result: results, finalStamp };
-        });
+        return this.runWithStamp(MIOT_METHOD_GET_PROPERTIES, (deviceId) => this.transport.getProperties(deviceId, this.clock, props));
     }
 
     /**
-     * Returns the current stamp state.
-     * Useful for manually persisting the stamp on shutdown or seeding another instance.
-     * Returns `undefined` if `connect()` / `discover()` has not been called yet.
+     * Returns the last reading of the device's clock.
+     * Useful for manually persisting it on shutdown or seeding another instance.
+     * Returns `undefined` until a handshake has happened.
      */
     getStampState(): StampState | undefined {
-        return this._stampState;
+        return this.clock.snapshot();
     }
 
     /**
-     * Seeds the internal stamp state without performing a handshake.
-     * Useful for restoring state from a DB / Redis on startup.
+     * Seeds the device clock without performing a handshake. The reading is aged by the wall-clock
+     * time since `state.updatedAt`; one with `updatedAt` 0 is ignored.
+     *
+     * Only for a reading taken shortly before, e.g. handed over from another node. A reading kept
+     * across a restart is not worth restoring: the device may have rebooted and reset its clock,
+     * and the first command would then cost a full timeout before the re-handshake. A handshake is
+     * one round trip.
      */
     setStampState(state: StampState): void {
-        this._stampState = state;
+        this.clock.restore(state);
     }
 
     /** The hardware device ID, set after the first `connect()` or `discover()` call. */
@@ -139,13 +138,10 @@ export class MiotDevice {
     /**
      * Runs `fn` with automatic stamp-refresh retry.
      *
-     * If no stamp state exists, a fresh handshake is performed first.
-     * Otherwise the cached stamp is tried; on failure the stamp state is
-     * cleared, a handshake is performed, and the call is retried once.
-     *
-     * `fn` must return `{ result, finalStamp? }`. When `finalStamp` is
-     * provided (multi-chunk operations), it is used as the persisted stamp
-     * instead of the stamp passed to `fn`.
+     * If the device clock has no reading, a fresh handshake is performed first.
+     * Otherwise `fn` sends with stamps derived from the cached reading; on
+     * failure the reading is dropped, a handshake is performed, and the call is
+     * retried once.
      *
      * **The retry is unconditional, and that is worth knowing when reading telemetry.** A stale
      * stamp and a refused property are indistinguishable here, so a `device_error` such as
@@ -158,10 +154,11 @@ export class MiotDevice {
      */
     private runWithStamp<T>(
         method: MiotMethod,
-        fn: (stamp: number, deviceId: number) => Promise<{ result: T; finalStamp?: number }>
+        fn: (deviceId: number) => Promise<T>
     ): Promise<T> {
-        // Serialize per instance: the next stamp is derived from `_stampState`, which is only
-        // advanced once a command completes, so concurrent calls would reuse the same stamp.
+        // Serialize per instance: a failure resets the shared clock and re-handshakes, which a
+        // concurrent call would see half-way through. One packet in flight per device also matches
+        // what the device itself copes with.
         const run = this._queue.then(() => this.runWithStampExclusive(method, fn));
         this._queue = run.then(() => undefined, () => undefined);
         return run;
@@ -169,31 +166,30 @@ export class MiotDevice {
 
     private async runWithStampExclusive<T>(
         method: MiotMethod,
-        fn: (stamp: number, deviceId: number) => Promise<{ result: T; finalStamp?: number }>
+        fn: (deviceId: number) => Promise<T>
     ): Promise<T> {
         const deviceId = this.requireDeviceId();
 
-        // Load stamp from external store if available (multi-node support)
-        if (this.options.stampStore && !this._stampState) {
+        // Load the clock reading from external store if available (multi-node support)
+        if (this.options.stampStore && !this.clock.synced) {
             const stored = await this.options.stampStore.getStamp();
             if (stored) {
-                this._stampState = stored;
+                this.clock.restore(stored);
             }
         }
 
-        if (!this._stampState) {
+        if (!this.clock.synced) {
             return this.runWithFreshStamp(method, deviceId, fn, false);
         }
 
         try {
-            const stamp = this._stampState.stamp + 1;
-            this.logger.debug(`Sending command with cached stamp`, { stamp, deviceId });
-            const { result, finalStamp } = await fn(stamp, deviceId);
-            await this.updateStamp(finalStamp ?? stamp);
+            this.logger.debug(`Sending command with cached device clock`, { deviceId });
+            const result = await fn(deviceId);
+            await this.persistStampSafely();
             return result;
         } catch (_err) {
-            // Command failed — clear stamp state and retry with fresh handshake
-            this._stampState = undefined;
+            // Command failed — drop the clock reading and retry with fresh handshake
+            this.clock.reset();
             const reason = _err instanceof Error ? _err.message : String(_err);
             this.logger.warn(`Sending command failed`, { deviceId, reason, retryingWithFreshStamp: true });
         }
@@ -204,15 +200,15 @@ export class MiotDevice {
     private async runWithFreshStamp<T>(
         method: MiotMethod,
         deviceId: number,
-        fn: (stamp: number, deviceId: number) => Promise<{ result: T; finalStamp?: number }>,
+        fn: (deviceId: number) => Promise<T>,
         retried: boolean
     ): Promise<T> {
         this.logger.debug(`Performing fresh handshake`, { deviceId });
-        const { stamp: freshStamp } = await this.transport.handshake();
-        const stamp = freshStamp + 1;
+        const { stamp } = await this.transport.handshake();
+        this.clock.sync(stamp);
         try {
-            const { result, finalStamp } = await fn(stamp, deviceId);
-            await this.updateStamp(finalStamp ?? stamp);
+            const result = await fn(deviceId);
+            await this.persistStampSafely();
             return result;
         } catch (retryError) {
             const reason = retryError instanceof Error ? retryError.message : String(retryError);
@@ -240,19 +236,19 @@ export class MiotDevice {
         }
     }
 
-    private async updateStamp(stamp: number): Promise<void> {
-        this._stampState = { stamp, updatedAt: Date.now() };
+    private async persistStampSafely(): Promise<void> {
         // The command already succeeded on the device, so a store failure must not reach the
-        // retry logic (it would re-send a non-idempotent command). The in-memory stamp is kept.
+        // retry logic (it would re-send a non-idempotent command). The in-memory clock is kept.
         try {
-            await this.persistStamp(this._stampState);
+            await this.persistStamp();
         } catch (err) {
             this.logger.warn(`Failed to persist stamp`, { reason: err instanceof Error ? err.message : String(err) });
         }
     }
 
-    private async persistStamp(state: StampState): Promise<void> {
-        if (this.options.stampStore) {
+    private async persistStamp(): Promise<void> {
+        const state = this.clock.snapshot();
+        if (this.options.stampStore && state) {
             await this.options.stampStore.setStamp(state);
         }
     }

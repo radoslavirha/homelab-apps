@@ -39,13 +39,13 @@ Communication between the bridge and devices uses the [Xiaomi Mi Home Binary Pro
 
 ### Stamp management
 
-Every MIoT packet carries a `Stamp` counter that the device increments after each call. The bridge:
+Every MIoT packet carries a `Stamp`: the device's clock in seconds since boot, not a call counter. A packet stamped behind that clock is dropped without an answer. The bridge:
 
-1. Obtains the current stamp via a handshake packet.
-2. Increments and includes the stamp on every subsequent packet.
-3. If a data packet is rejected (stale stamp), performs an automatic handshake to refresh the stamp and retries the packet once.
+1. Reads the device clock with a handshake on the first command. The stamp is never persisted.
+2. Stamps each packet with that reading plus the whole seconds elapsed since, plus one. Packets within one second share a stamp; a response header showing the device ahead re-bases the reading.
+3. If a command fails (a dropped packet times out), performs a fresh handshake and retries the command once.
 
-Stamp state is maintained per-device in memory by `MiotDeviceClient`.
+The clock reading is kept per device in memory by `MiotDevice` (`DeviceClock`), one instance per device in `MiotDeviceRegistry`.
 
 ## MIoT spec v2
 

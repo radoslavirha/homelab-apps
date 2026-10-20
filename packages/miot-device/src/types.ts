@@ -11,18 +11,23 @@ export interface ILogger {
     fatal(message: string, ...args: unknown[]): void;
 }
 
-/** Stamp state stored per device instance. */
+/**
+ * The last reading of a device's clock, as persisted.
+ *
+ * The miIO stamp is the device's uptime in seconds, not a counter (see `DeviceClock`), so a
+ * reading is only usable together with the time it was taken.
+ */
 export interface StampState {
-    /** Last stamp sent to the device. */
+    /** Stamp the device last reported: its clock, in seconds since boot. */
     stamp: number;
-    /** Unix timestamp (ms) of when this stamp was obtained. */
+    /** Unix timestamp (ms) of when the device reported it. 0 means unknown: the reading is not used. */
     updatedAt: number;
 }
 
 /**
  * Optional external stamp store for multi-node deployments (e.g. Redis).
- * If provided, the stamp is read on first use and written after every
- * successful operation that updates the stamp.
+ * If provided, the last clock reading is read on first use and written after
+ * every successful operation.
  */
 export interface IStampStore {
     getStamp(): Promise<StampState | null>;
@@ -61,6 +66,17 @@ export interface MiotDeviceOptions {
 export interface DiscoverResult {
     deviceId: number;
     stamp: number;
+}
+
+/** What a device answered to an `action` it did not refuse. */
+export interface ActionResult {
+    /**
+     * The `code` of the result object. `undefined` when the firmware answered something without
+     * one, e.g. the string `'ok'`.
+     */
+    code: number | undefined;
+    /** The response's `result` member, as the device sent it. */
+    result: unknown;
 }
 
 export interface GetPropertiesResult {

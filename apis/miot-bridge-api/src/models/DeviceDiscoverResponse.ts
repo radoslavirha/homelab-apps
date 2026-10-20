@@ -4,7 +4,7 @@ import { SimplifiedMiotSpec } from './simplified-miot-spec/SimplifiedMiotSpec.js
 
 /**
  * Device capabilities returned by the discover endpoint (not persisted).
- * Does not include id or stamp — those are only assigned after registration.
+ * Does not include an id — that is only assigned at registration.
  */
 @Description('Device capabilities returned by the discover endpoint (not persisted).')
 @AdditionalProperties(false)

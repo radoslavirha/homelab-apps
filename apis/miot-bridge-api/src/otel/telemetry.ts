@@ -199,6 +199,19 @@ export type MiotPropertySource =
 export const ATTR_MIOT_STAMP_REFRESHED = 'miot.stamp.refreshed';
 
 /**
+ * The device's answer to an `action` it did not refuse: the response `result`, as JSON.
+ *
+ * A device can acknowledge an action and not carry it out. That call is green, takes normal time
+ * and raises nothing, so the answer is the only record of what the device said. Its `code` also
+ * goes on `rpc.response.status_code`, which semconv defines as the status the server returned,
+ * success included. Span-only: it is a per-call payload.
+ */
+export const ATTR_MIOT_ACTION_RESULT = 'miot.action.result';
+
+/** Longest {@link ATTR_MIOT_ACTION_RESULT} kept. An answer is a few dozen bytes; a longer one is cut. */
+export const MIOT_ACTION_RESULT_MAX_LENGTH = 512;
+
+/**
  * Spec keys the device refused inside a bulk read, and how many.
  *
  * A bulk `get_properties` is one RPC call that can succeed at the envelope level while refusing

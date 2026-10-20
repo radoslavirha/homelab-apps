@@ -17,14 +17,14 @@ import { createAuthConfigSchema } from '@radoslavirha/auth';
 import { AuthMethod } from './AuthMethod.enum.js';
 
 /**
- * Selectors for the device secrets that travel in request/response bodies (`token`
- * authenticates a device on the LAN, `stamp` is its handshake counter). The request
+ * Selectors for the device secret that travels in request/response bodies (`token`
+ * authenticates a device on the LAN). The request
  * logger records the response before Ts.ED serializes it, so the `!simplified-spec`
  * group does not keep them out of the log. They are the *default* for
  * `logger.requests.request|response.redactPaths`; as with every redaction field a
  * configured list replaces it and an explicit `[]` opts out.
  */
-export const DEVICE_SECRET_REDACT_PATHS = ['token', 'stamp', '*.token', '*.stamp', '*.*.token', '*.*.stamp'];
+export const DEVICE_SECRET_REDACT_PATHS = ['token', '*.token', '*.*.token'];
 
 const withDeviceSecretRedaction = (raw: unknown): unknown => {
     const logger = (raw ?? {}) as Record<string, Record<string, Record<string, unknown>> | undefined>;
@@ -57,7 +57,7 @@ export const ConfigSchema = BaseConfig.extend({
     // Every field is defaulted, so omitting `health` entirely is valid — additive, and
     // safe for a rolling deploy where an old pod reads a new ConfigMap or vice versa.
     health: HealthConfigSchema.optional().describe('Health endpoint configuration.'),
-    logger: z.preprocess(withDeviceSecretRedaction, LoggerOptionsSchema).prefault({}).describe('Logger configuration. Request/response body redactPaths default to the device secrets (token, stamp).'),
+    logger: z.preprocess(withDeviceSecretRedaction, LoggerOptionsSchema).prefault({}).describe('Logger configuration. Request/response body redactPaths default to the device secret (token).'),
     otel: OtelConfigSchema.optional().describe('OpenTelemetry configuration.'),
     /**
      * Required, and tied to the methods this API's routes actually ask for.

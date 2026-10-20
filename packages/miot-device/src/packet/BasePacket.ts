@@ -9,7 +9,7 @@
  *   2-3   |  2   | Packet length (including header), uint16 BE
  *   4-7   |  4   | Unknown1: 0x00000000 (commands) or 0xFFFFFFFF (hello)
  *   8-11  |  4   | Device ID ("did"), uint32 BE
- *  12-15  |  4   | Stamp, uint32 BE (continuously increasing counter)
+ *  12-15  |  4   | Stamp, uint32 BE (device clock: seconds since boot, see DeviceClock)
  *  16-31  | 16   | MD5 checksum (or raw device token in hello response)
  *
  * Reference: https://github.com/OpenMiHome/mihome-binary-protocol/blob/master/doc/PROTOCOL.md

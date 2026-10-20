@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { DeviceClock } from './DeviceClock.js';
 import { MiotDevice } from './MiotDevice.js';
 import { MiotError, MIOT_ERROR_DEVICE_ERROR, MIOT_ERROR_TRANSPORT_ERROR, MIOT_METHOD_GET_PROPERTIES } from './MiotError.js';
-import type { DiscoverResult, GetPropertiesResult, IStampStore, StampState } from './types.js';
+import type { ActionResult, DiscoverResult, GetPropertiesResult, IStampStore, StampState } from './types.js';
 
 // ---------------------------------------------------------------------------
 // Mock MiotTransport — use vi.hoisted so mocks are available inside vi.mock()
@@ -15,10 +16,10 @@ const {
     mockGetProperties
 } = vi.hoisted(() => ({
     mockHandshake: vi.fn<() => Promise<DiscoverResult>>(),
-    mockGetProperty: vi.fn<() => Promise<string | number | undefined>>(),
+    mockGetProperty: vi.fn<(deviceId: number, clock: DeviceClock, siid: number, piid: number) => Promise<string | number | undefined>>(),
     mockSetProperty: vi.fn<() => Promise<void>>(),
-    mockCallAction: vi.fn<() => Promise<void>>(),
-    mockGetProperties: vi.fn<() => Promise<{ results: GetPropertiesResult[]; finalStamp: number }>>()
+    mockCallAction: vi.fn<() => Promise<ActionResult>>(),
+    mockGetProperties: vi.fn<() => Promise<GetPropertiesResult[]>>()
 }));
 
 vi.mock('./MiotTransport.js', () => ({
@@ -34,11 +35,27 @@ vi.mock('./MiotTransport.js', () => ({
 const TOKEN = '00112233445566778899aabbccddeeff';
 const DEVICE_ID = 42;
 const STAMP = 100;
+const ACTION_OK: ActionResult = { code: 0, result: { did: String(DEVICE_ID), siid: 2, aiid: 1, code: 0, out: [] } };
+
+/** Makes the mocked `getProperty` record the stamp the transport would put on its packet. */
+const recordStamps = (value: string | number = 1): number[] => {
+    const stamps: number[] = [];
+    mockGetProperty.mockImplementation(async (_deviceId, clock) => {
+        stamps.push(clock.next());
+        return value;
+    });
+    return stamps;
+};
 
 describe('MiotDevice', () => {
+    let elapsed: number;
+
     beforeEach(() => {
         vi.clearAllMocks();
         mockHandshake.mockResolvedValue({ deviceId: DEVICE_ID, stamp: STAMP });
+        // Time stands still unless a test moves it, so no stamp depends on how fast the suite runs.
+        elapsed = 0;
+        vi.spyOn(performance, 'now').mockImplementation(() => 1_000_000 + elapsed);
     });
 
     afterEach(() => {
@@ -139,29 +156,74 @@ describe('MiotDevice', () => {
             expect(value).toBe(42);
         });
 
-        it('does not send two concurrent commands with the same stamp', async () => {
-            mockGetProperty.mockImplementation(async () => {
+        it('runs concurrent commands one at a time', async () => {
+            expect.assertions(1);
+            const events: string[] = [];
+            mockGetProperty.mockImplementation(async (_deviceId, _clock, _siid, piid) => {
+                events.push(`start ${piid}`);
                 await new Promise(resolve => setTimeout(resolve, 10));
+                events.push(`end ${piid}`);
                 return 1;
             });
 
             const device = new MiotDevice({ address: '1.2.3.4', token: TOKEN, deviceId: DEVICE_ID });
-            device.setStampState({ stamp: STAMP, updatedAt: 0 });
+            device.setStampState({ stamp: STAMP, updatedAt: Date.now() });
 
             await Promise.all([device.getProperty(2, 1), device.getProperty(2, 2)]);
 
-            const stamps = mockGetProperty.mock.calls.map(call => (call as unknown[])[1]);
-            expect(stamps).toEqual([STAMP + 1, STAMP + 2]);
+            expect(events).toEqual(['start 1', 'end 1', 'start 2', 'end 2']);
         });
 
-        it('increments stamp by 1 before call', async () => {
-            mockGetProperty.mockResolvedValue(0);
+        it('sends one ahead of the device clock', async () => {
+            expect.assertions(2);
+            const stamps = recordStamps();
 
             const device = new MiotDevice({ address: '1.2.3.4', token: TOKEN, deviceId: DEVICE_ID });
             device.setStampState({ stamp: STAMP, updatedAt: Date.now() });
 
             await device.getProperty(2, 1);
-            expect(mockGetProperty).toHaveBeenCalledWith(DEVICE_ID, STAMP + 1, 2, 1);
+            expect(stamps).toEqual([STAMP + 1]);
+            expect(mockGetProperty).toHaveBeenCalledWith(DEVICE_ID, expect.any(DeviceClock), 2, 1);
+        });
+
+        // The regression behind the 10 s actions: the stamp is the device's uptime in seconds.
+        // Counting calls from the handshake left it behind the clock between polls, the device
+        // dropped the packet, and every such call waited out the timeout before re-handshaking.
+        it('derives the stamp from the time since the handshake, not from the number of calls', async () => {
+            expect.assertions(2);
+            mockHandshake.mockResolvedValue({ deviceId: DEVICE_ID, stamp: 35501 });
+            const stamps = recordStamps();
+
+            const device = new MiotDevice({ address: '1.2.3.4', token: TOKEN });
+            await device.discover();
+            await device.getProperty(2, 1);
+            await device.getProperty(2, 2);
+            elapsed = 17_000;
+            await device.getProperty(2, 3);
+
+            expect(stamps).toEqual([35502, 35502, 35519]);
+            expect(mockHandshake).toHaveBeenCalledOnce();
+        });
+
+        it('stamps the retry from the fresh handshake', async () => {
+            expect.assertions(1);
+            const stamps: number[] = [];
+            mockGetProperty
+                .mockImplementationOnce(async (_deviceId, clock) => {
+                    stamps.push(clock.next());
+                    throw new Error('Command timeout');
+                })
+                .mockImplementationOnce(async (_deviceId, clock) => {
+                    stamps.push(clock.next());
+                    return 1;
+                });
+            mockHandshake.mockResolvedValue({ deviceId: DEVICE_ID, stamp: 35518 });
+
+            const device = new MiotDevice({ address: '1.2.3.4', token: TOKEN, deviceId: DEVICE_ID });
+            device.setStampState({ stamp: STAMP, updatedAt: Date.now() });
+            await device.getProperty(2, 1);
+
+            expect(stamps).toEqual([STAMP + 1, 35519]);
         });
 
         it('retries with fresh stamp on failure', async () => {
@@ -271,7 +333,7 @@ describe('MiotDevice', () => {
             device.setStampState({ stamp: STAMP, updatedAt: Date.now() });
 
             await device.setProperty(3, 7, 100);
-            expect(mockSetProperty).toHaveBeenCalledWith(DEVICE_ID, STAMP + 1, 3, 7, 100);
+            expect(mockSetProperty).toHaveBeenCalledWith(DEVICE_ID, expect.any(DeviceClock), 3, 7, 100);
         });
     });
 
@@ -280,23 +342,25 @@ describe('MiotDevice', () => {
     // -----------------------------------------------------------------------
 
     describe('callAction()', () => {
-        it('resolves without error', async () => {
-            mockCallAction.mockResolvedValue(undefined);
+        // An action the device acknowledges and then ignores looks like any other success; only
+        // its answer can tell, so the answer is handed to the caller.
+        it('resolves with the device\'s answer', async () => {
+            mockCallAction.mockResolvedValue(ACTION_OK);
 
             const device = new MiotDevice({ address: '1.2.3.4', token: TOKEN, deviceId: DEVICE_ID });
             device.setStampState({ stamp: STAMP, updatedAt: Date.now() });
 
-            await expect(device.callAction(2, 1)).resolves.toBeUndefined();
+            await expect(device.callAction(2, 1)).resolves.toEqual(ACTION_OK);
         });
 
         it('forwards aiid and optional args', async () => {
-            mockCallAction.mockResolvedValue(undefined);
+            mockCallAction.mockResolvedValue(ACTION_OK);
 
             const device = new MiotDevice({ address: '1.2.3.4', token: TOKEN, deviceId: DEVICE_ID });
             device.setStampState({ stamp: STAMP, updatedAt: Date.now() });
 
             await device.callAction(5, 3, 'start');
-            expect(mockCallAction).toHaveBeenCalledWith(DEVICE_ID, STAMP + 1, 5, 3, 'start');
+            expect(mockCallAction).toHaveBeenCalledWith(DEVICE_ID, expect.any(DeviceClock), 5, 3, 'start');
         });
     });
 
@@ -310,7 +374,7 @@ describe('MiotDevice', () => {
                 { siid: 2, piid: 1, value: 10, code: 0 },
                 { siid: 2, piid: 2, value: 20, code: 0 }
             ];
-            mockGetProperties.mockResolvedValue({ results, finalStamp: STAMP + 1 });
+            mockGetProperties.mockResolvedValue(results);
 
             const device = new MiotDevice({ address: '1.2.3.4', token: TOKEN, deviceId: DEVICE_ID });
             device.setStampState({ stamp: STAMP, updatedAt: Date.now() });
@@ -320,17 +384,16 @@ describe('MiotDevice', () => {
             expect(out[0].value).toBe(10);
         });
 
-        it('uses finalStamp from transport for stamp update', async () => {
-            const finalStamp = STAMP + 5;
-            mockGetProperties.mockResolvedValue({ results: [], finalStamp });
+        // Packets sent do not move the reading; only the device reporting its clock does.
+        it('leaves the clock reading as the device reported it', async () => {
+            mockGetProperties.mockResolvedValue([]);
 
             const device = new MiotDevice({ address: '1.2.3.4', token: TOKEN, deviceId: DEVICE_ID });
-            device.setStampState({ stamp: STAMP, updatedAt: Date.now() });
+            device.setStampState({ stamp: STAMP, updatedAt: 12345 });
 
-            await device.getProperties([{ siid: 2, piid: 1 }]);
+            await device.getProperties([{ siid: 2, piid: 1 }, { siid: 2, piid: 2 }]);
 
-            const state = device.getStampState();
-            expect(state!.stamp).toBe(finalStamp);
+            expect(device.getStampState()).toEqual({ stamp: STAMP, updatedAt: 12345 });
         });
     });
 
@@ -364,7 +427,7 @@ describe('MiotDevice', () => {
                 getStamp: vi.fn<() => Promise<StampState | null>>().mockResolvedValue(storedState),
                 setStamp: vi.fn<() => Promise<void>>().mockResolvedValue(undefined)
             };
-            mockGetProperty.mockResolvedValue(1);
+            const stamps = recordStamps();
 
             const device = new MiotDevice({
                 address: '1.2.3.4',
@@ -376,7 +439,22 @@ describe('MiotDevice', () => {
             await device.getProperty(2, 1);
 
             expect(store.getStamp).toHaveBeenCalledOnce();
-            expect(mockGetProperty).toHaveBeenCalledWith(DEVICE_ID, storedState.stamp + 1, 2, 1);
+            expect(stamps).toEqual([storedState.stamp + 1]);
+            expect(mockHandshake).not.toHaveBeenCalled();
+        });
+
+        it('handshakes first when the stored reading has no time', async () => {
+            const store: IStampStore = {
+                getStamp: vi.fn<() => Promise<StampState | null>>().mockResolvedValue({ stamp: 200, updatedAt: 0 }),
+                setStamp: vi.fn<() => Promise<void>>().mockResolvedValue(undefined)
+            };
+            const stamps = recordStamps();
+
+            const device = new MiotDevice({ address: '1.2.3.4', token: TOKEN, deviceId: DEVICE_ID, stampStore: store });
+            await device.getProperty(2, 1);
+
+            expect(mockHandshake).toHaveBeenCalledOnce();
+            expect(stamps).toEqual([STAMP + 1]);
         });
 
         it('falls through to fresh stamp when store returns null', async () => {
@@ -420,10 +498,10 @@ describe('MiotDevice', () => {
 
         it('does not re-send a successful action when the stamp store write fails (cached stamp)', async () => {
             const store: IStampStore = {
-                getStamp: vi.fn<() => Promise<StampState | null>>().mockResolvedValue({ stamp: STAMP, updatedAt: 0 }),
+                getStamp: vi.fn<() => Promise<StampState | null>>().mockResolvedValue({ stamp: STAMP, updatedAt: Date.now() }),
                 setStamp: vi.fn<() => Promise<void>>().mockRejectedValueOnce(new Error('redis down'))
             };
-            mockCallAction.mockResolvedValue(undefined);
+            mockCallAction.mockResolvedValue(ACTION_OK);
 
             const device = new MiotDevice({ address: '1.2.3.4', token: TOKEN, deviceId: DEVICE_ID, stampStore: store });
             await device.callAction(2, 1);
@@ -437,7 +515,7 @@ describe('MiotDevice', () => {
                 getStamp: vi.fn<() => Promise<StampState | null>>().mockResolvedValue(null),
                 setStamp: vi.fn<() => Promise<void>>().mockRejectedValueOnce(new Error('redis down'))
             };
-            mockCallAction.mockResolvedValue(undefined);
+            mockCallAction.mockResolvedValue(ACTION_OK);
 
             const device = new MiotDevice({ address: '1.2.3.4', token: TOKEN, deviceId: DEVICE_ID, stampStore: store });
             await device.callAction(2, 1);
@@ -448,10 +526,10 @@ describe('MiotDevice', () => {
 
         it('tolerates a stamp store rejecting with a non-Error value', async () => {
             const store: IStampStore = {
-                getStamp: vi.fn<() => Promise<StampState | null>>().mockResolvedValue({ stamp: STAMP, updatedAt: 0 }),
+                getStamp: vi.fn<() => Promise<StampState | null>>().mockResolvedValue({ stamp: STAMP, updatedAt: Date.now() }),
                 setStamp: vi.fn<() => Promise<void>>().mockRejectedValueOnce('redis down')
             };
-            mockCallAction.mockResolvedValue(undefined);
+            mockCallAction.mockResolvedValue(ACTION_OK);
 
             const device = new MiotDevice({ address: '1.2.3.4', token: TOKEN, deviceId: DEVICE_ID, stampStore: store });
             await device.callAction(2, 1);

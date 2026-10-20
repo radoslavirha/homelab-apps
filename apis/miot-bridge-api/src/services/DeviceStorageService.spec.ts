@@ -17,10 +17,8 @@ const stored = (_id: string, deviceId: number): DeviceMongoDTO => {
     mongo.deviceId = deviceId;
     mongo.address = '192.168.1.50';
     mongo.token = 'ffffffffffffffffffffffffffffffff';
-    mongo.stamp = 42;
     mongo.modelName = 'xiaomi.vacuum.c102gl';
     mongo.specURL = 'https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:vacuum:0000A006:xiaomi-c102gl:1';
-    mongo.stampUpdatedAt = 1760000000000;
     mongo.rawSpec = ObjectUtils.cloneDeep(VACUUM_SPEC);
     return mongo;
 };
