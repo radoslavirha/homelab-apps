@@ -94,7 +94,9 @@ export const AuthCallback = ({
                 // settle — otherwise it waits forever and the app shows Loading…
                 // where the sign-in page belongs.
                 resolveAnonymous();
-                navigate(defaultPath, { replace: true });
+                // The page there is still gated, so it shows the sign-in page,
+                // and login() then returns the user to this deep link.
+                navigate(routePathOf(returnTo, basePath) ?? defaultPath, { replace: true });
             }
         });
     }, [client, navigate, resolveAnonymous, basePath, defaultPath]);
