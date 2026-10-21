@@ -138,4 +138,50 @@ describe('RasterService.getRGBAOnCoordinates', () => {
 
         expect({ r: color.r, g: color.g, b: color.b, a: color.a }).toEqual({ r: 255, g: 0, b: 0, a: 255 });
     });
+
+    it('leaves the LED off where ČHMÚ draws an echo in its pale (precipitation not reaching the ground) shade', async () => {
+        expect.assertions(1);
+        const liberec = { latitude: 50.76638, longitude: 15.054439 };
+        const { x, y } = pixelOf(liberec.latitude, liberec.longitude);
+
+        // radar_popis_cz.pdf: png_masked draws full colour only where PseudoCAPPI_2km >= 7 dBZ
+        // (precipitation reaches the ground); elsewhere a lighter, less saturated colour.
+        // 154,141,186 is the pale shade of 48,0,168, seen over Liberec on 20261020.2200.
+        const data = Buffer.alloc(WIDTH * HEIGHT * 4, 0);
+        for (let row = y - 3; row <= y + 3; row++) {
+            for (let col = x - 3; col <= x + 3; col++) {
+                const i = (row * WIDTH + col) * 4;
+                data[i] = 154; data[i + 1] = 141; data[i + 2] = 186; data[i + 3] = 255;
+            }
+        }
+        const image = sharp(data, { raw: { width: WIDTH, height: HEIGHT, channels: 4 } });
+
+        const color = await raster.getRGBAOnCoordinates(liberec.latitude, liberec.longitude, radar.bbox, image);
+
+        expect({ r: color.r, g: color.g, b: color.b, a: color.a }).toEqual({ r: 0, g: 0, b: 0, a: 0 });
+    });
+
+    it('picks the full-colour rain over a more frequent pale echo in the window', async () => {
+        expect.assertions(1);
+        const liberec = { latitude: 50.76638, longitude: 15.054439 };
+        const { x, y } = pixelOf(liberec.latitude, liberec.longitude);
+
+        const data = Buffer.alloc(WIDTH * HEIGHT * 4, 0);
+        for (let row = y - 3; row <= y + 3; row++) {
+            for (let col = x - 3; col <= x + 3; col++) {
+                const i = (row * WIDTH + col) * 4;
+                if (col <= x + 1) {
+                    data[i] = 154; data[i + 1] = 141; data[i + 2] = 186; // pale, majority
+                } else {
+                    data[i + 2] = 252; // full-colour 0,0,252: rain at the ground
+                }
+                data[i + 3] = 255;
+            }
+        }
+        const image = sharp(data, { raw: { width: WIDTH, height: HEIGHT, channels: 4 } });
+
+        const color = await raster.getRGBAOnCoordinates(liberec.latitude, liberec.longitude, radar.bbox, image);
+
+        expect({ r: color.r, g: color.g, b: color.b, a: color.a }).toEqual({ r: 0, g: 0, b: 252, a: 255 });
+    });
 });

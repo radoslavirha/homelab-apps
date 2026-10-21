@@ -10,6 +10,13 @@ import { CITIES } from '../Cities.js';
  */
 const MAP_PANEL = { west: 11.267, east: 19.624, north: 51.458, south: 48.047 };
 
+/**
+ * png_masked draws an echo in full colour only where precipitation reaches the ground and in a lighter, less
+ * saturated shade elsewhere. The radar scale is fully saturated (the pale shades seen are at most 0.26), so
+ * anything below this saturation is precipitation aloft, or the grey out-of-range mask.
+ */
+const MIN_RAIN_SATURATION = 0.5;
+
 @Service()
 @Scope(ProviderScope.SINGLETON)
 export class RasterService {
@@ -39,7 +46,7 @@ export class RasterService {
     };
 
     /**
-     * Transparent and black pixels mean "no precipitation" and are left out. Of the rest, the most frequent
+     * Transparent, black and pale (desaturated) pixels mean "no precipitation at the ground" and are left out. Of the rest, the most frequent
      * colour wins (first seen on a tie), so the result is always a colour of the radar scale.
      */
     private mostFrequentPrecipitationColor(pixels: RGBA[]): RGBA {
@@ -49,6 +56,10 @@ export class RasterService {
         for (const pixel of pixels) {
             // Opaque black is the frame, separators and the timestamp label, never rain.
             if (pixel.a === 0 || (pixel.r === 0 && pixel.g === 0 && pixel.b === 0)) {
+                continue;
+            }
+            const max = Math.max(pixel.r, pixel.g, pixel.b);
+            if ((max - Math.min(pixel.r, pixel.g, pixel.b)) / max < MIN_RAIN_SATURATION) {
                 continue;
             }
             const key = `${pixel.r},${pixel.g},${pixel.b},${pixel.a}`;
