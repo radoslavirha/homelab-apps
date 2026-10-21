@@ -9,7 +9,7 @@ import type { KnowledgeBaseRole } from '../models/config/KnowledgeBaseRole.enum.
 import type { McpServerConfig } from '../models/config/McpServerConfig.js';
 import { ConfigService } from './ConfigService.js';
 
-/** A request URL's path, without the query and without a trailing slash Express would also route. */
+/** A request URL's path, without the query and without a trailing slash Express would also route. Compared case-insensitively, as Express routes. */
 const pathOf = (url: string): string => {
     const path = url.split('?')[0];
 
@@ -61,7 +61,7 @@ export class McpEndpointService {
         }
 
         const path = pathOf(ctx.request.url);
-        const endpoint = ObjectUtils.values(this.configService.config.mcpServers).find((entry) => entry.path === path);
+        const endpoint = ObjectUtils.values(this.configService.config.mcpServers).find((entry) => entry.path.toLowerCase() === path.toLowerCase());
 
         if (CommonUtils.isUndefined(endpoint)) {
             throw new InternalServerError(`No MCP endpoint is mounted at ${path}.`);

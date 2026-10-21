@@ -25,6 +25,13 @@ describe('createMcpServersSchema', () => {
         expect(result.error?.issues[0]).toMatchObject({ path: ['HOME_KB', 'path'], message: 'Path /shared is already used by DEVELOPMENT_KB.' });
     });
 
+    it('refuses paths differing only in case, since Express routes both to the first', () => {
+        const result = schema.safeParse({ DEVELOPMENT_KB: server('/shared'), HOME_KB: server('/Shared') });
+
+        expect(result.success).toBe(false);
+        expect(result.error?.issues[0]).toMatchObject({ path: ['HOME_KB', 'path'], message: 'Path /Shared is already used by DEVELOPMENT_KB.' });
+    });
+
     it('refuses a path that does not start with a slash', () => {
         expect(schema.safeParse({ DEVELOPMENT_KB: server('development'), HOME_KB: server('/home') }).success).toBe(false);
     });

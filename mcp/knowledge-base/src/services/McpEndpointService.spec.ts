@@ -40,6 +40,12 @@ describe('McpEndpointService', () => {
         await expect(onRequestTo('/development/', () => endpoint.knowledgeBase())).resolves.toBe('dev');
     });
 
+    it('matches the path whatever its case, as Express routes it', async () => {
+        expect.assertions(1);
+
+        await expect(onRequestTo('/Development', () => endpoint.knowledgeBase())).resolves.toBe('dev');
+    });
+
     it('refuses a path no endpoint is mounted at, rather than guessing a knowledge base', async () => {
         expect.assertions(2);
 

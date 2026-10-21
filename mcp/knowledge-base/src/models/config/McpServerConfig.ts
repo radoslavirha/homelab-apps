@@ -17,7 +17,7 @@ export type McpServerConfig = z.infer<typeof McpServerConfigSchema>;
 /**
  * One required entry per key, like `createExternalApisSchema`: a server the code mounts but the
  * config forgot fails the boot, naming it. Two servers on one path would shadow each other, so
- * paths must differ.
+ * paths must differ, ignoring case (Express routes `/Dev` and `/dev` alike).
  */
 export const createMcpServersSchema = <K extends string>(keys: readonly K[]) =>
     z.object(Object.fromEntries(keys.map((key) => [key, McpServerConfigSchema])) as Record<K, typeof McpServerConfigSchema>)
@@ -25,11 +25,11 @@ export const createMcpServersSchema = <K extends string>(keys: readonly K[]) =>
             const seen = new Map<string, string>();
 
             for (const [key, server] of Object.entries(servers as Record<string, McpServerConfig>)) {
-                const other = seen.get(server.path);
+                const other = seen.get(server.path.toLowerCase());
 
                 if (CommonUtils.notUndefined(other)) {
                     ctx.addIssue({ code: 'custom', path: [key, 'path'], message: `Path ${server.path} is already used by ${other}.` });
                 }
-                seen.set(server.path, key);
+                seen.set(server.path.toLowerCase(), key);
             }
         });
