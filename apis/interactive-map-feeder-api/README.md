@@ -144,7 +144,7 @@ Hidden from Swagger, excluded from traces and request logs. See
 ```
 ČHMÚ (4 separate image fetches: surface, cities overlay, borders, radar)
   → composite via sharp (resize + overlay)
-  → for each city: sample radar pixels within `radius` km around city coords; only the geographic map panel is sampled; transparent (no rain) and opaque black (frame, label) pixels are ignored and the most frequent radar colour wins (LED off when none)
+  → for each city: sample radar pixels within `radius` km around city coords; only the geographic map panel is sampled; transparent (no rain) and opaque black (frame, label) and pale desaturated pixels (precipitation not reaching the ground, out-of-range grey) are ignored and the most frequent radar colour wins (LED off when none)
   → map intensity → RGB
   → return [{ id, name, lat, lng, r, g, b }]
 ```
