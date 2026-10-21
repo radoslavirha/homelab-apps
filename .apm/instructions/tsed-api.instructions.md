@@ -73,6 +73,11 @@ leak them into our responses or our database.
 - **A success response is described by its model**, `@Description` on the response class — not by
   `.Description('…')` chained on `@Returns`. `@Returns(202, ReindexPostResponse)` is the whole line.
 - A status with no body (`204`, `302`) stays `@Returns(204)`.
+- **No controller inheritance.** Do not put routes on a base controller class and extend it. Ts.ED
+  serves an inherited route from the *base* class's store, so a class-level `@Authenticate` /
+  `@RequireRoles` on the subclass is not seen (the guard answers 500) and the base's routes leak
+  auth into every sibling subclass. Declare routes on the class that is mounted; share logic through
+  handlers and services.
 
 ## Guards and helpers from `@radoslavirha/utils`
 
