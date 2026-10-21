@@ -1,5 +1,12 @@
 # miot-bridge
 
+## 0.30.1
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @radoslavirha/tsed-http-provider@0.2.11
+
 ## 0.30.0
 
 ### Minor Changes

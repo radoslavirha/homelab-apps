@@ -1,5 +1,12 @@
 # knowledge-base-api
 
+## 0.2.4
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @radoslavirha/tsed-http-provider@0.2.11
+
 ## 0.2.3
 
 ### Patch Changes

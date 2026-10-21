@@ -1,5 +1,12 @@
 # @radoslavirha/tsed-http-provider
 
+## 0.2.11
+
+### Patch Changes
+
+- Updated dependencies [[`3fea33a`](https://github.com/radoslavirha/homelab-apps/commit/3fea33a040030485bc4c4c2c0213a362313b0f8d)]:
+  - @radoslavirha/http-provider@0.4.0
+
 ## 0.2.10
 
 ### Patch Changes

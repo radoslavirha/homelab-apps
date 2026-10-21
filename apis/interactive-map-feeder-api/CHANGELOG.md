@@ -1,5 +1,13 @@
 # interactive-map-feeder
 
+## 0.16.8
+
+### Patch Changes
+
+- [#359](https://github.com/radoslavirha/homelab-apps/pull/359) [`e95a35b`](https://github.com/radoslavirha/homelab-apps/commit/e95a35b4b2140144eff88b53b147d7a02890c34b) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Cities no longer light up for pale radar echoes where precipitation does not reach the ground.
+- Updated dependencies []:
+  - @radoslavirha/tsed-http-provider@0.2.11
+
 ## 0.16.7
 
 ### Patch Changes
