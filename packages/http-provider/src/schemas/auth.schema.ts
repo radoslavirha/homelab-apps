@@ -46,6 +46,10 @@ export const TokenExchangeAuthSchema = z.object({
     strategy: z.literal(AuthStrategy.TokenExchange),
     request: TokenExchangeRequestSchema,
     tokenExtractor: TokenExtractorSchema,
+    /** Dot-notation path to the token lifetime in seconds (`expires_in`). Unset: cache until the upstream answers 401. */
+    expiresIn: z.string().optional(),
+    /** Seconds before expiry at which the cached token counts as missing. Defaults to 30. Used only with `expiresIn`. */
+    expiryMargin: z.number().nonnegative().optional(),
     transport: TransportSchema
 });
 
