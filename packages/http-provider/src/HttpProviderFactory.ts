@@ -275,7 +275,15 @@ export class HttpProviderFactory<K extends string> {
             (response) => response,
             async (error: unknown) => {
                 const axiosError = error as { response?: { status?: number }; config?: RetriableRequestConfig };
-                if (axiosError.response?.status === 401 && axiosError.config && !axiosError.config._retried) {
+                // Only a request this interceptor tagged is the provider's own; a 401 from the token
+                // endpoint reaches here untagged (axios chains request-interceptor rejections into
+                // response interceptors) and must not be replayed.
+                if (
+                    axiosError.response?.status === 401 &&
+                    axiosError.config &&
+                    axiosError.config._authGeneration !== undefined &&
+                    !axiosError.config._retried
+                ) {
                     axiosError.config._retried = true;
                     if (axiosError.config._authGeneration === generation) {
                         generation += 1;
