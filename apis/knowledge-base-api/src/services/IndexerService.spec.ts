@@ -225,6 +225,24 @@ describe('IndexerService', () => {
         expect(await count('SELECT count(*) AS n FROM embeddings')).toBe(2);
     });
 
+    it('indexes the rest of a snapshot when one file holds a NUL byte (a UTF-16 markdown file)', async () => {
+        expect.assertions(3);
+
+        // A file saved as UTF-16, decoded as UTF-8 the way GitSourceAdapter decodes every blob.
+        const utf16 = Buffer.from('# Saved as UTF-16\n\n## Fact\n\nWindows editors do this.\n', 'utf16le').toString('utf-8');
+
+        sources.adapter.next = {
+            upserts: [sourceDocument('raw/utf16.md', utf16), sourceDocument('raw/note.md', NOTE)],
+            deletes: [],
+            cursor: 'c1',
+            complete: true
+        };
+
+        await expect(indexer.index(dev, MANUAL)).resolves.toMatchObject({ cursor: 'c1', upserted: 1 });
+        expect(await count("SELECT count(*) AS n FROM documents WHERE external_id = 'raw/note.md'")).toBe(1);
+        expect(await count("SELECT count(*) AS n FROM documents WHERE external_id = 'raw/utf16.md'")).toBe(0);
+    });
+
     describe('a stopped run', () => {
         const SHUTDOWN = new DOMException('The pod is shutting down.', 'AbortError');
 

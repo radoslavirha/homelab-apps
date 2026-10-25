@@ -19,6 +19,7 @@ import {
     ATTR_KNOWLEDGE_BASE_SOURCE,
     DOCUMENT_CHANGE_VALUE_DELETE,
     DOCUMENT_CHANGE_VALUE_UNCHANGED,
+    type DocumentChange,
     EMBEDDING_OUTCOME_VALUE_FAILURE,
     EMBEDDING_OUTCOME_VALUE_SUCCESS,
     INDEXER_TRACER_NAME,
@@ -113,11 +114,26 @@ export class IndexerService {
             for (const document of changes.upserts) {
                 options.signal?.throwIfAborted();
 
-                const change = await this.documents.upsert(
-                    this.documentMapper.sourceToStorage(kb.id, document),
-                    kb.tsConfig,
-                    this.chunk(kb, document)
-                );
+                let change: DocumentChange;
+
+                try {
+                    change = await this.documents.upsert(
+                        this.documentMapper.sourceToStorage(kb.id, document),
+                        kb.tsConfig,
+                        this.chunk(kb, document)
+                    );
+                } catch (error) {
+                    options.signal?.throwIfAborted();
+                    // One unstorable file (a NUL byte, say) must not freeze the whole knowledge base.
+                    // Its id stays in `upsertedIds`, so a complete snapshot does not delete it either.
+                    this.log.error('Document could not be indexed; skipped.', {
+                        event: 'INDEXER_DOCUMENT_FAILED',
+                        knowledgeBase: kb.id,
+                        externalId: document.externalId,
+                        error: error instanceof Error ? error.message : String(error)
+                    });
+                    continue;
+                }
 
                 if (change === DOCUMENT_CHANGE_VALUE_UNCHANGED) {
                     unchanged++;
