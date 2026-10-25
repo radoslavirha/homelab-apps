@@ -19,7 +19,7 @@ Listens on port `4004`.
 | GET, DELETE | `/development` | `405` — a stateless endpoint has no event stream to open and no session to end |
 | GET | `/health/live` | Liveness. Always `200` |
 | GET | `/health/ready` | Readiness. `503` while the process drains |
-| GET | `/health` | Full report: `{ status, checks }` (`application/health+json`) |
+| GET | `/health` | Full report: `{ status, checks }` (`application/health+json`); `upstream-apis` is `warn` while the knowledge-base-api circuit breaker is open (never gates readiness) |
 
 Point an MCP client at `http://localhost:4004/development` (the transport is HTTP, there is no stdio mode); it signs you in through Authentik on first use. Deployed, the public URL adds the route prefix: `…/kb/development`. To try it by hand: the MCP Inspector (`npx @modelcontextprotocol/inspector`, transport "Streamable HTTP", URL `http://localhost:4004/development`), or any HTTP client posting JSON-RPC with `Content-Type: application/json` and `Accept: application/json, text/event-stream`.
 
