@@ -62,7 +62,7 @@ export class MiotDevice {
         const result = await this.transport.handshake();
         this._deviceId = result.deviceId;
         this.clock.sync(result.stamp);
-        await this.persistStamp();
+        await this.persistStampSafely();
         this.logger.debug(`Device discovered`, { deviceId: result.deviceId, stamp: result.stamp });
         return result;
     }
@@ -172,9 +172,14 @@ export class MiotDevice {
 
         // Load the clock reading from external store if available (multi-node support)
         if (this.options.stampStore && !this.clock.synced) {
-            const stored = await this.options.stampStore.getStamp();
-            if (stored) {
-                this.clock.restore(stored);
+            try {
+                const stored = await this.options.stampStore.getStamp();
+                if (stored) {
+                    this.clock.restore(stored);
+                }
+            } catch (err) {
+                // The store is a cache: stay unsynced and let the fresh handshake below run.
+                this.logger.warn(`Failed to load stamp`, { reason: err instanceof Error ? err.message : String(err) });
             }
         }
 

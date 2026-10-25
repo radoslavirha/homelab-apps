@@ -536,6 +536,33 @@ describe('MiotDevice', () => {
 
             expect(mockCallAction).toHaveBeenCalledTimes(1);
         });
+
+        it('falls back to a handshake when the stamp store read fails', async () => {
+            expect.assertions(3);
+            const store: IStampStore = {
+                getStamp: vi.fn<() => Promise<StampState | null>>().mockRejectedValue(new Error('redis down')),
+                setStamp: vi.fn<() => Promise<void>>().mockResolvedValue(undefined)
+            };
+            mockGetProperty.mockResolvedValue(7);
+
+            const device = new MiotDevice({ address: '1.2.3.4', token: TOKEN, deviceId: DEVICE_ID, stampStore: store });
+
+            await expect(device.getProperty(2, 1)).resolves.toBe(7);
+            expect(mockHandshake).toHaveBeenCalledOnce();
+            expect(mockGetProperty).toHaveBeenCalledOnce();
+        });
+
+        it('discover() resolves when the device answered but the stamp store write fails', async () => {
+            expect.assertions(1);
+            const store: IStampStore = {
+                getStamp: vi.fn<() => Promise<StampState | null>>().mockResolvedValue(null),
+                setStamp: vi.fn<() => Promise<void>>().mockRejectedValue(new Error('redis down'))
+            };
+
+            const device = new MiotDevice({ address: '1.2.3.4', token: TOKEN, stampStore: store });
+
+            await expect(device.discover()).resolves.toEqual({ deviceId: DEVICE_ID, stamp: STAMP });
+        });
     });
 
     // -----------------------------------------------------------------------
