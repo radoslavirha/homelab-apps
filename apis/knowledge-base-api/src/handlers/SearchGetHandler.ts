@@ -1,5 +1,6 @@
 import { CommonUtils } from '@radoslavirha/utils';
 import { Injectable, ProviderScope, Scope } from '@tsed/di';
+import { BadRequest } from '@tsed/exceptions';
 import { SearchResultMapper } from '../mappers/SearchResultMapper.js';
 import type { SearchGetResponse } from '../models/SearchGetResponse.js';
 import { ConfigService } from '../services/ConfigService.js';
@@ -29,6 +30,10 @@ export class SearchGetHandler {
     ) {}
 
     public async execute(params: SearchParams): Promise<SearchGetResponse> {
+        if (params.q.includes('\0')) {
+            throw new BadRequest('Invalid q; a NUL byte is not allowed.');
+        }
+
         const outcome = await this.search.search({
             question: params.q,
             knowledgeBases: this.access.resolve(params.kb),

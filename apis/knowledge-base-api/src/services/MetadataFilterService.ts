@@ -3,6 +3,7 @@ import { ProviderScope, Scope, Service } from '@tsed/di';
 import { BadRequest } from '@tsed/exceptions';
 import type { MetadataFilter } from '../models/MetadataFilter.js';
 
+const NUL = /\0/;
 const KEY = /^[A-Za-z0-9_.-]+$/;
 
 /**
@@ -15,6 +16,10 @@ const KEY = /^[A-Za-z0-9_.-]+$/;
 export class MetadataFilterService {
     public parse(raw: string | undefined): MetadataFilter {
         const filter = new Map<string, string[]>();
+
+        if (NUL.test(DefaultsUtil.string(raw, ''))) {
+            throw new BadRequest('Invalid filter; a NUL byte is not allowed.');
+        }
 
         for (const part of DefaultsUtil.string(raw, '').split(',')) {
             const pair = part.trim();

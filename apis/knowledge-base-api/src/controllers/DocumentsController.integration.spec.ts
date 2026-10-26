@@ -56,6 +56,12 @@ describe('DocumentsController (integration)', () => {
         expect((await get({ id: `${id}#fact` })).body.externalId).toBe(id);
     });
 
+    it('rejects a NUL byte in the id as a bad request, not a server error', async () => {
+        expect.assertions(1);
+
+        expect((await get({ id: 'x\0' })).status).toBe(400);
+    });
+
     it('answers 404 for an id nobody holds', async () => {
         expect.assertions(1);
 

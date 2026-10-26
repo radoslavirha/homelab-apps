@@ -214,6 +214,13 @@ describe('SearchController (integration)', () => {
     });
 
     describe('validation', () => {
+        it('rejects a NUL byte in the question or a filter as a bad request, not a server error', async () => {
+            expect.assertions(2);
+
+            expect((await search({ q: 'pods\0' })).status).toBe(400);
+            expect((await search({ q: 'pods', filter: 'area:raw\0' })).status).toBe(400);
+        });
+
         it('rejects a model no searched knowledge base is embedded with', async () => {
             expect.assertions(1);
 

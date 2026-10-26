@@ -1,6 +1,6 @@
 import { CommonUtils } from '@radoslavirha/utils';
 import { Injectable, ProviderScope, Scope } from '@tsed/di';
-import { Conflict, NotFound } from '@tsed/exceptions';
+import { BadRequest, Conflict, NotFound } from '@tsed/exceptions';
 import { DocumentMapper } from '../mappers/DocumentMapper.js';
 import type { DocumentsGetResponse } from '../models/DocumentsGetResponse.js';
 import { KnowledgeBaseAccessService } from '../services/KnowledgeBaseAccessService.js';
@@ -21,6 +21,10 @@ export class DocumentsGetHandler {
      * returned. The id is tried as given first, so a path that itself holds a `#` still resolves.
      */
     public async execute(id: string, kb: string | undefined): Promise<DocumentsGetResponse> {
+        if (id.includes('\0')) {
+            throw new BadRequest('Invalid id; a NUL byte is not allowed.');
+        }
+
         const knowledgeBases = this.access.resolve(kb).map((candidate) => candidate.id);
         const found = CommonUtils.isEmpty(knowledgeBases) ? [] : await this.find(knowledgeBases, id);
 
