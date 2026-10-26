@@ -1,9 +1,10 @@
 import { runInContext } from '@tsed/di';
 import { Forbidden, InternalServerError } from '@tsed/exceptions';
 import { PlatformTest } from '@tsed/platform-http/testing';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { KnowledgeBaseRole } from '../models/config/KnowledgeBaseRole.enum.js';
 import { TEST_ROLES } from '../test/fixtures.js';
+import { ConfigService } from './ConfigService.js';
 import { McpEndpointService } from './McpEndpointService.js';
 
 /**
@@ -38,6 +39,21 @@ describe('McpEndpointService', () => {
 
         await expect(onRequestTo('/development?x=1', () => endpoint.knowledgeBase())).resolves.toBe('dev');
         await expect(onRequestTo('/development/', () => endpoint.knowledgeBase())).resolves.toBe('dev');
+    });
+
+    it('matches an endpoint configured with a trailing slash, which the config schema accepts and Express routes', async () => {
+        expect.assertions(2);
+
+        const configService = PlatformTest.get<ConfigService>(ConfigService);
+        const config = configService.config;
+
+        vi.spyOn(configService, 'config', 'get').mockReturnValue({
+            ...config,
+            mcpServers: { ...config.mcpServers, DEVELOPMENT_KB: { ...config.mcpServers.DEVELOPMENT_KB, path: '/development/' } }
+        });
+
+        await expect(onRequestTo('/development/', () => endpoint.knowledgeBase())).resolves.toBe('dev');
+        await expect(onRequestTo('/development', () => endpoint.knowledgeBase())).resolves.toBe('dev');
     });
 
     it('matches the path whatever its case, as Express routes it', async () => {

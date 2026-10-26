@@ -43,4 +43,10 @@ describe('createMcpServersSchema', () => {
         expect(result.success).toBe(false);
         expect(result.error?.issues[0].path).toEqual(['DEVELOPMENT_KB', 'kb']);
     });
+
+    it('refuses paths differing only in a trailing slash, since Express routes both to the first', () => {
+        const result = schema.safeParse({ DEVELOPMENT_KB: server('/shared'), HOME_KB: server('/shared/') });
+
+        expect(result.success).toBe(false);
+    });
 });

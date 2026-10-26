@@ -14,10 +14,13 @@ export const McpServerConfigSchema = z.object({
 
 export type McpServerConfig = z.infer<typeof McpServerConfigSchema>;
 
+/** How Express matches a mount path: case-insensitively and with or without a trailing slash. */
+export const routeKeyOf = (path: string): string => (path.length > 1 ? path.replace(/\/+$/, '') : path).toLowerCase();
+
 /**
  * One required entry per key, like `createExternalApisSchema`: a server the code mounts but the
  * config forgot fails the boot, naming it. Two servers on one path would shadow each other, so
- * paths must differ, ignoring case (Express routes `/Dev` and `/dev` alike).
+ * paths must differ, ignoring case and a trailing slash (Express routes `/Dev`, `/dev` and `/dev/` alike).
  */
 export const createMcpServersSchema = <K extends string>(keys: readonly K[]) =>
     z.object(Object.fromEntries(keys.map((key) => [key, McpServerConfigSchema])) as Record<K, typeof McpServerConfigSchema>)
@@ -25,11 +28,11 @@ export const createMcpServersSchema = <K extends string>(keys: readonly K[]) =>
             const seen = new Map<string, string>();
 
             for (const [key, server] of Object.entries(servers as Record<string, McpServerConfig>)) {
-                const other = seen.get(server.path.toLowerCase());
+                const other = seen.get(routeKeyOf(server.path));
 
                 if (CommonUtils.notUndefined(other)) {
                     ctx.addIssue({ code: 'custom', path: [key, 'path'], message: `Path ${server.path} is already used by ${other}.` });
                 }
-                seen.set(server.path.toLowerCase(), key);
+                seen.set(routeKeyOf(server.path), key);
             }
         });

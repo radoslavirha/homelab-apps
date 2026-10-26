@@ -6,7 +6,7 @@ import { getContext, Injectable, ProviderScope, Scope } from '@tsed/di';
 import { Forbidden, InternalServerError } from '@tsed/exceptions';
 import type { PlatformContext } from '@tsed/platform-http';
 import type { KnowledgeBaseRole } from '../models/config/KnowledgeBaseRole.enum.js';
-import type { McpServerConfig } from '../models/config/McpServerConfig.js';
+import { routeKeyOf, type McpServerConfig } from '../models/config/McpServerConfig.js';
 import { ConfigService } from './ConfigService.js';
 
 /** A request URL's path, without the query and without a trailing slash Express would also route. Compared case-insensitively, as Express routes. */
@@ -61,7 +61,7 @@ export class McpEndpointService {
         }
 
         const path = pathOf(ctx.request.url);
-        const endpoint = ObjectUtils.values(this.configService.config.mcpServers).find((entry) => entry.path.toLowerCase() === path.toLowerCase());
+        const endpoint = ObjectUtils.values(this.configService.config.mcpServers).find((entry) => routeKeyOf(entry.path) === routeKeyOf(path));
 
         if (CommonUtils.isUndefined(endpoint)) {
             throw new InternalServerError(`No MCP endpoint is mounted at ${path}.`);
