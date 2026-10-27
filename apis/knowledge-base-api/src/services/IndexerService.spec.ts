@@ -67,7 +67,7 @@ describe('IndexerService', () => {
         postgres = PlatformTest.get<PostgresService>(PostgresService);
         [dev] = PlatformTest.get<ConfigService>(ConfigService).config.knowledgeBases;
         await postgres.query('TRUNCATE documents CASCADE');
-        await postgres.query("UPDATE knowledge_bases SET cursor = NULL WHERE id = 'dev'");
+        await postgres.query("UPDATE knowledge_bases SET cursor = NULL WHERE id = 'development'");
     });
     afterEach(PlatformTest.reset);
     afterEach(() => vi.restoreAllMocks());
@@ -82,7 +82,7 @@ describe('IndexerService', () => {
         expect(result).toMatchObject({ cursor: 'c1', complete: true, upserted: 1, unchanged: 0, deleted: 0, embedded: { 'test-embed:v1': 2 } });
         expect(await count('SELECT count(*) AS n FROM chunks')).toBe(2);
         expect(await count("SELECT count(*) AS n FROM embeddings WHERE model = 'test-embed:v1'")).toBe(2);
-        expect(await count("SELECT count(*) AS n FROM knowledge_bases WHERE id = 'dev' AND cursor = 'c1'")).toBe(1);
+        expect(await count("SELECT count(*) AS n FROM knowledge_bases WHERE id = 'development' AND cursor = 'c1'")).toBe(1);
         // The model's template, with the title and the heading path, is what reached Ollama.
         expect(ollama.embeddedDocuments).toEqual([
             'title: Pods keep their env | text: Fact\n\nA pod keeps the environment it booted with.',
@@ -238,7 +238,7 @@ describe('IndexerService', () => {
 
             await expect(indexer.index(dev, { ...MANUAL, signal: stop.signal })).rejects.toBe(SHUTDOWN);
             expect(await count('SELECT count(*) AS n FROM documents')).toBe(0);
-            expect(await PlatformTest.get<KnowledgeBaseRepository>(KnowledgeBaseRepository).getCursor('dev')).toBeNull();
+            expect(await PlatformTest.get<KnowledgeBaseRepository>(KnowledgeBaseRepository).getCursor('development')).toBeNull();
         });
 
         it('stops embedding mid-way as an interruption, not an embedder failure, keeping what it stored', async () => {
@@ -258,7 +258,7 @@ describe('IndexerService', () => {
             expect(await count('SELECT count(*) AS n FROM chunks')).toBe(2);
             expect(await count('SELECT count(*) AS n FROM embeddings')).toBe(0);
             // The cursor was stored before embedding began: the next run only embeds what is pending.
-            expect(await PlatformTest.get<KnowledgeBaseRepository>(KnowledgeBaseRepository).getCursor('dev')).toBe('c1');
+            expect(await PlatformTest.get<KnowledgeBaseRepository>(KnowledgeBaseRepository).getCursor('development')).toBe('c1');
         });
     });
 

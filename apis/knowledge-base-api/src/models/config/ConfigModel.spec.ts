@@ -44,7 +44,7 @@ describe('ConfigSchema', () => {
 
         delete config.github;
 
-        expect(issues(config)).toContain('github: Knowledge base "dev" has source GIT, which needs github.');
+        expect(issues(config)).toContain('github: Knowledge base "development" has source GIT, which needs github.');
     });
 
     it('fails at boot on duplicate knowledge base ids', () => {
@@ -53,7 +53,7 @@ describe('ConfigSchema', () => {
 
         config.knowledgeBases = [kb, kb];
 
-        expect(issues(config)).toContain('knowledgeBases.1.id: Duplicate knowledge base id "dev".');
+        expect(issues(config)).toContain('knowledgeBases.1.id: Duplicate knowledge base id "development".');
     });
 
     it('requires a CA file to verify the server', () => {

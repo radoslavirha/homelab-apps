@@ -15,7 +15,7 @@ import { ConfigService } from './ConfigService.js';
 import { IndexingLoopService } from './IndexingLoopService.js';
 
 /** A run started by hand — the only kind that builds a knowledge base from nothing. */
-const RUN = { knowledgeBases: ['dev'], full: false, manual: true };
+const RUN = { knowledgeBases: ['development'], full: false, manual: true };
 const SCHEDULED = { ...RUN, manual: false };
 
 /**
@@ -30,7 +30,7 @@ describe('IndexingLoopService (integration)', () => {
 
     const count = async (sql: string): Promise<number> => Number((await postgres.query<{ n: string }>(sql)).rows[0].n);
     const knowledgeBase = async () => (await postgres.query<{ cursor: string; last_run_outcome: string; last_run_error: string | null }>(
-        "SELECT cursor, last_run_outcome, last_run_error FROM knowledge_bases WHERE id = 'dev'"
+        "SELECT cursor, last_run_outcome, last_run_error FROM knowledge_bases WHERE id = 'development'"
     )).rows[0];
 
     beforeEach(async () => {
@@ -47,7 +47,7 @@ describe('IndexingLoopService (integration)', () => {
         loop = PlatformTest.get<IndexingLoopService>(IndexingLoopService);
         postgres = PlatformTest.get<PostgresService>(PostgresService);
         await postgres.query('TRUNCATE documents CASCADE');
-        await postgres.query("UPDATE knowledge_bases SET cursor = NULL WHERE id = 'dev'");
+        await postgres.query("UPDATE knowledge_bases SET cursor = NULL WHERE id = 'development'");
     });
     afterEach(PlatformTest.reset);
     afterEach(() => vi.restoreAllMocks());

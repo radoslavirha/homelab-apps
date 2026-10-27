@@ -35,7 +35,7 @@ describe('ReindexController (integration)', () => {
         const response = await reindex();
 
         expect(response.status).toBe(202);
-        expect(response.body).toEqual({ knowledgeBases: ['dev'], full: false, state: 'STARTED' });
+        expect(response.body).toEqual({ knowledgeBases: ['development'], full: false, state: 'STARTED' });
 
         await expect.poll(() => sources.adapter.cursors).toEqual(['c1']);
         await idle();
@@ -72,7 +72,7 @@ describe('ReindexController (integration)', () => {
         const queued = await reindex({ full: true });
 
         expect(queued.status).toBe(202);
-        expect(queued.body).toEqual({ knowledgeBases: ['dev'], full: true, state: 'QUEUED' });
+        expect(queued.body).toEqual({ knowledgeBases: ['development'], full: true, state: 'QUEUED' });
 
         // Stopping the pod ends the hanging run; the queued one is not started during shutdown.
         await PlatformTest.get<IndexingLoopService>(IndexingLoopService).$onDestroy();

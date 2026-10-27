@@ -13,7 +13,7 @@ import { SearchService } from './SearchService.js';
 
 const hit = (id: string, demoted = false): SearchHitDTO => CommonUtils.buildModelStrict(SearchHitDTO, {
     id,
-    kb: 'dev',
+    kb: 'development',
     externalId: `raw/${id}.md`,
     anchor: `raw/${id}.md#fact`,
     title: id,
@@ -66,10 +66,10 @@ describe('SearchService', () => {
         expect(outcome.mode).toBe(SearchMode.Vector);
         expect(outcome.models).toEqual(['test-embed:v1']);
         expect(outcome.hits.map((scored) => scored.hit.id)).toEqual(['v1', 'v2']);
-        expect(repository.vector).toHaveBeenCalledWith(['dev'], expect.objectContaining({ name: 'test-embed:v1' }), [1, 0, 0, 0], NO_FILTER, 50);
+        expect(repository.vector).toHaveBeenCalledWith(['development'], expect.objectContaining({ name: 'test-embed:v1' }), [1, 0, 0, 0], NO_FILTER, 50);
         // Only the look for chunks the model has no vector for; the full-text leg itself does not run.
         expect(repository.fullText).toHaveBeenCalledTimes(1);
-        expect(repository.fullText).toHaveBeenCalledWith(['dev'], 'why?', FullTextMatch.Any, NO_FILTER, 50, 'test-embed:v1');
+        expect(repository.fullText).toHaveBeenCalledWith(['development'], 'why?', FullTextMatch.Any, NO_FILTER, 50, 'test-embed:v1');
     });
 
     it('finds a chunk the model has no vector for yet through full-text, beside the vector leg', async () => {
@@ -92,7 +92,7 @@ describe('SearchService', () => {
         expect(outcome.mode).toBe(SearchMode.Hybrid);
         // v2 is in both lists, so it outranks the top of either one alone.
         expect(outcome.hits.map((scored) => scored.hit.id)).toEqual(['v2', 'v1', 'f1']);
-        expect(repository.fullText).toHaveBeenCalledWith(['dev'], 'why?', FullTextMatch.Any, NO_FILTER, 50);
+        expect(repository.fullText).toHaveBeenCalledWith(['development'], 'why?', FullTextMatch.Any, NO_FILTER, 50);
     });
 
     it('answers from full-text when the question cannot be embedded', async () => {
@@ -116,7 +116,7 @@ describe('SearchService', () => {
         const outcome = await search.search(query({ knowledgeBases: [dev, plain] }));
 
         expect(outcome.mode).toBe(SearchMode.Hybrid);
-        expect(repository.vector).toHaveBeenCalledWith(['dev'], expect.anything(), expect.anything(), NO_FILTER, 50);
+        expect(repository.vector).toHaveBeenCalledWith(['development'], expect.anything(), expect.anything(), NO_FILTER, 50);
         expect(repository.fullText).toHaveBeenCalledWith(['plain'], 'why?', FullTextMatch.Any, NO_FILTER, 50);
     });
 

@@ -7,7 +7,7 @@ export class DocumentsDeleteRequest {
     @Description('Knowledge base id.')
     @Required()
     @Pattern(KNOWLEDGE_BASE_ID_PATTERN)
-    @Example('dev')
+    @Example('development')
     public kb: string;
 
     @Required()

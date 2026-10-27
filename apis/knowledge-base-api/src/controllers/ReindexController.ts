@@ -28,7 +28,7 @@ export class ReindexController {
     @Returns(Conflict.STATUS, Conflict)
     public reindex(
         @Description('Comma-separated knowledge base ids. Default: every knowledge base the caller may read.')
-        @Example('dev')
+        @Example('development')
         @QueryParams('kb')
         kb?: string,
 

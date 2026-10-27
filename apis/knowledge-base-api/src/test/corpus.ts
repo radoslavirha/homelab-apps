@@ -2,7 +2,7 @@ import type { SourceDocument } from '../sources/SourceDocument.js';
 import { sourceDocument } from './fakes.js';
 
 /**
- * A small knowledge base in the dev KB's shape, for the controller tests. Each document is
+ * A small knowledge base in the development KB's shape, for the controller tests. Each document is
  * about one topic of the fake embedder, so the vector leg has something to rank by.
  */
 export const CORPUS: readonly SourceDocument[] = [

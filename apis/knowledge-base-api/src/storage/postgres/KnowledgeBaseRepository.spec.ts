@@ -10,7 +10,7 @@ import { KnowledgeBaseRepository } from './KnowledgeBaseRepository.js';
 describe('KnowledgeBaseRepository', () => {
     let knowledgeBases: KnowledgeBaseRepository;
 
-    const row = async (): Promise<KnowledgeBaseDTO> => (await knowledgeBases.list(['dev']))[0];
+    const row = async (): Promise<KnowledgeBaseDTO> => (await knowledgeBases.list(['development']))[0];
 
     beforeEach(PlatformTest.create);
     beforeEach(async () => {
@@ -22,26 +22,26 @@ describe('KnowledgeBaseRepository', () => {
     it('reads the rows the migrator wrote as DTOs', async () => {
         expect.assertions(3);
 
-        const [dev] = await knowledgeBases.list(['dev', 'missing']);
+        const [dev] = await knowledgeBases.list(['development', 'missing']);
 
         expect(dev).toBeInstanceOf(KnowledgeBaseDTO);
-        expect(dev).toEqual(expect.objectContaining({ id: 'dev', source: 'GIT', tsConfig: 'english', cursor: null, lastSuccessAt: null }));
+        expect(dev).toEqual(expect.objectContaining({ id: 'development', source: 'GIT', tsConfig: 'english', cursor: null, lastSuccessAt: null }));
         expect(await knowledgeBases.list(['missing'])).toEqual([]);
     });
 
     it('stores and reads the cursor, null before the first run', async () => {
         expect.assertions(2);
 
-        expect(await knowledgeBases.getCursor('dev')).toBeNull();
-        await knowledgeBases.setCursor('dev', 'abc');
-        expect(await knowledgeBases.getCursor('dev')).toBe('abc');
+        expect(await knowledgeBases.getCursor('development')).toBeNull();
+        await knowledgeBases.setCursor('development', 'abc');
+        expect(await knowledgeBases.getCursor('development')).toBe('abc');
     });
 
     it('records a successful run and its time', async () => {
         expect.assertions(3);
 
-        await knowledgeBases.recordRunStart('dev');
-        const lastSuccess = await knowledgeBases.recordRunEnd('dev', RunOutcome.Success, null);
+        await knowledgeBases.recordRunStart('development');
+        const lastSuccess = await knowledgeBases.recordRunEnd('development', RunOutcome.Success, null);
         const dev = await row();
 
         expect(lastSuccess).toBeInstanceOf(Date);
@@ -52,10 +52,10 @@ describe('KnowledgeBaseRepository', () => {
     it('records a failure without moving the last success, and shortens a long error', async () => {
         expect.assertions(3);
 
-        const succeeded = await knowledgeBases.recordRunEnd('dev', RunOutcome.Success, null);
+        const succeeded = await knowledgeBases.recordRunEnd('development', RunOutcome.Success, null);
 
-        await knowledgeBases.recordRunStart('dev');
-        await knowledgeBases.recordRunEnd('dev', RunOutcome.Failure, 'x'.repeat(2000));
+        await knowledgeBases.recordRunStart('development');
+        await knowledgeBases.recordRunEnd('development', RunOutcome.Failure, 'x'.repeat(2000));
         const dev = await row();
 
         expect(dev.lastRunOutcome).toBe(RunOutcome.Failure);
@@ -66,8 +66,8 @@ describe('KnowledgeBaseRepository', () => {
     it('clears the outcome of the previous run when a run starts', async () => {
         expect.assertions(1);
 
-        await knowledgeBases.recordRunEnd('dev', RunOutcome.Failure, 'boom');
-        await knowledgeBases.recordRunStart('dev');
+        await knowledgeBases.recordRunEnd('development', RunOutcome.Failure, 'boom');
+        await knowledgeBases.recordRunStart('development');
 
         expect(await row()).toEqual(expect.objectContaining({ lastRunFinishedAt: null, lastRunOutcome: null, lastRunError: null }));
     });
@@ -80,7 +80,7 @@ describe('KnowledgeBaseRepository', () => {
         await seedDocument(documentDTO('work/b/spec.md'), [chunkDTO(0, 'C', 'gamma')]);
         await PlatformTest.get<EmbeddingRepository>(EmbeddingRepository).insert('test-embed:v1', [{ chunkId: ids.A, vector: [1, 0, 0, 0] }]);
 
-        const stats = await knowledgeBases.stats('dev');
+        const stats = await knowledgeBases.stats('development');
 
         expect(stats).toBeInstanceOf(KnowledgeBaseStatsDTO);
         expect(stats).toEqual(expect.objectContaining({

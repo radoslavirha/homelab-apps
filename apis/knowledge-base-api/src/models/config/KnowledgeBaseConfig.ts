@@ -7,7 +7,7 @@ export const ChunkingConfigSchema = z.object({
     /**
      * A section longer than this is split at paragraph boundaries, the heading kept on every
      * part. 3000 is what the model measurement ran with: chunks p50 721, p95 2719, max 3226
-     * characters on the dev KB — inside embeddinggemma's 2k-token context.
+     * characters on the development KB — inside embeddinggemma's 2k-token context.
      */
     maxChars: z.number().int().min(200).default(3000),
     /** Trailing paragraphs of one part repeated at the start of the next, up to this length. */

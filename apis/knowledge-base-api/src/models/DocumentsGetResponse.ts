@@ -4,7 +4,7 @@ import { AdditionalProperties, Description, Example, Format, Nullable, Property,
 @AdditionalProperties(false)
 export class DocumentsGetResponse {
     @Required()
-    @Example('dev')
+    @Example('development')
     public kb: string;
 
     @Required()

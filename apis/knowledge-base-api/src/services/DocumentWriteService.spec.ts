@@ -97,7 +97,7 @@ describe('DocumentWriteService', () => {
         vi.mocked(loop.trigger).mockRejectedValue(new Error('database down'));
 
         expect(await writes.delete(kb, ID, 'blob', PROVENANCE)).toEqual({ commit: 'c1' });
-        expect(loop.trigger).toHaveBeenCalledWith({ knowledgeBases: ['dev'], full: false, manual: false });
+        expect(loop.trigger).toHaveBeenCalledWith({ knowledgeBases: ['development'], full: false, manual: false });
         await expect.poll(() => warn.mock.calls[0]?.[1]).toMatchObject({ event: 'DOCUMENT_WRITE_INDEX_FAILED', error: 'database down' });
     });
 });

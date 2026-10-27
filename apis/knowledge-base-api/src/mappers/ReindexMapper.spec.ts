@@ -15,15 +15,15 @@ describe('ReindexMapper', () => {
     afterEach(PlatformTest.reset);
 
     it('maps a started run to the response model, the id list copied rather than shared', () => {
-        const knowledgeBases = ['dev'];
+        const knowledgeBases = ['development'];
         const response = mapper.toResponse(knowledgeBases, true, RunStart.Started);
 
         expect(response).toBeInstanceOf(ReindexPostResponse);
-        expect(response).toEqual(expect.objectContaining({ knowledgeBases: ['dev'], full: true, state: ReindexState.Started }));
+        expect(response).toEqual(expect.objectContaining({ knowledgeBases: ['development'], full: true, state: ReindexState.Started }));
         expect(response.knowledgeBases).not.toBe(knowledgeBases);
     });
 
     it('maps a queued run to QUEUED', () => {
-        expect(mapper.toResponse(['dev'], false, RunStart.Queued).state).toBe(ReindexState.Queued);
+        expect(mapper.toResponse(['development'], false, RunStart.Queued).state).toBe(ReindexState.Queued);
     });
 });

@@ -16,7 +16,7 @@ import * as tools from './index.js';
 
 const MCP_HEADERS = { Accept: 'application/json, text/event-stream', 'Content-Type': 'application/json' };
 
-const DOCUMENT = { kb: 'dev', externalId: 'raw/2026-01-01-a-note.md', title: 'A note', date: '2026-01-01', url: null, version: 'c1', metadata: { area: 'raw' }, content: '# A note\n\nBody.' };
+const DOCUMENT = { kb: 'development', externalId: 'raw/2026-01-01-a-note.md', title: 'A note', date: '2026-01-01', url: null, version: 'c1', metadata: { area: 'raw' }, content: '# A note\n\nBody.' };
 
 describe('Tools (integration, through MCP)', () => {
     let request: SuperTest.Agent;
@@ -86,13 +86,13 @@ describe('Tools (integration, through MCP)', () => {
         const search = vi.spyOn(api, 'search').mockResolvedValue(Serializer.deserialize({
             mode: 'VECTOR',
             models: [],
-            results: [{ kb: 'dev', externalId: DOCUMENT.externalId, anchor: `${DOCUMENT.externalId}#body`, title: 'A note', heading: 'Body', snippet: 'Body.', score: 0.5, date: '2026-01-01', url: null, metadata: {} }]
+            results: [{ kb: 'development', externalId: DOCUMENT.externalId, anchor: `${DOCUMENT.externalId}#body`, title: 'A note', heading: 'Body', snippet: 'Body.', score: 0.5, date: '2026-01-01', url: null, metadata: {} }]
         }, SearchResponseDTO));
 
         const result = await callTool('search', { query: 'what is the note about?', filter: 'area:raw' });
 
         expect(result.isError).toBeUndefined();
-        expect(search).toHaveBeenCalledWith(expect.objectContaining({ q: 'what is the note about?', kb: 'dev', filter: 'area:raw', limit: 8 }));
+        expect(search).toHaveBeenCalledWith(expect.objectContaining({ q: 'what is the note about?', kb: 'development', filter: 'area:raw', limit: 8 }));
         expect(result.structuredContent).toEqual({
             hits: [{ id: DOCUMENT.externalId, anchor: `${DOCUMENT.externalId}#body`, title: 'A note', heading: 'Body', snippet: 'Body.', date: '2026-01-01' }]
         });
@@ -105,7 +105,7 @@ describe('Tools (integration, through MCP)', () => {
         vi.spyOn(api, 'search').mockResolvedValue(Serializer.deserialize({
             mode: 'VECTOR',
             models: [],
-            results: [{ kb: 'dev', externalId: DOCUMENT.externalId, anchor: DOCUMENT.externalId, title: 'A note', heading: '', snippet: 'Intro.', score: 0.5, date: null, url: null, metadata: {} }]
+            results: [{ kb: 'development', externalId: DOCUMENT.externalId, anchor: DOCUMENT.externalId, title: 'A note', heading: '', snippet: 'Intro.', score: 0.5, date: null, url: null, metadata: {} }]
         }, SearchResponseDTO));
 
         const result = await callTool('search', { query: 'q' });
@@ -121,8 +121,8 @@ describe('Tools (integration, through MCP)', () => {
 
         const result = await callTool('search', { query: 'q', kb: 'home' });
 
-        // An argument the tool does not declare is ignored, not refused: the call succeeds, on `dev`.
-        expect({ isError: result.isError, kbs: search.mock.calls.map(([query]) => query.kb) }).toEqual({ isError: undefined, kbs: ['dev'] });
+        // An argument the tool does not declare is ignored, not refused: the call succeeds, on `development`.
+        expect({ isError: result.isError, kbs: search.mock.calls.map(([query]) => query.kb) }).toEqual({ isError: undefined, kbs: ['development'] });
     });
 
     it('search: refuses a limit above 20 before calling the API', async () => {
@@ -144,7 +144,7 @@ describe('Tools (integration, through MCP)', () => {
         const result = await callTool('read', { id: DOCUMENT.externalId });
 
         expect(result.isError).toBeUndefined();
-        expect(document).toHaveBeenCalledWith(expect.objectContaining({ id: DOCUMENT.externalId, kb: 'dev' }));
+        expect(document).toHaveBeenCalledWith(expect.objectContaining({ id: DOCUMENT.externalId, kb: 'development' }));
         expect(result.structuredContent).toEqual({
             id: DOCUMENT.externalId, title: 'A note', date: '2026-01-01', metadata: { area: 'raw' }, markdown: '# A note\n\nBody.'
         });
@@ -157,8 +157,8 @@ describe('Tools (integration, through MCP)', () => {
 
         const result = await callTool('read', { kb: 'home', id: DOCUMENT.externalId });
 
-        // An argument the tool does not declare is ignored, not refused: the call succeeds, on `dev`.
-        expect({ isError: result.isError, kbs: document.mock.calls.map(([query]) => query.kb) }).toEqual({ isError: undefined, kbs: ['dev'] });
+        // An argument the tool does not declare is ignored, not refused: the call succeeds, on `development`.
+        expect({ isError: result.isError, kbs: document.mock.calls.map(([query]) => query.kb) }).toEqual({ isError: undefined, kbs: ['development'] });
     });
 
     it('read: a document that is only frontmatter has empty markdown, which the output schema accepts', async () => {

@@ -6,7 +6,7 @@ import { NoteType } from '../models/NoteType.enum.js';
 import { NoteRenderService } from './NoteRenderService.js';
 
 const request = (overrides: Partial<NotesPostRequest> = {}): NotesPostRequest => CommonUtils.buildModelPartial(NotesPostRequest, {
-    kb: 'dev',
+    kb: 'development',
     title: 'Ollama keeps one model loaded',
     type: NoteType.Gotcha,
     context: 'Embedding evicted the chat model.',
