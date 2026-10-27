@@ -35,7 +35,9 @@ Everywhere:
   validation gaps
 - behavior that contradicts the member's README or the toolkit skill
 NOT bugs: style, naming, refactors, missing docs, type-only nits, "could be cleaner",
-missing tests on their own.
+missing tests on their own, and paths no deployed app reaches — an option, branch or
+config value that nothing in this repo sets. If you would have to write "no app in this
+repo does X today", it is not a bug: drop it.
 
 This area — Ts.ED services running in the cluster:
 - endpoints missing auth guards; JWT validation gaps (issuer, audience, expiry, algorithm)
@@ -44,6 +46,21 @@ This area — Ts.ED services running in the cluster:
 - config changes that break backward compatibility (AGENTS.md → "Configuration
   backward compatibility")
 - pollers, timers and listeners that crash the process or leak on failure
+
+Owner-gated — the miot-bridge-api device path (`DeviceCommandService`,
+`DevicePropertyPollerService`, `MiotDeviceRegistry`, `MqttListenerService` and anything
+they call into `@radoslavirha/miot-device`). It drives a real vacuum that the tests only
+imitate, and its docs have been wrong about the device before: the miIO stamp was
+documented and implemented as a per-call counter for months, while it is the device's
+clock. A fix written from the docs and a mock passes every test and can still break the
+device. File an issue on this path only when all of these hold:
+- the bug is a secret leak, a crash or unhandled rejection, or a failure you can show in
+  production telemetry (a Loki line or a Tempo trace from the deployed app), not one
+  derived from reading the protocol docs or the mocks
+- severity is high or critical
+- the proposed fix does not change protocol behaviour: stamp, message id, retries,
+  timeouts, packet shape or request pacing
+Anything else on this path goes in your Finish summary for the owner, not into an issue.
 
 # 3. Deduplicate before filing
 Search issues and PRs in radoslavirha/homelab-apps, open AND closed, by file path
