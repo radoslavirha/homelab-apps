@@ -281,7 +281,7 @@ export class HttpProviderFactory<K extends string> {
                 if (
                     axiosError.response?.status === 401 &&
                     axiosError.config &&
-                    axiosError.config._authGeneration !== undefined &&
+                    CommonUtils.notUndefined(axiosError.config._authGeneration) &&
                     !axiosError.config._retried
                 ) {
                     axiosError.config._retried = true;
