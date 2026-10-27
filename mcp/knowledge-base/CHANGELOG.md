@@ -1,5 +1,13 @@
 # knowledge-base
 
+## 0.2.1
+
+### Patch Changes
+
+- [#360](https://github.com/radoslavirha/homelab-apps/pull/360) [`99a42f3`](https://github.com/radoslavirha/homelab-apps/commit/99a42f3602ed508ddb45bfc72b475e6b8421bdf8) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Tool calls on an MCP endpoint URL typed in another case (e.g. /Development) now reach the endpoint instead of failing; config paths differing only in case are refused at boot.
+- Updated dependencies []:
+  - @radoslavirha/tsed-http-provider@0.2.11
+
 ## 0.2.0
 
 ### Minor Changes

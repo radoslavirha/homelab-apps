@@ -1,5 +1,13 @@
 # @radoslavirha/nginx-runtime
 
+## 0.2.5
+
+### Patch Changes
+
+- [#374](https://github.com/radoslavirha/homelab-apps/pull/374) [`bf42f91`](https://github.com/radoslavirha/homelab-apps/commit/bf42f91530ad1e4cb79179ee620771d3eb6b9817) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - The runtime-config guard now rejects numbers JSON.parse rejects (`.5`, `1.`, `+1`, `-.5`) instead of starting nginx with a config the browser cannot load.
+
+- [#381](https://github.com/radoslavirha/homelab-apps/pull/381) [`7bd8935`](https://github.com/radoslavirha/homelab-apps/commit/7bd893500be75c53098137358930e51b07f7077e) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - The runtime-config guard accepts a config holding an unpaired UTF-16 surrogate escape (e.g. `"\ud800"`), which `JSON.parse` accepts, instead of aborting the nginx start.
+
 ## 0.2.4
 
 ### Patch Changes

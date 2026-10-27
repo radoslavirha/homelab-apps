@@ -1,5 +1,15 @@
 # homelab-dashboard-ui
 
+## 0.8.7
+
+### Patch Changes
+
+- [#349](https://github.com/radoslavirha/homelab-apps/pull/349) [`bf1b83b`](https://github.com/radoslavirha/homelab-apps/commit/bf1b83bfabedf99c4cb19eaaab0ffb0f846a7136) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Redirect slashless URLs to a relative path, so the browser stays on its own scheme and port instead of landing on http://host:8080/.
+
+- [#350](https://github.com/radoslavirha/homelab-apps/pull/350) [`4523247`](https://github.com/radoslavirha/homelab-apps/commit/45232470ebbec2da311e98c6fe4084cd28e54ede) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - A missing hashed asset now answers 404 and index.html is served with Cache-Control: no-cache, so a reload after a deploy no longer shows a blank page.
+
+- [#388](https://github.com/radoslavirha/homelab-apps/pull/388) [`04545d6`](https://github.com/radoslavirha/homelab-apps/commit/04545d6a5a819d5016cb9512e34ff2cc4a793a23) Thanks [@radoslavirha](https://github.com/radoslavirha)! - The 404 for a missing hashed asset no longer carries `Cache-Control: immutable, max-age=1y`, so a rollout race can no longer leave the browser with a 404 cached for a year.
+
 ## 0.8.6
 
 ### Patch Changes
