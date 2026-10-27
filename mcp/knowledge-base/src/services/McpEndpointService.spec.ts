@@ -75,6 +75,20 @@ describe('McpEndpointService', () => {
         });
     });
 
+    describe('username', () => {
+        it('is the subject of the verified token', async () => {
+            expect.assertions(1);
+
+            await expect(onRequestTo('/development', () => endpoint.username(), [TEST_ROLES.EDITOR])).resolves.toBe('s');
+        });
+
+        it('refuses a request nobody was verified on: a write is never made for nobody', async () => {
+            expect.assertions(1);
+
+            await expect(onRequestTo('/development', () => endpoint.username())).rejects.toThrow(new Forbidden('Insufficient permissions.'));
+        });
+    });
+
     it('refuses outside a request: there is no endpoint to take the knowledge base from', () => {
         expect(() => endpoint.knowledgeBase()).toThrow(new InternalServerError('No MCP request is being handled.'));
     });

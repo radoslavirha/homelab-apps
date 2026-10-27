@@ -108,7 +108,7 @@ describe('KnowledgeBaseApiEndpoint (integration): the token flow', () => {
         expect(request?.contentType).toBe('application/x-www-form-urlencoded');
         expect(request?.form).toEqual({
             grant_type: 'client_credentials',
-            client_id: 'development-kb-mcp',
+            client_id: 'knowledge-base-mcp',
             client_secret: 'test-secret-not-a-real-one',
             scope: 'openid profile email roles'
         });

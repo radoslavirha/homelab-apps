@@ -17,6 +17,11 @@ export class ReadOutput {
     @Property(Object)
     public metadata: Record<string, unknown>;
 
+    @Description('Its version: what `write_document` or `delete_document` passes to change it. Opaque.')
+    @Required()
+    @Property()
+    public version: string;
+
     // Not `content`: platform-mcp passes any result with a `content` key through as a finished
     // MCP result, without the structured content the output schema promises.
     @Description('The whole document, as markdown; empty for a document that is only frontmatter.')

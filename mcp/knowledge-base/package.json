@@ -2,7 +2,7 @@
   "name": "knowledge-base",
   "version": "0.2.0",
   "private": true,
-  "description": "MCP server for the knowledge bases: search and read them from any MCP client, one endpoint per audience",
+  "description": "MCP server for the knowledge bases: search, read and write them from any MCP client, one endpoint per audience",
   "type": "module",
   "scripts": {
     "build": "tsc --noEmit && swc src --out-dir dist --strip-leading-paths --ignore '**/*.spec.ts'",

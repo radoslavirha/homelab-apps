@@ -5,7 +5,7 @@
 
 ## What it does
 
-An MCP server in front of `knowledge-base-api`, so that any MCP client can search and read its knowledge bases — one endpoint per audience, not one app per knowledge base. **Today:** one MCP endpoint, `/development` (via `@tsed/platform-mcp`, stateless Streamable HTTP; built in `src/index.ts` from `ConfigService` by `toMcpSettings`) and the shared health endpoints, with two read-only tools (`src/tools/`, `search` and `read`) answered from knowledge-base-api through `KnowledgeBaseApiEndpoint`.
+An MCP server in front of `knowledge-base-api`, so that any MCP client can search, read and write its knowledge bases — one endpoint per audience, not one app per knowledge base. **Today:** one MCP endpoint, `/development` (via `@tsed/platform-mcp`, stateless Streamable HTTP; built in `src/index.ts` from `ConfigService` by `toMcpSettings`) and the shared health endpoints, with two reading tools (`src/tools/`, `search` and `read`) and three writing ones (`create_note`, `write_document`, `delete_document`), answered from knowledge-base-api through `KnowledgeBaseApiEndpoint`.
 
 ## Rules
 
@@ -22,7 +22,9 @@ An MCP server in front of `knowledge-base-api`, so that any MCP client can searc
 - **Every tool declares the least role it needs: `@RequireRole(KnowledgeBaseRole.<level>)`** on the tool method, next to `@Tool`. Levels (`READER`, `EDITOR`) are the same for every endpoint; each endpoint maps them to its Authentik roles in `auth.roles`, since the shared tools cannot name one endpoint's roles. Reading tools take `Reader`, a writing tool `Editor`. A spec fails for a tool without one. Exact strings, no hierarchy, as in the APIs: Authentik gives an editor the reader role too.
 - **`scopes` must include `profile` and `roles`.** Without `profile` Authentik issues `aud` as the bare client id and every token is refused; without `roles` the token carries no role. The schema refuses such a config at boot.
 - **The resource identifier is `publicURL` + the endpoint's `path`**, e.g. `https://mcp.irha.cz/kb` + `/development` (`resourceOf`). platform-mcp requires it and never derives it from `Host`. `publicURL` is required here, optional in `BaseConfig`.
-- **Never forward a caller's token upstream.** This server calls knowledge-base-api as its own client (`development-kb-mcp`), with a token it fetches itself.
+- **Never forward a caller's token upstream.** This server calls knowledge-base-api as its own client (`knowledge-base-mcp`), with a token it fetches itself.
 - **No token refresh code.** http-provider's `token-exchange` re-fetches on `401` and retries once; `KnowledgeBaseApiEndpoint.integration.spec.ts` pins that flow against a fake Authentik and API. An expiry-aware cache, if the one refused call per token lifetime becomes noise, belongs in http-provider, not here.
-- **Read-only.** The tools search and read; nothing writes to the knowledge base, which lives in git.
+- **This server holds no key to the knowledge base.** A write goes to knowledge-base-api, which validates it and commits it through its GitHub App. The user it is for is `McpEndpointService.username()` — the verified token's `sub` — sent as `On-Behalf-Of`; never a tool argument.
+- **A refused write reaches the agent with the document as it is now.** platform-mcp keeps only an exception's message, so a write handler catches the API's error and `UpstreamErrorService.refusal` returns a `409` carrying `current` as a finished `isError` result; it throws the other refusals with the API's message. A writing tool's return type is its output model or that result.
+- **Writing tools set `readOnlyHint: false`, the deleting one `destructiveHint: true`**, so clients that confirm such tools ask the user. Their descriptions say when to write and when not, that the user approves the full content first, and what to do on a refusal: write them for the agent deciding.
 - **Deployed to production only** (homelab: the `knowledge-base` ApplicationSet, `mcp.irha.cz/kb/`). `deploy.json` names `values-production.yaml`; a release bumps its `image.tag`. No sandbox: the knowledge bases exist in production only.
