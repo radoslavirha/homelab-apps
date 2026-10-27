@@ -30,6 +30,8 @@ fatal() { echo "[nginx-runtime] FATAL: $*" >&2; exit 1; }
 #     also reject a legitimate top-level `null` or `false`.
 #  2. no NaN/Infinity literals and no leading-zero numbers. With string contents
 #     blanked out, only true/false/null may remain as bare words.
+#  3. no number JSON.parse rejects: a `.` without a digit on both sides (.5, 1.)
+#     or a `+` that is not an exponent sign (+1).
 # stderr is discarded so config values never reach the log.
 jq -n -e '[inputs] | length == 1' "$CONFIG_PATH" >/dev/null 2>&1 \
     || fatal "$CONFIG_PATH is not valid JSON."
@@ -37,7 +39,7 @@ jq -n -e '[inputs] | length == 1' "$CONFIG_PATH" >/dev/null 2>&1 \
 jq -R -s -e '
     gsub("\"(\\\\.|[^\"\\\\])*\""; "\"\"")
     | gsub("\\b(true|false|null)\\b"; "")
-    | test("[A-DF-Za-df-z]|(^|[\\s:,\\[])-?0[0-9]") | not
+    | test("[A-DF-Za-df-z]|(^|[\\s:,\\[])-?0[0-9]|(^|[^0-9])\\.|\\.([^0-9]|$)|(^|[^eE])\\+") | not
 ' "$CONFIG_PATH" >/dev/null 2>&1 \
     || fatal "$CONFIG_PATH is not valid JSON."
 
