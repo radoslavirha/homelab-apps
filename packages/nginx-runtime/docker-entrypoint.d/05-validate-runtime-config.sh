@@ -27,11 +27,17 @@ fatal() { echo "[nginx-runtime] FATAL: $*" >&2; exit 1; }
 # jq is more lenient than JSON.parse, which the browser loader and the validating
 # initContainer use. Narrow it down to what JSON.parse accepts:
 #  1. exactly one top-level value (jq reads `{}{}` as two). No `-e`: it would
-#     also reject a legitimate top-level `null` or `false`.
+#     also reject a legitimate top-level `null` or `false`. jq 1.8 rejects an
+#     unpaired \uD800-\uDFFF escape that JSON.parse accepts, so each one becomes
+#     U+FFFD in this parse copy only (an escaped backslash and a valid high+low
+#     pair are left alone).
 #  2. no NaN/Infinity literals and no leading-zero numbers. With string contents
 #     blanked out, only true/false/null may remain as bare words.
 # stderr is discarded so config values never reach the log.
-jq -n -e '[inputs] | length == 1' "$CONFIG_PATH" >/dev/null 2>&1 \
+jq -R -s -r '
+    gsub("(?<keep>\\\\\\\\|\\\\u[dD][89abAB][0-9a-fA-F]{2}\\\\u[dD][c-fC-F][0-9a-fA-F]{2})|\\\\u[dD][89a-fA-F][0-9a-fA-F]{2}";
+         if .keep == null then "\\ufffd" else .keep end)
+' "$CONFIG_PATH" 2>/dev/null | jq -n -e '[inputs] | length == 1' >/dev/null 2>&1 \
     || fatal "$CONFIG_PATH is not valid JSON."
 
 jq -R -s -e '
