@@ -11,9 +11,9 @@ import type { LoggerProviderLogMetadata } from './LoggerProviderLogMetadata.js';
  *
  * Bodies are off in code, not in configuration, so no values file can turn them back on. A
  * response here is knowledge-base content — one `GET /search` line carried every snippet (~30 KB),
- * `GET /documents` carries whole documents — and logging it copies the corpus into Loki. No route
- * takes a request body. Method, url, status, duration, the query string and the redacted headers
- * stay.
+ * `GET /documents` carries whole documents — and logging it copies the corpus into Loki. The write
+ * routes' request bodies are whole documents too. Method, url, status, duration, the query string
+ * and the redacted headers stay.
  */
 @Injectable({ token: Logger, scope: ProviderScope.SINGLETON })
 export class LoggerProvider extends Logger {

@@ -24,7 +24,7 @@ export class DocumentRepository {
      *
      * A document whose fields and chunk hashes are all unchanged only gets its `version` and
      * `url` bumped — a full rebuild is mostly that. The url is not compared: a source may derive
-     * it from the version (a git permalink names the commit), so it changes whenever that does. Otherwise the chunks are reconciled by hash: a
+     * it from the revision it read (a git permalink names the commit, not the file's blob), so it changes whenever that does. Otherwise the chunks are reconciled by hash: a
      * chunk whose hash survives keeps its row, so its embeddings survive with it, and only new
      * or changed text is embedded again.
      */

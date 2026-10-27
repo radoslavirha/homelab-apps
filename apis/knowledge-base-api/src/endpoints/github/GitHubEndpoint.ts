@@ -10,12 +10,24 @@ import { ConfigService } from '../../services/ConfigService.js';
 import { GitHubBlobDTO } from './dto/GitHubBlobDTO.js';
 import { GitHubBranchDTO } from './dto/GitHubBranchDTO.js';
 import { GitHubCompareDTO } from './dto/GitHubCompareDTO.js';
+import { GitHubContentCommitDTO } from './dto/GitHubContentCommitDTO.js';
+import { GitHubContentDeleteRequestDTO } from './dto/GitHubContentDeleteRequestDTO.js';
+import { GitHubContentDTO } from './dto/GitHubContentDTO.js';
+import { GitHubContentPutRequestDTO } from './dto/GitHubContentPutRequestDTO.js';
 import { GitHubRepositoryDTO } from './dto/GitHubRepositoryDTO.js';
 import { GitHubTreeDTO } from './dto/GitHubTreeDTO.js';
 import { fetchWithTimeout } from './fetchWithTimeout.js';
 
 /** True for a GitHub 404 — a commit, tree or file that does not exist (any more). */
 export const isGitHubNotFound = (error: unknown): boolean => error instanceof RequestError && error.status === 404;
+
+/**
+ * GitHub refusing a contents write: `409` and `422` (a `sha` that is not the file's, a create of a
+ * file that exists — the docs list both without saying which case gets which) and `404` (the file
+ * is gone). The status means nothing more; the caller reads the file to know why.
+ */
+export const isGitHubWriteRefusal = (error: unknown): boolean =>
+    error instanceof RequestError && [404, 409, 422].includes(error.status);
 
 /**
  * GitHub, as the `knowledge-base-updater` GitHub App, through Octokit.
@@ -26,6 +38,7 @@ export const isGitHubNotFound = (error: unknown): boolean => error instanceof Re
  * `github.timeoutMs` bounds each attempt, not the call: see {@link fetchWithTimeout}.
  *
  * Every read takes an optional `signal` — the indexing run's — that aborts it, retries included.
+ * The contents calls are the write path's: one file, and for `PUT`/`DELETE` one commit, per call.
  *
  * {@link listRepositories} must run first: it is what discovers which repositories the App
  * covers and keeps an installation client for each.
@@ -110,6 +123,43 @@ export class GitHubEndpoint {
         });
 
         return Serializer.deserialize(data, GitHubBlobDTO);
+    }
+
+    /** One file on `ref` (a branch), with its blob SHA. A 404 when there is none. */
+    public async getContent(repo: GitHubRepositoryDTO, path: string, ref: string): Promise<GitHubContentDTO> {
+        const { data } = await this.client(repo).rest.repos.getContent({
+            owner: repo.owner.login,
+            repo: repo.name,
+            path,
+            ref
+        });
+
+        return Serializer.deserialize(data, GitHubContentDTO);
+    }
+
+    /** Creates or replaces one file, as one commit on the request's branch. */
+    public async putContent(repo: GitHubRepositoryDTO, path: string, request: GitHubContentPutRequestDTO): Promise<GitHubContentCommitDTO> {
+        const { data } = await this.client(repo).rest.repos.createOrUpdateFileContents({
+            owner: repo.owner.login,
+            repo: repo.name,
+            path,
+            // The wire names are the DTO's own: no field is renamed, so the serialized body has its type.
+            ...Serializer.serialize(request, GitHubContentPutRequestDTO) as GitHubContentPutRequestDTO
+        });
+
+        return Serializer.deserialize(data, GitHubContentCommitDTO);
+    }
+
+    /** Deletes one file, as one commit on the request's branch. */
+    public async deleteContent(repo: GitHubRepositoryDTO, path: string, request: GitHubContentDeleteRequestDTO): Promise<GitHubContentCommitDTO> {
+        const { data } = await this.client(repo).rest.repos.deleteFile({
+            owner: repo.owner.login,
+            repo: repo.name,
+            path,
+            ...Serializer.serialize(request, GitHubContentDeleteRequestDTO) as GitHubContentDeleteRequestDTO
+        });
+
+        return Serializer.deserialize(data, GitHubContentCommitDTO);
     }
 
     private client(repo: GitHubRepositoryDTO): Octokit {
