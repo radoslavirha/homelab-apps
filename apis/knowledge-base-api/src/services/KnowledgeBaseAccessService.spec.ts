@@ -49,13 +49,13 @@ describe('KnowledgeBaseAccessService', () => {
     it('defaults to every readable knowledge base', () => {
         callerHolds('knowledge-base-api.reader');
 
-        expect(access.resolve(undefined).map((kb) => kb.id)).toEqual(['dev', 'both']);
+        expect(access.resolve(undefined).map((kb) => kb.id)).toEqual(['development', 'both']);
     });
 
     it('narrows to the named ones, de-duplicated', () => {
         callerHolds('knowledge-base-api.reader');
 
-        expect(access.resolve(' both,dev,both ').map((kb) => kb.id)).toEqual(['both', 'dev']);
+        expect(access.resolve(' both,development,both ').map((kb) => kb.id)).toEqual(['both', 'development']);
     });
 
     it('answers the same 404 for an unreadable and a missing knowledge base', () => {

@@ -100,7 +100,7 @@ describe('Server', () => {
             const { rows } = await PlatformTest.get<PostgresService>(PostgresService)
                 .query<{ id: string; source: string; ts_config: string }>('SELECT id, source, ts_config::text FROM knowledge_bases');
 
-            expect(rows).toEqual([{ id: 'dev', source: 'GIT', ts_config: 'english' }]);
+            expect(rows).toEqual([{ id: 'development', source: 'GIT', ts_config: 'english' }]);
         });
     });
 });

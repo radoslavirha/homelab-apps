@@ -7,7 +7,7 @@ import { ModelStatus } from './ModelStatus.js';
 @AdditionalProperties(false)
 export class KnowledgeBaseStatus {
     @Required()
-    @Example('dev')
+    @Example('development')
     public id: string;
 
     @Required()

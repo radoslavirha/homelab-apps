@@ -14,7 +14,7 @@ export const TEST_PUBLIC_URL = 'http://localhost:4004';
  */
 export const TEST_SERVER: McpServerConfig = {
     path: '/development',
-    kb: 'dev',
+    kb: 'development',
     name: 'test-server',
     title: 'Test title',
     auth: {

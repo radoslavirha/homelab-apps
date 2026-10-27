@@ -104,7 +104,7 @@ describe('DocumentRepository', () => {
             await seedDocument(documentDTO('raw/a.md'), [chunkDTO(0, 'A', 'alpha')]);
             await seedDocument(documentDTO('raw/b.md'), [chunkDTO(0, 'B', 'beta')]);
 
-            expect(await documents.delete('dev', ['raw/a.md', 'raw/missing.md'])).toBe(1);
+            expect(await documents.delete('development', ['raw/a.md', 'raw/missing.md'])).toBe(1);
             expect(await chunkIds('raw/a.md')).toEqual([]);
             expect(await chunkIds('raw/b.md')).toHaveLength(1);
         });
@@ -112,7 +112,7 @@ describe('DocumentRepository', () => {
         it('answers 0 for nothing to delete', async () => {
             expect.assertions(1);
 
-            expect(await documents.delete('dev', [])).toBe(0);
+            expect(await documents.delete('development', [])).toBe(0);
         });
 
         it('keeps only the named documents on deleteAllExcept', async () => {
@@ -121,7 +121,7 @@ describe('DocumentRepository', () => {
             await seedDocument(documentDTO('raw/a.md'), [chunkDTO(0, 'A', 'alpha')]);
             await seedDocument(documentDTO('raw/b.md'), [chunkDTO(0, 'B', 'beta')]);
 
-            expect(await documents.deleteAllExcept('dev', ['raw/b.md'])).toBe(1);
+            expect(await documents.deleteAllExcept('development', ['raw/b.md'])).toBe(1);
             expect((await postgres.query<{ external_id: string }>('SELECT external_id FROM documents')).rows).toEqual([{ external_id: 'raw/b.md' }]);
         });
     });
@@ -132,11 +132,11 @@ describe('DocumentRepository', () => {
 
             await seedDocument(documentDTO('raw/a.md', { date: '2026-01-01', url: 'https://example.test/a', metadata: { area: 'raw', repos: ['x'] } }), []);
 
-            const [found] = await documents.find(['dev'], 'raw/a.md');
+            const [found] = await documents.find(['development'], 'raw/a.md');
 
             expect(found).toBeInstanceOf(DocumentDTO);
             expect(found).toEqual(expect.objectContaining({
-                kb: 'dev',
+                kb: 'development',
                 externalId: 'raw/a.md',
                 date: '2026-01-01',
                 url: 'https://example.test/a',

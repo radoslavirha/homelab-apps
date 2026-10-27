@@ -5,7 +5,7 @@ import { AdditionalProperties, Description, Example, Format, Nullable, Property,
 export class SearchResult {
     @Description('Knowledge base the document belongs to.')
     @Required()
-    @Example('dev')
+    @Example('development')
     public kb: string;
 
     @Description('Document id within its knowledge base — for git, the file path. Pass it to GET /documents.')
@@ -47,7 +47,7 @@ export class SearchResult {
     @Nullable(String)
     public url: string | null;
 
-    @Description('Source-specific fields, e.g. area, type, status, repos for the dev knowledge base.')
+    @Description('Source-specific fields, e.g. area, type, status, repos for the development knowledge base.')
     @Required()
     @Property(Object)
     public metadata: Record<string, unknown>;

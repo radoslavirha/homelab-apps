@@ -22,7 +22,7 @@ const RESULT: IndexResult = {
     embeddingDeferred: []
 };
 
-const RUN = { knowledgeBases: ['dev'], full: false, manual: true };
+const RUN = { knowledgeBases: ['development'], full: false, manual: true };
 
 describe('IndexingLoopService', () => {
     let loop: IndexingLoopService;
@@ -55,7 +55,7 @@ describe('IndexingLoopService', () => {
         vi.spyOn(knowledgeBases, 'recordRunEnd').mockResolvedValue(new Date());
         vi.spyOn(knowledgeBases, 'list').mockResolvedValue([
             CommonUtils.buildModelStrict(KnowledgeBaseDTO, {
-                id: 'dev',
+                id: 'development',
                 source: 'GIT',
                 tsConfig: 'english',
                 cursor: 'c1',
@@ -90,7 +90,7 @@ describe('IndexingLoopService', () => {
         await loop.$onReady();
 
         await expect.poll(() => vi.mocked(indexer.index).mock.calls.length).toBeGreaterThanOrEqual(2);
-        expect(indexer.index).toHaveBeenCalledWith(expect.objectContaining({ id: 'dev' }), { full: false, manual: false, signal: expect.any(AbortSignal) });
+        expect(indexer.index).toHaveBeenCalledWith(expect.objectContaining({ id: 'development' }), { full: false, manual: false, signal: expect.any(AbortSignal) });
     });
 
     it('does not run on its own when disabled', async () => {
@@ -136,8 +136,8 @@ describe('IndexingLoopService', () => {
         vi.mocked(indexer.index).mockRejectedValue(new Error('source down'));
         await loop.run(RUN);
 
-        expect(knowledgeBases.recordRunEnd).toHaveBeenCalledWith('dev', RunOutcome.Failure, 'source down');
-        expect(error).toHaveBeenCalledWith('Indexing a knowledge base failed.', expect.objectContaining({ knowledgeBase: 'dev' }));
+        expect(knowledgeBases.recordRunEnd).toHaveBeenCalledWith('development', RunOutcome.Failure, 'source down');
+        expect(error).toHaveBeenCalledWith('Indexing a knowledge base failed.', expect.objectContaining({ knowledgeBase: 'development' }));
     });
 
     it('skips when another pod holds the lock', async () => {
@@ -205,7 +205,7 @@ describe('IndexingLoopService', () => {
             await loop.$onDestroy();
 
             expect(loop.isRunning).toBe(false);
-            expect(knowledgeBases.recordRunEnd).toHaveBeenCalledWith('dev', RunOutcome.Interrupted, 'The pod is shutting down.');
+            expect(knowledgeBases.recordRunEnd).toHaveBeenCalledWith('development', RunOutcome.Interrupted, 'The pod is shutting down.');
             expect(error).not.toHaveBeenCalled();
         });
 
@@ -224,8 +224,8 @@ describe('IndexingLoopService', () => {
 
             await loop.run(RUN);
 
-            expect(knowledgeBases.recordRunEnd).toHaveBeenCalledWith('dev', RunOutcome.Interrupted, 'The Postgres connection was lost: terminated');
-            expect(knowledgeBases.recordRunEnd).not.toHaveBeenCalledWith('dev', RunOutcome.Failure, expect.anything());
+            expect(knowledgeBases.recordRunEnd).toHaveBeenCalledWith('development', RunOutcome.Interrupted, 'The Postgres connection was lost: terminated');
+            expect(knowledgeBases.recordRunEnd).not.toHaveBeenCalledWith('development', RunOutcome.Failure, expect.anything());
         });
 
         it('does not start the next knowledge base once stopped', async () => {
@@ -236,7 +236,7 @@ describe('IndexingLoopService', () => {
 
             vi.spyOn(configService, 'config', 'get').mockReturnValue({ ...configService.config, knowledgeBases: [dev, { ...dev, id: 'home' }] });
             hangUntilAborted();
-            await loop.trigger({ ...RUN, knowledgeBases: ['dev', 'home'] });
+            await loop.trigger({ ...RUN, knowledgeBases: ['development', 'home'] });
             await loop.$onDestroy();
 
             expect(indexer.index).toHaveBeenCalledTimes(1);

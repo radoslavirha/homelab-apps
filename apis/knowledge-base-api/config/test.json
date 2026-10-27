@@ -39,7 +39,7 @@
     },
     "knowledgeBases": [
         {
-            "id": "dev",
+            "id": "development",
             "source": "GIT",
             "tsConfig": "english",
             "models": [

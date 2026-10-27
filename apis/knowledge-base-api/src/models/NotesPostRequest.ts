@@ -8,7 +8,7 @@ export class NotesPostRequest {
     @Description('Knowledge base id.')
     @Required()
     @Pattern(KNOWLEDGE_BASE_ID_PATTERN)
-    @Example('dev')
+    @Example('development')
     public kb: string;
 
     @Description('One line stating the decision or fact. Also the file name\'s slug.')

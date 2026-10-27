@@ -29,10 +29,10 @@ describe('EmbeddingRepository', () => {
 
         await embeddings.insert(MODEL, [{ chunkId: ids.One, vector: [1, 0, 0, 0] }]);
 
-        const pending = await embeddings.pending('dev', MODEL, 10);
+        const pending = await embeddings.pending('development', MODEL, 10);
 
-        expect(await embeddings.countPending('dev', MODEL)).toBe(1);
-        expect(await embeddings.countPending('dev', 'other:1b')).toBe(2);
+        expect(await embeddings.countPending('development', MODEL)).toBe(1);
+        expect(await embeddings.countPending('development', 'other:1b')).toBe(2);
         expect(pending[0]).toBeInstanceOf(PendingChunkDTO);
         expect(pending).toEqual([expect.objectContaining({ id: ids.Two, title: 'A doc', heading: 'Two', body: 'second' })]);
     });
@@ -63,8 +63,8 @@ describe('EmbeddingRepository', () => {
         await embeddings.insert(MODEL, [{ chunkId: old.Same, vector: [1, 0, 0, 0] }]);
         await seedDocument(documentDTO('raw/new.md'), [chunkDTO(0, 'Same', 'text', 'h')]);
 
-        expect(await embeddings.copyByHash('dev', MODEL)).toBe(1);
-        expect(await embeddings.countPending('dev', MODEL)).toBe(0);
+        expect(await embeddings.copyByHash('development', MODEL)).toBe(1);
+        expect(await embeddings.countPending('development', MODEL)).toBe(0);
         expect(await vectors()).toBe(2);
     });
 });

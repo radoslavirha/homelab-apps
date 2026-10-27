@@ -19,7 +19,7 @@ const pathOf = (url: string): string => {
 /**
  * The MCP endpoint a tool call came in on, and who made it.
  *
- * An endpoint is its knowledge base: `/development` serves `dev` and nothing else, as configured
+ * An endpoint is its knowledge base: `/development` serves `development` and nothing else, as configured
  * in `mcpServers.<key>.kb`. A caller never names one. platform-mcp registers tool names globally,
  * so every endpoint shares the same tool instances; a tool asks this service, which matches the
  * path of the request being handled against the mounted endpoints.

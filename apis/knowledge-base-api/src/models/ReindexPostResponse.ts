@@ -7,7 +7,7 @@ export class ReindexPostResponse {
     @Description('Knowledge bases the run covers.')
     @Required()
     @CollectionOf(String)
-    @Example(['dev'])
+    @Example(['development'])
     public knowledgeBases: string[];
 
     @Description('The run ignores the stored cursor and asks the source for everything.')

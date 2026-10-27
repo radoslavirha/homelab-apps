@@ -7,7 +7,7 @@ export class DocumentsPutRequest {
     @Description('Knowledge base id.')
     @Required()
     @Pattern(KNOWLEDGE_BASE_ID_PATTERN)
-    @Example('dev')
+    @Example('development')
     public kb: string;
 
     @Description('work/<YYYY-MM-DD>-<kebab-slug>/spec.md or plan.md. The folder is created when it is new.')

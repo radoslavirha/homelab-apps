@@ -5,10 +5,10 @@ import { DocumentDTO } from '../storage/postgres/dto/DocumentDTO.js';
 import { DocumentRepository } from '../storage/postgres/DocumentRepository.js';
 import { PostgresService } from '../storage/postgres/PostgresService.js';
 
-/** A `documents` row for the `dev` knowledge base (the one `config/test.json` declares). */
+/** A `documents` row for the `development` knowledge base (the one `config/test.json` declares). */
 export const documentDTO = (externalId: string, overrides: Partial<DocumentDTO> = {}): DocumentDTO =>
     CommonUtils.buildModelStrict(DocumentDTO, {
-        kb: 'dev',
+        kb: 'development',
         externalId,
         title: externalId,
         date: null,

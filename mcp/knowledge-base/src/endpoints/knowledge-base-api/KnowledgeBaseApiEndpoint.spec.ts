@@ -12,7 +12,7 @@ import { SearchResponseDTO } from './dto/SearchResponseDTO.js';
 import { KnowledgeBaseApiEndpoint } from './KnowledgeBaseApiEndpoint.js';
 
 const RESULT = {
-    kb: 'dev',
+    kb: 'development',
     externalId: 'raw/2026-01-01-a-note.md',
     anchor: 'raw/2026-01-01-a-note.md#fact',
     title: 'A note',
@@ -53,11 +53,11 @@ describe('KnowledgeBaseApiEndpoint', () => {
     it('reads a whole document by id and knowledge base', async () => {
         expect.assertions(3);
 
-        get.mockResolvedValue({ kb: 'dev', externalId: RESULT.externalId, title: 'A note', date: null, url: null, version: 'c1', metadata: {}, content: '# A note' });
+        get.mockResolvedValue({ kb: 'development', externalId: RESULT.externalId, title: 'A note', date: null, url: null, version: 'c1', metadata: {}, content: '# A note' });
 
-        const document = await endpoint.document(CommonUtils.buildModelStrict(DocumentQueryDTO, { id: RESULT.externalId, kb: 'dev' }));
+        const document = await endpoint.document(CommonUtils.buildModelStrict(DocumentQueryDTO, { id: RESULT.externalId, kb: 'development' }));
 
-        expect(get).toHaveBeenCalledWith('/documents', { params: { id: RESULT.externalId, kb: 'dev' } });
+        expect(get).toHaveBeenCalledWith('/documents', { params: { id: RESULT.externalId, kb: 'development' } });
         expect(document).toBeInstanceOf(DocumentResponseDTO);
         expect(document.content).toBe('# A note');
     });

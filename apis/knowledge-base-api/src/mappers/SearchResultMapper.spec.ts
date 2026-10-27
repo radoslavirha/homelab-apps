@@ -9,7 +9,7 @@ import { SearchResultMapper } from './SearchResultMapper.js';
 
 const hit = CommonUtils.buildModelStrict(SearchHitDTO, {
     id: '7',
-    kb: 'dev',
+    kb: 'development',
     externalId: 'raw/a.md',
     anchor: 'raw/a.md#fact',
     title: 'A',
@@ -35,7 +35,7 @@ describe('SearchResultMapper', () => {
 
         expect(result).toBeInstanceOf(SearchResult);
         expect(result).toEqual(expect.objectContaining({
-            kb: 'dev',
+            kb: 'development',
             externalId: 'raw/a.md',
             anchor: 'raw/a.md#fact',
             heading: 'Fact',

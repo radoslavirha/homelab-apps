@@ -26,7 +26,7 @@ export const bootstrapIndexed = async (): Promise<IndexedServer> => {
         imports: [{ token: OllamaEndpoint, use: ollama }, { token: SourceAdapterFactory, use: sources }]
     })();
     await PlatformTest.get<PostgresService>(PostgresService).query('TRUNCATE documents CASCADE');
-    await PlatformTest.get<IndexingLoopService>(IndexingLoopService).run({ knowledgeBases: ['dev'], full: true, manual: true });
+    await PlatformTest.get<IndexingLoopService>(IndexingLoopService).run({ knowledgeBases: ['development'], full: true, manual: true });
 
     return { request: SuperTest.agent(PlatformTest.callback()), ollama, sources };
 };

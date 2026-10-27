@@ -46,7 +46,7 @@ export class DocumentsController {
         id: string,
 
         @Description('Knowledge base id. Default: every knowledge base the caller may read.')
-        @Example('dev')
+        @Example('development')
         @QueryParams('kb')
         kb?: string
     ): Promise<DocumentsGetResponse> {

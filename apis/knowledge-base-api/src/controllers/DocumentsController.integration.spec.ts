@@ -28,7 +28,7 @@ describe('DocumentsController (integration)', () => {
 
             expect(response.status).toBe(200);
             expect(response.body).toEqual({
-                kb: 'dev',
+                kb: 'development',
                 externalId: note.externalId,
                 title: note.title,
                 date: '2026-01-01',
@@ -106,13 +106,13 @@ describe('DocumentsController (integration)', () => {
             .put('/documents')
             .set('Authorization', `Bearer ${token ?? await editorToken()}`)
             .set('On-Behalf-Of', 'akadmin')
-            .send({ kb: 'dev', id: ID, ...body });
+            .send({ kb: 'development', id: ID, ...body });
 
         const remove = async (body: object, token?: string): Promise<SuperTest.Response> => server.request
             .delete('/documents')
             .set('Authorization', `Bearer ${token ?? await editorToken()}`)
             .set('On-Behalf-Of', 'akadmin')
-            .send({ kb: 'dev', id: ID, reason: 'Merged into another spec.', ...body });
+            .send({ kb: 'development', id: ID, reason: 'Merged into another spec.', ...body });
 
         beforeEach(async () => {
             server = await bootstrapWritable();
@@ -325,10 +325,10 @@ describe('DocumentsController (integration)', () => {
                 .put('/documents')
                 .set('Authorization', `Bearer ${await editorToken()}`)
                 .set('On-Behalf-Of', 'akadmin')
-                .send({ kb: 'dev', id: 'work/2026-10-20-x/spec.md', content: '---\nstatus: draft\nrepos: []\ncreated: 2026-10-20\n---\n# X\n' });
+                .send({ kb: 'development', id: 'work/2026-10-20-x/spec.md', content: '---\nstatus: draft\nrepos: []\ncreated: 2026-10-20\n---\n# X\n' });
 
             expect(response.status).toBe(501);
-            expect(response.body.message).toBe('Knowledge base dev has a GIT source, which cannot be written.');
+            expect(response.body.message).toBe('Knowledge base development has a GIT source, which cannot be written.');
         });
     });
 });

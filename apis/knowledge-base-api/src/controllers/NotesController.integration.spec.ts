@@ -6,7 +6,7 @@ import { FakeGitHubEndpoint } from '../test/FakeGitHubEndpoint.js';
 import { editorToken, readerToken } from '../test/tokens.js';
 
 const DECISION = {
-    kb: 'dev',
+    kb: 'development',
     title: 'MongoDB stays on :latest',
     type: 'DECISION',
     context: 'Renovate kept proposing a digest pin.',
@@ -74,7 +74,7 @@ describe('NotesController (integration)', () => {
             message: 'kb: MongoDB stays on :latest\n\nOn-behalf-of: akadmin\nVia: knowledge-base MCP'
         });
         expect(server.trigger).toHaveBeenCalledTimes(1);
-        expect(server.trigger).toHaveBeenCalledWith({ knowledgeBases: ['dev'], full: false, manual: false });
+        expect(server.trigger).toHaveBeenCalledWith({ knowledgeBases: ['development'], full: false, manual: false });
     });
 
     it('answers 409 with the note as committed in errors when the create is retried after it landed', async () => {

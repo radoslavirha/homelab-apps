@@ -25,7 +25,7 @@ describe('StatusController (integration)', () => {
         const [kb] = response.body.knowledgeBases;
 
         expect(kb).toMatchObject({
-            id: 'dev',
+            id: 'development',
             source: 'GIT',
             cursor: 'c1',
             lastRun: { outcome: RunOutcome.Success, error: null },

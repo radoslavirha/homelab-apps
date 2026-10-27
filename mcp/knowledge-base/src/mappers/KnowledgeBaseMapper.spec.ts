@@ -21,7 +21,7 @@ describe('KnowledgeBaseMapper', () => {
             mode: 'VECTOR',
             models: [],
             results: [{
-                kb: 'dev', externalId: 'raw/a.md', anchor: 'raw/a.md#fact', title: 'A', heading: 'Fact',
+                kb: 'development', externalId: 'raw/a.md', anchor: 'raw/a.md#fact', title: 'A', heading: 'Fact',
                 snippet: 's', score: 0.5, date: '2026-01-01', url: 'https://example.test', metadata: { area: 'raw' }
             }]
         }, SearchResponseDTO);
@@ -38,7 +38,7 @@ describe('KnowledgeBaseMapper', () => {
     it('gives a read document its markdown under `markdown`, never `content`', () => {
         // A `content` key would make platform-mcp pass the result through as a finished MCP result.
         const document = Serializer.deserialize({
-            kb: 'dev', externalId: 'raw/a.md', title: 'A', date: null, url: null, version: 'c1', metadata: { area: 'raw' }, content: '# A'
+            kb: 'development', externalId: 'raw/a.md', title: 'A', date: null, url: null, version: 'c1', metadata: { area: 'raw' }, content: '# A'
         }, DocumentResponseDTO);
 
         const output = mapper.toRead(document);
