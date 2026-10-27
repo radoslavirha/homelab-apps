@@ -1,5 +1,11 @@
 # knowledge-base
 
+## 0.3.0
+
+### Minor Changes
+
+- [#390](https://github.com/radoslavirha/homelab-apps/pull/390) [`3f4f829`](https://github.com/radoslavirha/homelab-apps/commit/3f4f829f795c31cc8100c78585c12f60a2fafa63) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Add the writing tools `create_note`, `write_document` and `delete_document` (editor level), each one commit made for the signed-in user through knowledge-base-api; `read` returns the document's `version`. Upstream client is now `knowledge-base-mcp`.
+
 ## 0.2.1
 
 ### Patch Changes
