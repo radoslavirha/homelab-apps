@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { handleCallback } from './handleCallback.js';
+import { createAuthClient } from './createAuthClient.js';
 import type { AuthClient } from './createAuthClient.js';
 
 const client = (overrides: Record<string, unknown> = {}) =>
@@ -78,5 +79,31 @@ describe('handleCallback', () => {
         const c = client({ signinRedirectCallback: vi.fn().mockRejectedValue(new Error('invalid_grant')) });
 
         await expect(handleCallback(c)).resolves.toEqual({ result: 'failed' });
+    });
+
+    it('does not fail again when the user follows the failure screen and reloads', async () => {
+        // A real client: oidc-client-ts consumes the state entry before the
+        // exchange, so the URL left in the address bar can never succeed again.
+        const config = {
+            issuer: 'https://auth.example.test/application/o/qr/',
+            clientId: 'qr',
+            scope: 'openid profile email roles',
+            redirectUri: 'http://localhost:3000/callback',
+            postLogoutRedirectUri: 'http://localhost:3000/'
+        };
+        at('?code=abc&state=consumed');
+
+        await expect(handleCallback(createAuthClient(config))).resolves.toEqual({ result: 'failed' });
+        expect(window.location.search).toBe('');
+
+        await expect(handleCallback(createAuthClient(config))).resolves.toEqual({ result: 'no-session' });
+    });
+
+    it('reports no-session when the callback route is loaded without an authorization response', async () => {
+        at('');
+        const c = client();
+
+        await expect(handleCallback(c)).resolves.toEqual({ result: 'no-session' });
+        expect(c.signinRedirectCallback).not.toHaveBeenCalled();
     });
 });
