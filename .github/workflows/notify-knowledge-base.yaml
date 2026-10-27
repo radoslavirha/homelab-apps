@@ -15,6 +15,7 @@ on:
       - "AGENTS.md"
       - "docs/**/*.md"
       - "apis/*/README.md"
+      - "mcp/*/README.md"
       - "packages/*/README.md"
       - "ui/*/README.md"
   workflow_dispatch:

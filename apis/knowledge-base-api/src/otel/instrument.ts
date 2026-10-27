@@ -1,0 +1,30 @@
+/**
+ * OpenTelemetry SDK bootstrap.
+ * Must be loaded before the main entrypoint via Node.js --import flag:
+ *   node --import ./dist/otel/instrument.js dist/index.js
+ */
+import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
+import { UndiciInstrumentation } from '@opentelemetry/instrumentation-undici';
+import { openTelemetry } from '@radoslavirha/otel';
+import { ConfigProvider } from '@radoslavirha/tsed-configuration';
+import { type ConfigModel, ConfigSchema } from './OtelConfig.js';
+
+const configProvider = new ConfigProvider<ConfigModel>({ schema: ConfigSchema });
+
+openTelemetry.init({
+    otel: configProvider.config.otel,
+    service: configProvider.api.service,
+    version: configProvider.api.version,
+    extraInstrumentations: [
+        new PgInstrumentation({
+            // A query with no parent — the readiness probe's `SELECT 1`, which runs under an
+            // ignored /health path — would otherwise start a one-span trace every few seconds.
+            requireParentSpan: true,
+            // Off, and it must stay off: parameters carry whole documents and embedding vectors.
+            enhancedDatabaseReporting: false
+        }),
+        // Octokit calls GitHub through Node's fetch (undici), which HttpInstrumentation does not
+        // see. Without this every GitHub call is missing from the indexing trace.
+        new UndiciInstrumentation({ requireParentforSpans: true })
+    ]
+});

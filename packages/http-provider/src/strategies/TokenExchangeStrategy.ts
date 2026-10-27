@@ -1,10 +1,14 @@
+import { CommonUtils } from '@radoslavirha/utils';
 import axios, { type AxiosInstance } from 'axios';
 import type { TokenExchangeAuth, TokenExtractorEntry } from '../schemas/auth.schema.js';
-import { extractByPath } from '../utils/extractByPath.js';
+import { extractByPath, extractNumberByPath } from '../utils/extractByPath.js';
 import type { IAuthStrategy } from './IAuthStrategy.js';
+
+const DEFAULT_EXPIRY_MARGIN_SECONDS = 30;
 
 export class TokenExchangeStrategy implements IAuthStrategy {
     private cachedCredentials: Record<string, string> | undefined;
+    private expiresAt: number | undefined;
     private inFlightCredentials: Promise<Record<string, string>> | undefined;
     private inFlightEpoch: number | undefined;
     private cacheEpoch: number = 0;
@@ -26,7 +30,7 @@ export class TokenExchangeStrategy implements IAuthStrategy {
     }
 
     public async getCredentials(): Promise<Record<string, string>> {
-        if (this.cachedCredentials) {
+        if (this.cachedCredentials && (CommonUtils.isUndefined(this.expiresAt) || Date.now() < this.expiresAt)) {
             return this.cachedCredentials;
         }
 
@@ -37,9 +41,10 @@ export class TokenExchangeStrategy implements IAuthStrategy {
         const requestEpoch = this.cacheEpoch;
         this.inFlightEpoch = requestEpoch;
         this.inFlightCredentials = this.fetchCredentials()
-            .then((credentials) => {
+            .then(({ credentials, expiresAt }) => {
                 if (this.cacheEpoch === requestEpoch) {
                     this.cachedCredentials = credentials;
+                    this.expiresAt = expiresAt;
                 }
                 return credentials;
             })
@@ -56,9 +61,10 @@ export class TokenExchangeStrategy implements IAuthStrategy {
     public invalidate(): void {
         this.cacheEpoch += 1;
         this.cachedCredentials = undefined;
+        this.expiresAt = undefined;
     }
 
-    private async fetchCredentials(): Promise<Record<string, string>> {
+    private async fetchCredentials(): Promise<{ credentials: Record<string, string>; expiresAt: number | undefined }> {
         const { method, url, headers, queryParams, body } = this.config.request;
 
         const requestHeaders: Record<string, string> = {};
@@ -87,6 +93,12 @@ export class TokenExchangeStrategy implements IAuthStrategy {
         for (const extractor of this.extractors) {
             credentials[extractor.as] = extractByPath(response.data, extractor.field);
         }
-        return credentials;
+
+        let expiresAt: number | undefined;
+        if (CommonUtils.notUndefined(this.config.expiresIn)) {
+            const lifetime = extractNumberByPath(response.data, this.config.expiresIn);
+            expiresAt = Date.now() + (lifetime - (this.config.expiryMargin ?? DEFAULT_EXPIRY_MARGIN_SECONDS)) * 1000;
+        }
+        return { credentials, expiresAt };
     }
 }

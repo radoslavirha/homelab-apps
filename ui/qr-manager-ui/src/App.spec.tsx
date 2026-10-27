@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { App } from './App.js';
 import type { QrCode } from './api/types.js';
@@ -146,7 +146,8 @@ describe('<App />', () => {
         await waitFor(() => expect(screen.getByText(/having problems — retrying/)).toBeInTheDocument());
         const callsAtBanner = fetchMock.mock.calls.length;
 
-        await vi.advanceTimersByTimeAsync(120_000);
+        // The retry re-renders App, so the timers advance inside act().
+        await act(async () => { await vi.advanceTimersByTimeAsync(120_000); });
         vi.useRealTimers();
 
         expect(fetchMock.mock.calls.length).toBeGreaterThan(callsAtBanner);
@@ -184,6 +185,15 @@ describe('the gate', () => {
         // One logout control, not two: it ends the SSO session outright.
         expect(screen.getByRole('button', { name: /log out/i })).toBeInTheDocument();
         expect(screen.queryByRole('button', { name: /everywhere/i })).not.toBeInTheDocument();
+    });
+
+    it('redirects an unknown route to the list instead of a blank page', async () => {
+        expect.assertions(1);
+        okFetch();
+        window.history.replaceState(null, '', '/qr-codes');
+        render(<App config={config()} />);
+
+        expect(await screen.findByRole('heading', { name: 'QR codes' })).toBeInTheDocument();
     });
 
     it('shows an anonymous visitor the sign-in page and NONE of the app', async () => {

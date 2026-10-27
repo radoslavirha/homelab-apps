@@ -1,6 +1,6 @@
 {
     "name": "@radoslavirha/auth",
-    "version": "0.2.1",
+    "version": "0.3.0",
     "description": "Framework-agnostic authentication contracts: Principal, verification outcomes, token verifier and key source seams, and the shared test kit",
     "private": true,
     "type": "module",

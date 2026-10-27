@@ -5,7 +5,7 @@ import { SimplifiedMiotSpec } from './simplified-miot-spec/SimplifiedMiotSpec.js
 /**
  * Base class for device response models that include a parsed MIoT spec.
  * Shared by DeviceGetResponse and DevicePostResponse (registered devices with full Device fields).
- * DeviceDiscoverResponse is standalone — it does not have id or stamp.
+ * DeviceDiscoverResponse is standalone — it does not have an id.
  */
 export class DeviceWithSpec extends Device {
     @Description('Parsed MIoT spec describing the device capabilities.')

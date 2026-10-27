@@ -4,13 +4,18 @@ import { defineConfig, mergeConfig } from 'vitest/config';
 export default defineConfig(mergeConfig(defaultConfig, {
     oxc: false,
     test: {
+        // Console output (logger lines included) is printed only for a failing test.
+        silent: 'passed-only',
+        // MongoDB is the only storage, so the controller integration specs boot against a
+        // real one (Docker required). Each `TestContainersMongo.bootstrap` gets its own database.
+        globalSetup: [import.meta.resolve('@tsed/testcontainers-mongo/vitest/setup')],
         coverage: {
             exclude: ['src/models/**', 'src/test/**'],
             thresholds: {
-                lines: 50.9,
-                functions: 36.8,
-                statements: 49.7,
-                branches: 47.6
+                lines: 83,
+                functions: 87,
+                statements: 83,
+                branches: 73
             }
         }
     }

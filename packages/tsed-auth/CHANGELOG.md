@@ -1,5 +1,25 @@
 # @radoslavirha/tsed-auth
 
+## 0.3.1
+
+### Patch Changes
+
+- [`099d0cd`](https://github.com/radoslavirha/homelab-apps/commit/099d0cd52cbb08f3bc850569b2fd5e6ab9b31f4b) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update packages
+- Updated dependencies [[`20c61e5`](https://github.com/radoslavirha/homelab-apps/commit/20c61e558621cba57a2b2ae95d902d44ac35baab), [`099d0cd`](https://github.com/radoslavirha/homelab-apps/commit/099d0cd52cbb08f3bc850569b2fd5e6ab9b31f4b)]:
+  - @radoslavirha/auth@0.3.0
+
+## 0.3.0
+
+### Minor Changes
+
+- [#309](https://github.com/radoslavirha/homelab-apps/pull/309) [`6bd3255`](https://github.com/radoslavirha/homelab-apps/commit/6bd32558bf2a34f2e3160a799d2618c3961853b5) Thanks [@radoslavirha](https://github.com/radoslavirha)! - `PrincipalService` lets any provider read the current request's principal (`current()`, or `require()`, which throws `Unauthorized`), so a controller no longer has to pass it down through every handler.
+
+### Patch Changes
+
+- [#304](https://github.com/radoslavirha/homelab-apps/pull/304) [`d5b67cb`](https://github.com/radoslavirha/homelab-apps/commit/d5b67cb7293177913233282fcac87de11563b933) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Use CommonUtils.isEmpty instead of raw length checks; no behaviour change.
+- Updated dependencies [[`d5b67cb`](https://github.com/radoslavirha/homelab-apps/commit/d5b67cb7293177913233282fcac87de11563b933)]:
+  - @radoslavirha/auth@0.2.2
+
 ## 0.2.1
 
 ### Patch Changes

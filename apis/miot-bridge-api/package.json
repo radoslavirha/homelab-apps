@@ -1,6 +1,6 @@
 {
   "name": "miot-bridge-api",
-  "version": "0.28.1",
+  "version": "0.30.0",
   "private": true,
   "description": "Bridge between Loxone/other controllers and Xiaomi devices via miot protocol",
   "type": "module",
@@ -9,7 +9,7 @@
     "cleanup:all": "pnpm run cleanup:artifacts && pnpm run cleanup:modules",
     "cleanup:artifacts": "rm -rf coverage dist",
     "cleanup:modules": "rm -rf node_modules",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint --fix .",
     "start": "nodemon src/index.ts",
     "start:prod": "node --import /home/app/dist/otel/instrument.js dist/index.js",
@@ -61,7 +61,7 @@
     "cookie-parser": "catalog:express",
     "express": "catalog:express",
     "mongoose": "catalog:",
-    "mqtt": "^5.16.0",
+    "mqtt": "^5.16.1",
     "zod": "catalog:"
   },
   "devDependencies": {
@@ -72,6 +72,7 @@
     "@swc-node/register": "catalog:swc",
     "@swc/cli": "catalog:swc",
     "@swc/core": "catalog:swc",
+    "@tsed/testcontainers-mongo": "catalog:tsed",
     "@types/compression": "catalog:express",
     "@types/cookie-parser": "catalog:express",
     "@types/express": "catalog:express",

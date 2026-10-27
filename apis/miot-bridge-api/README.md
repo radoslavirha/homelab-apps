@@ -58,7 +58,11 @@ still sets `http` boots normally and the key is ignored.
 | Xiaomi devices (LAN) | MIoT binary UDP | always | Device control, property reads |
 | miot-spec.org | HTTPS GET | on device registration | Fetch device capability spec |
 | MQTT broker | MQTT pub/sub | `mqtt.enabled` | Inbound commands + outbound notifications |
-| MongoDB | TCP | `mongodb.enabled` | Device registry + notification subscriptions (fallback: local JSON cache) |
+| MongoDB | TCP | always (`mongodb.enabled` must be `true`) | Device registry, notification subscriptions, model property overrides |
+
+MongoDB is the only storage: a config without an enabled `mongodb` block fails at boot. The local
+JSON file storage was removed; a config file that still sets `cachePath` boots normally and the key
+is ignored.
 
 ## Configuration (externalApis)
 
@@ -87,7 +91,7 @@ Apply ConfigMap changes before rolling application images.
 
 ## Configuration (logger)
 
-`logger.requests.request.redactPaths` and `logger.requests.response.redactPaths` default to the device secrets (`token`, `stamp`, plus `*.`/`*.*.` nested forms) so MIoT tokens never reach the request log. A configured list replaces the default; `[]` disables redaction for that body.
+`logger.requests.request.redactPaths` and `logger.requests.response.redactPaths` default to the device secret (`token`, plus `*.`/`*.*.` nested forms) so MIoT tokens never reach the request log. A configured list replaces the default; `[]` disables redaction for that body.
 
 ## REST API
 
@@ -137,7 +141,7 @@ Retained command messages are ignored (subscribed with `rh: 2`, and dropped if t
 
 Command payload: `{ deviceId: number, command: "service:property", operation: "GetProperty|SetProperty|Action", [value] }`
 
-A device that publishes several services of the same type (e.g. a multi-gang switch) gets the siid appended to that service's key: `switch-2:on`, `switch-3:on`. Unique service types keep the plain `service:property` key.
+A device that publishes several services of the same type (e.g. a multi-gang switch) gets the siid appended to that service's key: `switch-2:on`, `switch-3:on`. The same holds inside a service: a property or action type published more than once gets its iid appended (`switch:mode-2`, `switch:mode-6`, `filter:reset-filter-life-1`). Unique service and property/action types keep the plain `service:property` key.
 
 ## Notification Payload
 

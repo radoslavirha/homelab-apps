@@ -1,7 +1,6 @@
 import { Injectable, Scope, ProviderScope } from '@tsed/di';
 import { MiotDevice } from '@radoslavirha/miot-device';
 import type { DeviceCache } from '../models/DeviceCache.js';
-import { CommonUtils } from '@radoslavirha/utils';
 import { Logger } from '@radoslavirha/tsed-logger';
 
 /**
@@ -10,8 +9,8 @@ import { Logger } from '@radoslavirha/tsed-logger';
  * transport-level `MiotDevice` — the registry never performs storage I/O.
  *
  * Instances are keyed by hardware `deviceId`. On first access the instance is
- * created and seeded with the stamp stored in the device record; the internal
- * stamp-refresh logic of `MiotDevice` handles stale stamps transparently.
+ * created **without** a stamp: its first command handshakes, and `MiotDevice`
+ * tracks the device clock from there.
  */
 @Injectable()
 @Scope(ProviderScope.SINGLETON)
@@ -24,8 +23,7 @@ export class MiotDeviceRegistry {
      * Returns the existing `MiotDevice` instance for the device, creating and
      * seeding one from `device` if it does not yet exist.
      *
-     * No I/O is performed here — the device's stamp-refresh logic handles
-     * re-handshaking lazily when the cached stamp is stale.
+     * No I/O is performed here — the device handshakes lazily on its first command.
      */
     public getOrCreate(device: DeviceCache): MiotDevice {
         const existing = this._registry.get(device.deviceId);
@@ -40,12 +38,10 @@ export class MiotDeviceRegistry {
             logger: this.logger.child('MIOT_DEVICE')
         });
 
-        // Seed the stamp from whatever was last persisted in the device record.
-        // If stampUpdatedAt is 0 (never refreshed), the instance will proactively
-        // handshake on the first command because the age will exceed stampMaxAgeMs.
-        if (CommonUtils.notNil(device.stamp)) {
-            instance.setStampState({ stamp: device.stamp, updatedAt: device.stampUpdatedAt ?? 0 });
-        }
+        // Deliberately not seeded. The stamp is the device's clock (seconds since boot), so any
+        // stored copy is behind it, or from before the device last rebooted. Seeding from the
+        // registration-time copy made the first command after every pod restart wait out a 10 s
+        // timeout before re-handshaking. A handshake is one round trip.
 
         this._registry.set(device.deviceId, instance);
         return instance;

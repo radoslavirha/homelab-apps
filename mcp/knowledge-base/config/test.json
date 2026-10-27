@@ -1,0 +1,80 @@
+{
+    "server": {
+        "httpPort": 4004
+    },
+    "publicURL": "http://localhost:4004",
+    "mcpServers": {
+        "DEVELOPMENT_KB": {
+            "path": "/development",
+            "kb": "development",
+            "name": "development-knowledge-base",
+            "title": "Development knowledge base",
+            "description": "Development knowledge base for the homelab repositories: decisions with the alternatives that were rejected, specs and plans, cross-repository contracts (MQTT topics, REST endpoints, URLs, auth), gotchas, and a mirror of the repositories' own docs.",
+            "auth": {
+                "issuer": "https://issuer.test/",
+                "audience": "test-audience",
+                "key": {
+                    "source": "value",
+                    "algorithm": "HS256",
+                    "value": "test-secret-not-a-real-key-000000"
+                },
+                "roles": {
+                    "READER": "kb-development.reader",
+                    "EDITOR": "kb-development.editor"
+                }
+            }
+        }
+    },
+    "externalApis": {
+        "KNOWLEDGE_BASE_API": {
+            "baseURL": "http://kb-api.test",
+            "auth": {
+                "strategy": "token-exchange",
+                "request": {
+                    "method": "POST",
+                    "url": "http://auth.test/application/o/token/",
+                    "headers": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/x-www-form-urlencoded"
+                        }
+                    ],
+                    "body": {
+                        "grant_type": "client_credentials",
+                        "client_id": "development-kb-mcp",
+                        "client_secret": "test-secret-not-a-real-one",
+                        "scope": "openid profile email roles"
+                    }
+                },
+                "tokenExtractor": "access_token",
+                "transport": {
+                    "headers": [
+                        {
+                            "name": "Authorization",
+                            "credential": "value",
+                            "prefix": "Bearer "
+                        }
+                    ]
+                }
+            },
+            "resilience": {
+                "timeout": {
+                    "ms": 10000
+                },
+                "retry": {
+                    "count": 1,
+                    "backoffMs": 500
+                },
+                "circuitBreaker": {}
+            },
+            "retriableStatusCodes": [
+                500,
+                502,
+                503,
+                504,
+                408
+            ]
+        }
+    },
+    "logger": {}
+}

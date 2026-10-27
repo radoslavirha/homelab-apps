@@ -1,0 +1,28 @@
+# Instructions
+
+- End-user documentation lives in [README.md](./README.md). Keep it up to date when adding tools, config keys or transports.
+- The design and its phases live in the private knowledge base (`knowledge-base` skill): search it for `development-kb-mcp` before changing anything non-obvious.
+
+## What it does
+
+An MCP server in front of `knowledge-base-api`, so that any MCP client can search and read its knowledge bases — one endpoint per audience, not one app per knowledge base. **Today:** one MCP endpoint, `/development` (via `@tsed/platform-mcp`, stateless Streamable HTTP; built in `src/index.ts` from `ConfigService` by `toMcpSettings`) and the shared health endpoints, with two read-only tools (`src/tools/`, `search` and `read`) answered from knowledge-base-api through `KnowledgeBaseApiEndpoint`.
+
+## Rules
+
+- **An MCP endpoint is a `McpServer` value plus a `mcpServers` entry**, the same contract as `ExternalApi` and `externalApis`: path, `kb`, name, title, description and its own required `auth` in config. `path` is the app's own (`/development`); Traefik adds and strips the public prefix `/kb`. Endpoints share the tools in `src/tools/` — platform-mcp registers tool names globally, so two endpoints cannot each have their own `search`.
+
+- **An endpoint is its knowledge base; a caller never names one.** No tool takes a `kb`: handlers ask `McpEndpointService.knowledgeBase()`, which matches the request path against `mcpServers` and returns that entry's `kb`. Without it knowledge-base-api's `/search` would search every knowledge base the client may read. A new audience (a household or a personal knowledge base) is a new endpoint in config, never a parameter; one whose knowledge base depends on the caller resolves it from the verified token in that service.
+- **A tool is a class in `src/tools/`, exported from `src/tools/index.ts`.** `index.ts` registers every class that barrel exports, as `Server.ts` mounts controllers; there is no list to keep. Tool → handler → endpoint and mapper, like controller → handler in the APIs. The tool's `@Description` is what an agent reads to decide whether to call it: write it for that reader.
+- **An output string that may be empty takes `@MinLength(0)`.** `@Required()` alone adds `minLength: 1`, and the SDK then rejects the whole result when real data has an empty value (a section before the first heading). `@Allow('')` is not the fix: it leaves `minLength: undefined`, which platform-mcp fails to convert at startup.
+- **A tool's output model never has a top-level `content` property.** platform-mcp passes any result with a `content` key through as a finished MCP result, so the structured content the output schema promises goes missing and clients reject the call. `read` returns the document as `markdown` for that reason.
+
+- **`@modelcontextprotocol/server` stays a direct dependency** (from the workspace catalog). `@tsed/platform-mcp` accepts any `>=2.0.0`, and pnpm resolved it to 2.0.0, which the transport (`@modelcontextprotocol/node`, needing `^2.3.0`) cannot load. The direct dependency keeps one copy at a version that works.
+
+- **Every endpoint requires a sign-in, with no switch.** `mcpServers.<key>.auth` is required (the root AGENTS.md § Authentication). platform-mcp's OAuth resource server serves the Protected Resource Metadata and the `401`/`403` challenges; `McpTokenVerifier` (`src/auth/`) decides, through `@radoslavirha/auth`'s `Authenticator` — not the tsed-auth guard, which guards controllers, and an MCP endpoint is no controller. Refusals map to OAuth errors: credential refused → `invalid_token` (401), keys unreachable → `server_error` (never a 401), none of the endpoint's roles → `insufficient_scope` (403, never a 401).
+- **Every tool declares the least role it needs: `@RequireRole(KnowledgeBaseRole.<level>)`** on the tool method, next to `@Tool`. Levels (`READER`, `EDITOR`) are the same for every endpoint; each endpoint maps them to its Authentik roles in `auth.roles`, since the shared tools cannot name one endpoint's roles. Reading tools take `Reader`, a writing tool `Editor`. A spec fails for a tool without one. Exact strings, no hierarchy, as in the APIs: Authentik gives an editor the reader role too.
+- **`scopes` must include `profile` and `roles`.** Without `profile` Authentik issues `aud` as the bare client id and every token is refused; without `roles` the token carries no role. The schema refuses such a config at boot.
+- **The resource identifier is `publicURL` + the endpoint's `path`**, e.g. `https://mcp.irha.cz/kb` + `/development` (`resourceOf`). platform-mcp requires it and never derives it from `Host`. `publicURL` is required here, optional in `BaseConfig`.
+- **Never forward a caller's token upstream.** This server calls knowledge-base-api as its own client (`development-kb-mcp`), with a token it fetches itself.
+- **No token refresh code.** http-provider's `token-exchange` re-fetches on `401` and retries once; `KnowledgeBaseApiEndpoint.integration.spec.ts` pins that flow against a fake Authentik and API. An expiry-aware cache, if the one refused call per token lifetime becomes noise, belongs in http-provider, not here.
+- **Read-only.** The tools search and read; nothing writes to the knowledge base, which lives in git.
+- **Deployed to production only** (homelab: the `knowledge-base` ApplicationSet, `mcp.irha.cz/kb/`). `deploy.json` names `values-production.yaml`; a release bumps its `image.tag`. No sandbox: the knowledge bases exist in production only.

@@ -1,6 +1,6 @@
 lockfile_version: '1'
-generated_at: '2026-10-13T20:13:38.192241+00:00'
-apm_version: 0.31.0
+generated_at: '2026-10-27T19:05:34.246651+00:00'
+apm_version: 0.28.0
 dependencies:
 - repo_url: radoslavirha/toolkit-hub
   name: toolkit-adoption
@@ -214,6 +214,96 @@ dependencies:
   declared_license: MIT
 deployments:
 - kind: project-relative
+  target: agents
+  value: .agents/skills/add-workspace-member
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: agents
+  value: .agents/skills/add-workspace-member/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:0d8be337dc14c9daad150789ffa8854dafd72e64d927697b998f69c7017bc972
+- kind: project-relative
+  target: agents
+  value: .agents/skills/instrument-entry-point
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: agents
+  value: .agents/skills/instrument-entry-point/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:dde43317847d390b4f6d3515d52e8d6ab6d99adce9533f3507f4e99597a80f79
+- kind: project-relative
+  target: agents
+  value: .agents/skills/onboard-to-homelab
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: agents
+  value: .agents/skills/onboard-to-homelab/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:a63e5f55956b4be8111c7afe109b5f453a96ad662add3ccaaf9b2c31cdbe5a8e
+- kind: project-relative
+  target: agents
+  value: .agents/skills/update-docs
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: agents
+  value: .agents/skills/update-docs/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:7a1d94bcdfecfdb6dbabde23c41994664a6a343ddc04ed755b847ec60cdcd43e
+- kind: project-relative
+  target: agents
+  value: .agents/skills/verify-auth-in-browser
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: agents
+  value: .agents/skills/verify-auth-in-browser/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:d4f05055a8381ab1b04bad9d2fd19836269fc907a2d7fb97d07562b4b0b54f75
+- kind: project-relative
   target: claude
   value: .claude/rules/react-testing.md
   runtime: null
@@ -221,7 +311,16 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:7961ec428e4922b7b9d0e473018ba0763bd069daa9d04232a7bbd5c18c8d71b3
+  content_hash: sha256:56d8de4d1ded844e807bf2dfd0696764566bd08cf25b183020ec1c9c5f874965
+- kind: project-relative
+  target: claude
+  value: .claude/rules/tsed-api.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:c465de86ebe068a3c1c56d72012818dfd906ad4f7a5469d8e5be07ed102dd88e
 - kind: project-relative
   target: claude
   value: .claude/rules/tsed-testing.md
@@ -230,7 +329,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:44c028e02165e9160f8c973c9d07c45f4895f7131aa754de46409fc67449ef3c
+  content_hash: sha256:5720c8000602f7ea313145d23646cc896a9ba13c114f736b59303e926d6f8d9f
 - kind: project-relative
   target: claude
   value: .claude/skills/adding-a-workspace-member
@@ -248,7 +347,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:5fca30f4a17014ef4dcdda0a95953d024b4e6cc48cad3adbb003a287c3999b10
+  content_hash: sha256:91c56633e7dcf067b5a524e3b4410e704958e30b7fefe515b3606e4c7c454e31
 - kind: project-relative
   target: claude
   value: .claude/skills/adding-a-workspace-member/reference/api.md
@@ -257,7 +356,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:11d2f1289cef7a6c687f418c0522aa29dc84670eb2f417309087f9156b4183fc
+  content_hash: sha256:7352060b8092bafc3c62e48b40d6bc6899df5b3c234f73c598dd8406138ad0e1
 - kind: project-relative
   target: claude
   value: .claude/skills/adding-a-workspace-member/reference/dockerfile.md
@@ -293,7 +392,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:1d6995c4aaea624bbc6575b67a6a518aacd55132730e0b1e97f5a8f30de20a52
+  content_hash: sha256:855fc7acbb96de3db425587cd165f628d47a90c056c89399eaa45102feb4d872
 - kind: project-relative
   target: claude
   value: .claude/skills/adopting-toolkit-hub
@@ -347,7 +446,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:4cd515022a247de1bf66861c6820bcb017e8fc3d33204d257e8f79604016b478
+  content_hash: sha256:5506012895969fbbd5569fa9799cdb65600bed8ff0806891b1f3a6a4c66c3678
 - kind: project-relative
   target: claude
   value: .claude/skills/onboarding-to-homelab
@@ -365,7 +464,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:f14ea985b412614c9ed8a6434faf4a557d041c6df839dcb680fac5412f06de72
+  content_hash: sha256:be44857c1904e91f4dfd2a57fd0788accbad49d18194496d58b958c47fe037ab
 - kind: project-relative
   target: claude
   value: .claude/skills/onboarding-to-homelab/scripts/validate-app.sh
@@ -374,7 +473,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:aebbc64a7bbb4861f6ed48a355b089a8ea47896d480b18a2c5d40314fc19ca55
+  content_hash: sha256:c8dbb46b8c7b2aa768ac7b9a9726cb0a18321f7835124aa772acc532ad9273fc
 - kind: project-relative
   target: claude
   value: .claude/skills/updating-docs
@@ -626,97 +725,25 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:72c00125734b3ec2f62285058155f030d86a0aa766a4f929358794897c4babbd
+  content_hash: sha256:f287f0fa80c25477560069917746814464e78533da39017f82b9753888776bb2
 - kind: project-relative
-  target: legacy
-  value: .agents/skills/add-workspace-member
+  target: claude
+  value: .claude/skills/verifying-auth-in-browser/scripts/authentik_token.py
   runtime: null
   scope: project
   owners:
   - .
   active_owner: .
-  content_hash: null
+  content_hash: sha256:82a4e59788692ef4acbc8fa252707560c888d38cebfdfba95b98c8aa2d3dc057
 - kind: project-relative
-  target: legacy
-  value: .agents/skills/add-workspace-member/SKILL.md
+  target: claude
+  value: .claude/skills/verifying-auth-in-browser/scripts/ui_login.cjs
   runtime: null
   scope: project
   owners:
   - .
   active_owner: .
-  content_hash: sha256:0d8be337dc14c9daad150789ffa8854dafd72e64d927697b998f69c7017bc972
-- kind: project-relative
-  target: legacy
-  value: .agents/skills/instrument-entry-point
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-- kind: project-relative
-  target: legacy
-  value: .agents/skills/instrument-entry-point/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: sha256:dde43317847d390b4f6d3515d52e8d6ab6d99adce9533f3507f4e99597a80f79
-- kind: project-relative
-  target: legacy
-  value: .agents/skills/onboard-to-homelab
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-- kind: project-relative
-  target: legacy
-  value: .agents/skills/onboard-to-homelab/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: sha256:a63e5f55956b4be8111c7afe109b5f453a96ad662add3ccaaf9b2c31cdbe5a8e
-- kind: project-relative
-  target: legacy
-  value: .agents/skills/update-docs
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-- kind: project-relative
-  target: legacy
-  value: .agents/skills/update-docs/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: sha256:7a1d94bcdfecfdb6dbabde23c41994664a6a343ddc04ed755b847ec60cdcd43e
-- kind: project-relative
-  target: legacy
-  value: .agents/skills/verify-auth-in-browser
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-- kind: project-relative
-  target: legacy
-  value: .agents/skills/verify-auth-in-browser/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: sha256:d4f05055a8381ab1b04bad9d2fd19836269fc907a2d7fb97d07562b4b0b54f75
+  content_hash: sha256:12da1e23b9ac546e533e5904d0cb29a9f19b551cc789afb3fd0cf9aa73e67466
 local_deployed_files:
 - .agents/skills/add-workspace-member
 - .agents/skills/add-workspace-member/SKILL.md
@@ -729,6 +756,7 @@ local_deployed_files:
 - .agents/skills/verify-auth-in-browser
 - .agents/skills/verify-auth-in-browser/SKILL.md
 - .claude/rules/react-testing.md
+- .claude/rules/tsed-api.md
 - .claude/rules/tsed-testing.md
 - .claude/skills/adding-a-workspace-member
 - .claude/skills/adding-a-workspace-member/SKILL.md
@@ -746,22 +774,27 @@ local_deployed_files:
 - .claude/skills/updating-docs/SKILL.md
 - .claude/skills/verifying-auth-in-browser
 - .claude/skills/verifying-auth-in-browser/SKILL.md
+- .claude/skills/verifying-auth-in-browser/scripts/authentik_token.py
+- .claude/skills/verifying-auth-in-browser/scripts/ui_login.cjs
 local_deployed_file_hashes:
   .agents/skills/add-workspace-member/SKILL.md: sha256:0d8be337dc14c9daad150789ffa8854dafd72e64d927697b998f69c7017bc972
   .agents/skills/instrument-entry-point/SKILL.md: sha256:dde43317847d390b4f6d3515d52e8d6ab6d99adce9533f3507f4e99597a80f79
   .agents/skills/onboard-to-homelab/SKILL.md: sha256:a63e5f55956b4be8111c7afe109b5f453a96ad662add3ccaaf9b2c31cdbe5a8e
   .agents/skills/update-docs/SKILL.md: sha256:7a1d94bcdfecfdb6dbabde23c41994664a6a343ddc04ed755b847ec60cdcd43e
   .agents/skills/verify-auth-in-browser/SKILL.md: sha256:d4f05055a8381ab1b04bad9d2fd19836269fc907a2d7fb97d07562b4b0b54f75
-  .claude/rules/react-testing.md: sha256:7961ec428e4922b7b9d0e473018ba0763bd069daa9d04232a7bbd5c18c8d71b3
-  .claude/rules/tsed-testing.md: sha256:44c028e02165e9160f8c973c9d07c45f4895f7131aa754de46409fc67449ef3c
-  .claude/skills/adding-a-workspace-member/SKILL.md: sha256:5fca30f4a17014ef4dcdda0a95953d024b4e6cc48cad3adbb003a287c3999b10
-  .claude/skills/adding-a-workspace-member/reference/api.md: sha256:11d2f1289cef7a6c687f418c0522aa29dc84670eb2f417309087f9156b4183fc
+  .claude/rules/react-testing.md: sha256:56d8de4d1ded844e807bf2dfd0696764566bd08cf25b183020ec1c9c5f874965
+  .claude/rules/tsed-api.md: sha256:c465de86ebe068a3c1c56d72012818dfd906ad4f7a5469d8e5be07ed102dd88e
+  .claude/rules/tsed-testing.md: sha256:5720c8000602f7ea313145d23646cc896a9ba13c114f736b59303e926d6f8d9f
+  .claude/skills/adding-a-workspace-member/SKILL.md: sha256:91c56633e7dcf067b5a524e3b4410e704958e30b7fefe515b3606e4c7c454e31
+  .claude/skills/adding-a-workspace-member/reference/api.md: sha256:7352060b8092bafc3c62e48b40d6bc6899df5b3c234f73c598dd8406138ad0e1
   .claude/skills/adding-a-workspace-member/reference/dockerfile.md: sha256:6e1ed83f52ec474b4143337850502c43068fd185e3c2ce26e60120d2e759be07
   .claude/skills/adding-a-workspace-member/reference/package.md: sha256:d71faf8e295af4e95c94a6df3bde788632d15acd17f9b8ede9d6dc18c29b53ca
   .claude/skills/adding-a-workspace-member/reference/ui.md: sha256:663c9eb47e17ea58500a0bd0a8fad9c31cc66f83a9da6122b111fd234fad1a04
-  .claude/skills/adding-a-workspace-member/scripts/check-member.sh: sha256:1d6995c4aaea624bbc6575b67a6a518aacd55132730e0b1e97f5a8f30de20a52
-  .claude/skills/instrumenting-entry-points/SKILL.md: sha256:4cd515022a247de1bf66861c6820bcb017e8fc3d33204d257e8f79604016b478
-  .claude/skills/onboarding-to-homelab/SKILL.md: sha256:f14ea985b412614c9ed8a6434faf4a557d041c6df839dcb680fac5412f06de72
-  .claude/skills/onboarding-to-homelab/scripts/validate-app.sh: sha256:aebbc64a7bbb4861f6ed48a355b089a8ea47896d480b18a2c5d40314fc19ca55
+  .claude/skills/adding-a-workspace-member/scripts/check-member.sh: sha256:855fc7acbb96de3db425587cd165f628d47a90c056c89399eaa45102feb4d872
+  .claude/skills/instrumenting-entry-points/SKILL.md: sha256:5506012895969fbbd5569fa9799cdb65600bed8ff0806891b1f3a6a4c66c3678
+  .claude/skills/onboarding-to-homelab/SKILL.md: sha256:be44857c1904e91f4dfd2a57fd0788accbad49d18194496d58b958c47fe037ab
+  .claude/skills/onboarding-to-homelab/scripts/validate-app.sh: sha256:c8dbb46b8c7b2aa768ac7b9a9726cb0a18321f7835124aa772acc532ad9273fc
   .claude/skills/updating-docs/SKILL.md: sha256:6b247d0ed9c24da452ae2d65294fbded95bc8638003a5e4f750ac2a7693585a8
-  .claude/skills/verifying-auth-in-browser/SKILL.md: sha256:72c00125734b3ec2f62285058155f030d86a0aa766a4f929358794897c4babbd
+  .claude/skills/verifying-auth-in-browser/SKILL.md: sha256:f287f0fa80c25477560069917746814464e78533da39017f82b9753888776bb2
+  .claude/skills/verifying-auth-in-browser/scripts/authentik_token.py: sha256:82a4e59788692ef4acbc8fa252707560c888d38cebfdfba95b98c8aa2d3dc057
+  .claude/skills/verifying-auth-in-browser/scripts/ui_login.cjs: sha256:12da1e23b9ac546e533e5904d0cb29a9f19b551cc789afb3fd0cf9aa73e67466

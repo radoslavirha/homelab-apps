@@ -1,6 +1,6 @@
 {
   "name": "interactive-map-feeder-api",
-  "version": "0.16.2",
+  "version": "0.16.7",
   "private": true,
   "description": "Data Feeder for LaskaKit interactive map of Czech republic",
   "type": "module",
@@ -9,7 +9,7 @@
     "cleanup:all": "pnpm run cleanup:artifacts && pnpm run cleanup:modules",
     "cleanup:artifacts": "rm -rf coverage dist",
     "cleanup:modules": "rm -rf node_modules",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint --fix .",
     "start": "nodemon src/index.ts",
     "start:prod": "node --import /home/app/dist/otel/instrument.js dist/index.js",

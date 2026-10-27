@@ -1,5 +1,48 @@
 # interactive-map-feeder
 
+## 0.16.7
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @radoslavirha/tsed-health@0.3.4
+
+## 0.16.6
+
+### Patch Changes
+
+- [#338](https://github.com/radoslavirha/homelab-apps/pull/338) [`0accb0e`](https://github.com/radoslavirha/homelab-apps/commit/0accb0ec2d569606d179772fa0ae8b0a297cb4ad) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Ship the previous release's changes. That release was tagged, but its run failed before any image was built (`mcp/knowledge-base` had no `deploy.json`), so it was never deployed.
+
+## 0.16.5
+
+### Patch Changes
+
+- [`099d0cd`](https://github.com/radoslavirha/homelab-apps/commit/099d0cd52cbb08f3bc850569b2fd5e6ab9b31f4b) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update packages
+- Updated dependencies [[`20c61e5`](https://github.com/radoslavirha/homelab-apps/commit/20c61e558621cba57a2b2ae95d902d44ac35baab), [`099d0cd`](https://github.com/radoslavirha/homelab-apps/commit/099d0cd52cbb08f3bc850569b2fd5e6ab9b31f4b)]:
+  - @radoslavirha/auth@0.3.0
+  - @radoslavirha/otel@0.6.5
+  - @radoslavirha/tsed-auth@0.3.1
+  - @radoslavirha/tsed-health@0.3.3
+  - @radoslavirha/tsed-http-provider@0.2.10
+
+## 0.16.4
+
+### Patch Changes
+
+- [#314](https://github.com/radoslavirha/homelab-apps/pull/314) [`9cbc3e8`](https://github.com/radoslavirha/homelab-apps/commit/9cbc3e85ad73a671261c3c1eb3aba52b33d1e3f0) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Add specs for `RadarService` and `RadarImageService`, and lint against `new` providers in tests (no runtime change).
+
+- [#318](https://github.com/radoslavirha/homelab-apps/pull/318) [`f702e82`](https://github.com/radoslavirha/homelab-apps/commit/f702e82af1f5241db3f51234bf87981472aa8660) Thanks [@radoslavirha](https://github.com/radoslavirha)! - `GET /data-sources/:dataSource/image` now sends PNG bytes to match its declared `image/png`. Before, it sent the JPEG format of the ČHMÚ surface map.
+
+## 0.16.3
+
+### Patch Changes
+
+- [#304](https://github.com/radoslavirha/homelab-apps/pull/304) [`d5b67cb`](https://github.com/radoslavirha/homelab-apps/commit/d5b67cb7293177913233282fcac87de11563b933) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Use CommonUtils.isEmpty instead of a raw length check in UpstreamHealthCheck; no behaviour change.
+- Updated dependencies [[`d5b67cb`](https://github.com/radoslavirha/homelab-apps/commit/d5b67cb7293177913233282fcac87de11563b933), [`d5b67cb`](https://github.com/radoslavirha/homelab-apps/commit/d5b67cb7293177913233282fcac87de11563b933), [`d5b67cb`](https://github.com/radoslavirha/homelab-apps/commit/d5b67cb7293177913233282fcac87de11563b933), [`6bd3255`](https://github.com/radoslavirha/homelab-apps/commit/6bd32558bf2a34f2e3160a799d2618c3961853b5)]:
+  - @radoslavirha/auth@0.2.2
+  - @radoslavirha/tsed-auth@0.3.0
+  - @radoslavirha/tsed-http-provider@0.2.9
+
 ## 0.16.2
 
 ### Patch Changes

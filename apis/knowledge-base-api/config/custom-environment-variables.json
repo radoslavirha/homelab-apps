@@ -1,0 +1,12 @@
+{
+    "database": {
+        "host": "KNOWLEDGE_BASE_DATABASE_HOST",
+        "port": {
+            "__name": "KNOWLEDGE_BASE_DATABASE_PORT",
+            "__format": "json"
+        },
+        "database": "KNOWLEDGE_BASE_DATABASE_NAME",
+        "user": "KNOWLEDGE_BASE_DATABASE_USER",
+        "password": "KNOWLEDGE_BASE_DATABASE_PASSWORD"
+    }
+}

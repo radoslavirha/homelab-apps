@@ -1,5 +1,67 @@
 # miot-bridge
 
+## 0.30.0
+
+### Minor Changes
+
+- [#351](https://github.com/radoslavirha/homelab-apps/pull/351) [`0bad63d`](https://github.com/radoslavirha/homelab-apps/commit/0bad63df1729524d08a3f4418cacb048117a6a71) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Stop commands timing out on a stale stamp: the device clock is tracked by time instead of counted per call, and a new device instance handshakes on its first command. `stamp` and `stampUpdatedAt` are removed from the device record, the `/devices` responses and the default `redactPaths`; documents registered earlier keep the two fields in MongoDB, unread. This removes the 10 s timeout plus re-handshake that hit polling every few minutes and the first command after every restart. The `miot action` span now carries the device's answer (`miot.action.result`, and its code on `rpc.response.status_code`).
+
+### Patch Changes
+
+- Updated dependencies [[`0bad63d`](https://github.com/radoslavirha/homelab-apps/commit/0bad63df1729524d08a3f4418cacb048117a6a71)]:
+  - @radoslavirha/miot-device@0.8.0
+
+## 0.29.3
+
+### Patch Changes
+
+- [#335](https://github.com/radoslavirha/homelab-apps/pull/335) [`23f8309`](https://github.com/radoslavirha/homelab-apps/commit/23f83092e3fad2014c778d368c0b3ba1d37b9083) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Properties and actions that repeat a type within one service are no longer overwritten in the simplified spec; they are keyed with their iid appended (e.g. `switch:mode-2`, `switch:mode-6`), so devices with such repeats get new command keys.
+- Updated dependencies []:
+  - @radoslavirha/tsed-health@0.3.4
+
+## 0.29.2
+
+### Patch Changes
+
+- [#338](https://github.com/radoslavirha/homelab-apps/pull/338) [`0accb0e`](https://github.com/radoslavirha/homelab-apps/commit/0accb0ec2d569606d179772fa0ae8b0a297cb4ad) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Ship the previous release's changes. That release was tagged, but its run failed before any image was built (`mcp/knowledge-base` had no `deploy.json`), so it was never deployed.
+
+## 0.29.1
+
+### Patch Changes
+
+- [`099d0cd`](https://github.com/radoslavirha/homelab-apps/commit/099d0cd52cbb08f3bc850569b2fd5e6ab9b31f4b) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update packages
+- Updated dependencies [[`20c61e5`](https://github.com/radoslavirha/homelab-apps/commit/20c61e558621cba57a2b2ae95d902d44ac35baab), [`099d0cd`](https://github.com/radoslavirha/homelab-apps/commit/099d0cd52cbb08f3bc850569b2fd5e6ab9b31f4b)]:
+  - @radoslavirha/auth@0.3.0
+  - @radoslavirha/miot-device@0.7.3
+  - @radoslavirha/otel@0.6.5
+  - @radoslavirha/tsed-auth@0.3.1
+  - @radoslavirha/tsed-health@0.3.3
+  - @radoslavirha/tsed-http-provider@0.2.10
+
+## 0.29.0
+
+### Minor Changes
+
+- [#319](https://github.com/radoslavirha/homelab-apps/pull/319) [`fe0d6e2`](https://github.com/radoslavirha/homelab-apps/commit/fe0d6e2430d605a40afe8f86ed87656e9d1c6c45) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Remove the local JSON file storage: MongoDB is the only storage. The `mongodb` config block is now required and must set `enabled: true`, so a missing or disabled block fails at boot. `cachePath` is ignored if still set.
+
+### Patch Changes
+
+- [#315](https://github.com/radoslavirha/homelab-apps/pull/315) [`eb26fb9`](https://github.com/radoslavirha/homelab-apps/commit/eb26fb94b14618175a2439ae3644bacd5808867e) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Add a spec for every mapper, service and file repository that lacked one, and lint against `new` providers in tests (no runtime change).
+
+## 0.28.2
+
+### Patch Changes
+
+- [#298](https://github.com/radoslavirha/homelab-apps/pull/298) [`cd19ebf`](https://github.com/radoslavirha/homelab-apps/commit/cd19ebfad35eaee8b0ee26d6b612a043389046f9) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - POST /devices and POST /devices/discover now reject a device token that is not 32 hex characters with 400 instead of registering a device that can never be controlled.
+
+- [#304](https://github.com/radoslavirha/homelab-apps/pull/304) [`d5b67cb`](https://github.com/radoslavirha/homelab-apps/commit/d5b67cb7293177913233282fcac87de11563b933) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Read the miot-spec /instances envelope through a DTO class and choose the newest instance in DeviceDiscoveryService; no behaviour change.
+
+- [#305](https://github.com/radoslavirha/homelab-apps/pull/305) [`04060aa`](https://github.com/radoslavirha/homelab-apps/commit/04060aa63618dfca2f24053b4ac1b6907b800d0a) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - OpenAPI now declares the error responses each route raises, with their exception class body.
+- Updated dependencies [[`d5b67cb`](https://github.com/radoslavirha/homelab-apps/commit/d5b67cb7293177913233282fcac87de11563b933), [`d5b67cb`](https://github.com/radoslavirha/homelab-apps/commit/d5b67cb7293177913233282fcac87de11563b933), [`d5b67cb`](https://github.com/radoslavirha/homelab-apps/commit/d5b67cb7293177913233282fcac87de11563b933), [`6bd3255`](https://github.com/radoslavirha/homelab-apps/commit/6bd32558bf2a34f2e3160a799d2618c3961853b5)]:
+  - @radoslavirha/auth@0.2.2
+  - @radoslavirha/tsed-auth@0.3.0
+  - @radoslavirha/tsed-http-provider@0.2.9
+
 ## 0.28.1
 
 ### Patch Changes

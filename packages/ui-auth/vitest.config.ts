@@ -2,9 +2,13 @@ import { defaultConfig } from '@radoslavirha/config-vitest';
 import { defineConfig, mergeConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
-export default defineConfig(mergeConfig(defaultConfig, {
+// defaultConfig's SWC plugin exists for Ts.ED decorators. Here plugin-react's Oxc transform does
+// TS and JSX, and keeping SWC too makes Vite warn that `esbuild: false` is ignored on every run.
+export default defineConfig(mergeConfig({ ...defaultConfig, plugins: [] }, {
     plugins: [react()],
     test: {
+        // Console output (logger lines included) is printed only for a failing test.
+        silent: 'passed-only',
         environment: 'jsdom',
         setupFiles: ['./src/test-setup.ts'],
         coverage: {

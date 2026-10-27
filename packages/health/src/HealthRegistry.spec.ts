@@ -346,6 +346,10 @@ describe('HealthRegistry', () => {
         it('Should reject an invalid config', () => {
             expect(() => new HealthRegistry([], { checkTimeoutMs: 0 })).toThrow();
         });
+
+        it('Should reject a checkTimeoutMs a timer cannot hold', () => {
+            expect(() => new HealthRegistry([], { checkTimeoutMs: 2 ** 31 })).toThrow();
+        });
     });
 
     describe('Resilience', () => {

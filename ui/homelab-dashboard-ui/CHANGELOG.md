@@ -1,5 +1,31 @@
 # homelab-dashboard-ui
 
+## 0.8.6
+
+### Patch Changes
+
+- [#327](https://github.com/radoslavirha/homelab-apps/pull/327) [`1968dbf`](https://github.com/radoslavirha/homelab-apps/commit/1968dbf791a9ffb0c91980374b33c0ff52bb9dd7) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - A service whose CNAME points at another CNAME now appears in the cluster the chain resolves to instead of disappearing from the dashboard.
+
+- [#328](https://github.com/radoslavirha/homelab-apps/pull/328) [`9bca7f2`](https://github.com/radoslavirha/homelab-apps/commit/9bca7f20e263889a8ae35c1f3f698ae4db0e1d3a) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - A `paths` config key now matches its DNS hostname regardless of letter case.
+- Updated dependencies [[`ea42b4a`](https://github.com/radoslavirha/homelab-apps/commit/ea42b4a40b23387f03dbd7907d7e9c7167b84814)]:
+  - @radoslavirha/ui-runtime@0.3.3
+  - @radoslavirha/ui-kit@1.1.3
+
+## 0.8.5
+
+### Patch Changes
+
+- [#338](https://github.com/radoslavirha/homelab-apps/pull/338) [`0accb0e`](https://github.com/radoslavirha/homelab-apps/commit/0accb0ec2d569606d179772fa0ae8b0a297cb4ad) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Ship the previous release's changes. That release was tagged, but its run failed before any image was built (`mcp/knowledge-base` had no `deploy.json`), so it was never deployed.
+
+## 0.8.4
+
+### Patch Changes
+
+- [`099d0cd`](https://github.com/radoslavirha/homelab-apps/commit/099d0cd52cbb08f3bc850569b2fd5e6ab9b31f4b) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update packages
+- Updated dependencies [[`099d0cd`](https://github.com/radoslavirha/homelab-apps/commit/099d0cd52cbb08f3bc850569b2fd5e6ab9b31f4b)]:
+  - @radoslavirha/ui-kit@1.1.2
+  - @radoslavirha/ui-runtime@0.3.2
+
 ## 0.8.3
 
 ### Patch Changes

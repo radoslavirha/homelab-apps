@@ -1,55 +1,52 @@
 import { Injectable, Scope, ProviderScope } from '@tsed/di';
+import { NotFound } from '@tsed/exceptions';
 import { DeviceCache } from '../models/DeviceCache.js';
-import { ConfigService } from './ConfigService.js';
-import { DeviceLocalStorageService } from './DeviceLocalStorageService.js';
-import { DeviceMongoService } from './DeviceMongoService.js';
-import { ObjectUtils } from '@radoslavirha/utils';
+import { DeviceMongoRepository } from '../storage/device-mongo/DeviceMongoRepository.js';
+import { MongoDeviceMapper } from '../mappers/MongoDeviceMapper.js';
+import { CommonUtils } from '@radoslavirha/utils';
 
 /**
- * Facade for device persistence.
- * Selects the active backend at startup based on configuration:
- *  - mongodb.enabled → DeviceMongoService (MongoDB)
- *  - fallback → DeviceLocalStorageService (local JSON cache)
- *
- * Handlers and other consumers depend only on this service and are unaware of the backend.
+ * Device persistence, backed by MongoDB.
+ * Bridges DeviceMongoRepository (DTO level) with the domain model using MongoDeviceMapper.
  */
 @Injectable()
 @Scope(ProviderScope.SINGLETON)
 export class DeviceStorageService {
-    private readonly storage: DeviceLocalStorageService | DeviceMongoService;
-
     constructor(
-        readonly config: ConfigService,
-        private readonly fileDeviceService: DeviceLocalStorageService,
-        private readonly mongoDeviceService: DeviceMongoService
-    ) {
-        this.storage = ObjectUtils.isEnabled(config.config.mongodb)
-            ? this.mongoDeviceService
-            : this.fileDeviceService;
+        private readonly repository: DeviceMongoRepository,
+        private readonly mapper: MongoDeviceMapper
+    ) {}
+
+    public async getAll(): Promise<DeviceCache[]> {
+        const dtos = await this.repository.findAll();
+        return Promise.all(dtos.map(dto => this.mapper.mongoToModel(dto)));
     }
 
-    getAll(): Promise<DeviceCache[]> {
-        return this.storage.getAll();
+    public async getById(id: string): Promise<DeviceCache | undefined> {
+        const dto = await this.repository.findById(id);
+        return CommonUtils.isNil(dto) ? undefined : this.mapper.mongoToModel(dto);
     }
 
-    getById(id: string): Promise<DeviceCache | undefined> {
-        return this.storage.getById(id);
+    public async getByDeviceId(deviceId: number): Promise<DeviceCache | undefined> {
+        const dto = await this.repository.findByDeviceId(deviceId);
+        return CommonUtils.isNil(dto) ? undefined : this.mapper.mongoToModel(dto);
     }
 
-    getByDeviceId(deviceId: number): Promise<DeviceCache | undefined> {
-        return this.storage.getByDeviceId(deviceId);
+    public async create(device: Omit<DeviceCache, 'id' | 'createdAt' | 'updatedAt'>): Promise<DeviceCache> {
+        const dto = await this.repository.create(await this.mapper.buildMongoCreate(device));
+        return this.mapper.mongoToModel(dto);
     }
 
-    create(device: Omit<DeviceCache, 'id' | 'createdAt' | 'updatedAt'>): Promise<DeviceCache> {
-        return this.storage.create(device);
+    public async update(device: DeviceCache): Promise<DeviceCache> {
+        const updateObj = await this.mapper.buildMongoUpdate(device);
+        const dto = await this.repository.updateById(device.id, updateObj);
+        if (CommonUtils.isNil(dto)) {
+            throw new NotFound(`Device ${device.id} not found.`);
+        }
+        return this.mapper.mongoToModel(dto);
     }
 
-    update(device: DeviceCache): Promise<DeviceCache> {
-        return this.storage.update(device);
-    }
-
-    delete(id: string): Promise<void> {
-        return this.storage.delete(id);
+    public async delete(id: string): Promise<void> {
+        await this.repository.deleteById(id);
     }
 }
-

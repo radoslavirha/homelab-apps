@@ -46,6 +46,7 @@ export class RadarImageService {
         
         const composite = await this.rasterService.compositeImages(surface, [borders, cities, radar, cityDots]);
 
-        return composite.toBuffer();
+        // The controller declares image/png; without an explicit format sharp keeps the surface map's JPEG.
+        return composite.png().toBuffer();
     }
 }

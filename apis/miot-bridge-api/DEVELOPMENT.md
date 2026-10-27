@@ -24,12 +24,11 @@ src/
 │   ├── notifications/  # Notification request/response models
 │   └── simplified-miot-spec/  # Internal simplified property/action map
 ├── providers/          # Custom Ts.ED providers (MqttClientProvider)
-├── services/           # Core services: command execution, polling, dispatch, storage facades, listeners
-└── storage/            # Storage layer — repositories + DTOs, one subfolder per backend+entity
-    ├── device-local-storage/     # File-based device repository
-    ├── device-mongo/             # MongoDB device repository
-    ├── notification-local-storage/ # File-based notification repository
-    └── notification-mongo/       # MongoDB notification repository
+├── services/           # Core services: command execution, polling, dispatch, storage, listeners
+└── storage/            # Storage layer — MongoDB repositories + DTOs, one subfolder per entity
+    ├── device-mongo/                    # Device repository
+    ├── model-property-override-mongo/   # Model property override repository
+    └── notification-mongo/              # Notification subscription repository
 ```
 
 All controllers are mounted at `/` — there is no API version prefix in routes.
@@ -40,13 +39,13 @@ Communication between the bridge and devices uses the [Xiaomi Mi Home Binary Pro
 
 ### Stamp management
 
-Every MIoT packet carries a `Stamp` counter that the device increments after each call. The bridge:
+Every MIoT packet carries a `Stamp`: the device's clock in seconds since boot, not a call counter. A packet stamped behind that clock is dropped without an answer. The bridge:
 
-1. Obtains the current stamp via a handshake packet.
-2. Increments and includes the stamp on every subsequent packet.
-3. If a data packet is rejected (stale stamp), performs an automatic handshake to refresh the stamp and retries the packet once.
+1. Reads the device clock with a handshake on the first command. The stamp is never persisted.
+2. Stamps each packet with that reading plus the whole seconds elapsed since, plus one. Packets within one second share a stamp; a response header showing the device ahead re-bases the reading.
+3. If a command fails (a dropped packet times out), performs a fresh handshake and retries the command once.
 
-Stamp state is maintained per-device in memory by `MiotDeviceClient`.
+The clock reading is kept per device in memory by `MiotDevice` (`DeviceClock`), one instance per device in `MiotDeviceRegistry`.
 
 ## MIoT spec v2
 
@@ -60,21 +59,18 @@ This map is used to validate commands and notification subscriptions at request 
 
 ## Storage
 
-Two storage backends are supported, selected at startup by `DeviceStorageService` and `NotificationStorageService` based on `mongodb.enabled`.
+MongoDB is the only storage, via `@radoslavirha/tsed-mongoose`. The `mongodb` config block is required and must be enabled: a missing or disabled block fails at boot.
 
 Layering (bottom-up):
 
-1. `src/storage/<group>/dto/` — raw data shapes (no Ts.ED schema decorators needed)
-2. `src/storage/<group>/` — repository class (`DeviceLocalStorageRepository`, `DeviceMongoRepository`, etc.), performs CRUD and returns DTOs
-3. `src/services/Device[Local|Mongo]Service.ts` — maps DTOs to domain models, contains business logic
-4. `src/services/DeviceStorageService.ts` — facade, delegates to the active backend
-
-| Backend | Folder | Notes |
-|---|---|---|
-| File (default) | `storage/device-local-storage/`, `storage/notification-local-storage/` | JSON files at `cachePath`. Single-instance only. |
-| MongoDB | `storage/device-mongo/`, `storage/notification-mongo/` | Via `@radoslavirha/tsed-mongoose`. Mongo models extend `BaseMongo`. |
+1. `src/storage/<entity>-mongo/dto/` — Mongoose documents (extend `BaseMongo`)
+2. `src/storage/<entity>-mongo/` — repository class (`DeviceMongoRepository`, etc.), performs CRUD and returns DTOs
+3. `src/mappers/Mongo*Mapper.ts` — document ↔ domain model
+4. `src/services/DeviceStorageService.ts`, `NotificationStorageService.ts`, `ModelPropertyOverrideService.ts` — map repository DTOs to domain models; what handlers and services inject
 
 Repositories return `null` for missing single-document results. Services convert to `undefined` where callers expect it.
+
+Controller integration specs boot against a real MongoDB from `@tsed/testcontainers-mongo` (`globalSetup` in `vitest.config.ts`), so `pnpm test` needs Docker.
 
 ## Polling & notification dispatch
 

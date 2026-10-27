@@ -1,5 +1,46 @@
 # qr-manager-api
 
+## 0.10.7
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @radoslavirha/tsed-health@0.3.4
+
+## 0.10.6
+
+### Patch Changes
+
+- [#338](https://github.com/radoslavirha/homelab-apps/pull/338) [`0accb0e`](https://github.com/radoslavirha/homelab-apps/commit/0accb0ec2d569606d179772fa0ae8b0a297cb4ad) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Ship the previous release's changes. That release was tagged, but its run failed before any image was built (`mcp/knowledge-base` had no `deploy.json`), so it was never deployed.
+
+## 0.10.5
+
+### Patch Changes
+
+- [`099d0cd`](https://github.com/radoslavirha/homelab-apps/commit/099d0cd52cbb08f3bc850569b2fd5e6ab9b31f4b) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update packages
+- Updated dependencies [[`20c61e5`](https://github.com/radoslavirha/homelab-apps/commit/20c61e558621cba57a2b2ae95d902d44ac35baab), [`099d0cd`](https://github.com/radoslavirha/homelab-apps/commit/099d0cd52cbb08f3bc850569b2fd5e6ab9b31f4b)]:
+  - @radoslavirha/auth@0.3.0
+  - @radoslavirha/otel@0.6.5
+  - @radoslavirha/resilience@0.2.4
+  - @radoslavirha/tsed-auth@0.3.1
+  - @radoslavirha/tsed-health@0.3.3
+  - @radoslavirha/tsed-resilience@0.2.4
+
+## 0.10.4
+
+### Patch Changes
+
+- [#312](https://github.com/radoslavirha/homelab-apps/pull/312) [`7baecf1`](https://github.com/radoslavirha/homelab-apps/commit/7baecf1f2600671dcb61d420736e79b1eed97b4f) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Resolve providers through DI in specs and lint against `new` providers in tests (no runtime change).
+
+## 0.10.3
+
+### Patch Changes
+
+- [#305](https://github.com/radoslavirha/homelab-apps/pull/305) [`04060aa`](https://github.com/radoslavirha/homelab-apps/commit/04060aa63618dfca2f24053b4ac1b6907b800d0a) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - OpenAPI now declares the error responses each route raises, with their exception class body.
+- Updated dependencies [[`d5b67cb`](https://github.com/radoslavirha/homelab-apps/commit/d5b67cb7293177913233282fcac87de11563b933), [`d5b67cb`](https://github.com/radoslavirha/homelab-apps/commit/d5b67cb7293177913233282fcac87de11563b933), [`6bd3255`](https://github.com/radoslavirha/homelab-apps/commit/6bd32558bf2a34f2e3160a799d2618c3961853b5)]:
+  - @radoslavirha/auth@0.2.2
+  - @radoslavirha/tsed-auth@0.3.0
+
 ## 0.10.2
 
 ### Patch Changes

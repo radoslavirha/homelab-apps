@@ -207,6 +207,31 @@ describe('DeviceCommandService', () => {
         expect(spanNamed(SPAN_MIOT_ACTION).attributes).toMatchObject({ 'miot.aiid': '1', 'miot.command': ACTION_KEY });
     });
 
+    // An action the device acknowledged and then ignored is a green span of normal length. The
+    // device's answer is the only thing that tells it apart, so it goes on the span.
+    it('Should put the device\'s answer to an action on its span', async () => {
+        expect.assertions(1);
+        miotDevice.callAction.mockResolvedValue({ code: 1, result: { did: '1141132187', siid: 3, aiid: 1, code: 1, out: [] } });
+
+        await service.execute(request({ command: ACTION_KEY, operation: DeviceCommandOperation.Action }));
+
+        expect(spanNamed(SPAN_MIOT_ACTION).attributes).toMatchObject({
+            'rpc.response.status_code': '1',
+            'miot.action.result': '{"did":"1141132187","siid":3,"aiid":1,"code":1,"out":[]}'
+        });
+    });
+
+    it('Should put an answer without a code on the span of a raw action, and no status code', async () => {
+        expect.assertions(2);
+        miotDevice.callAction.mockResolvedValue({ code: undefined, result: 'ok' });
+
+        await service.executeRaw({ deviceId: DEVICE_ID, operation: DeviceCommandOperation.Action, siid: 2, aiid: 1 } as never);
+
+        const { attributes } = spanNamed(SPAN_MIOT_ACTION);
+        expect(attributes['miot.action.result']).toBe('"ok"');
+        expect(attributes['rpc.response.status_code']).toBeUndefined();
+    });
+
     it('Should raise a CLIENT span carrying the property count for a bulk read', async () => {
         await service.getProperties(STORAGE_ID, [PROPERTY_KEY]);
 

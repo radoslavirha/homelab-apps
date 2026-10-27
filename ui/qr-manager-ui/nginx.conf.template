@@ -26,6 +26,10 @@ server {
     listen [::]:8080 default_server;
     server_name _;
 
+    # TLS terminates at Traefik, so nginx sees plain HTTP on 8080. Absolute redirects would
+    # send the browser to http://<host>:8080/...; a relative Location keeps its own origin.
+    absolute_redirect off;
+
     # Disable gzip on HTML so sub_filter can modify the plain bytes.
     gzip off;
 

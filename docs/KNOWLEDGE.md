@@ -1,6 +1,6 @@
 # Homelab Apps — Knowledge Base
 
-> Maintained by `/updating-docs` skill. Last updated: 2026-09-07.
+> Maintained by `/updating-docs` skill. Last updated: 2026-10-26.
 
 pnpm monorepo of small independent Node.js APIs and UIs (Ts.ED, TypeScript ESM).
 
@@ -9,6 +9,7 @@ pnpm monorepo of small independent Node.js APIs and UIs (Ts.ED, TypeScript ESM).
 | Name | Type | Purpose |
 |------|------|---------|
 | `interactive-map-feeder-api` | API | Fetches ČHMÚ precipitation radar, composites image layers, serves city LED RGB values for LaskaKit IoT map |
+| `knowledge-base-api` | API | Indexes knowledge bases from pluggable sources (git via a GitHub App first) into Postgres + pgvector, serves hybrid (full-text + vector) search over an internal REST API, and commits notes and specs back to a writable source |
 | `miot-bridge-api` | API | Gateway between home automation controllers and Xiaomi MIoT devices. Manages device registry, translates commands, polls properties, dispatches change notifications |
 | `qr-manager-api` | API | QR code redirect manager: allocates slugs, stores slug→URL, resolves via 302 redirect, renders QR images |
 | `qr-manager-ui` | UI | Admin UI for `qr-manager-api`: create/edit/deactivate QR records, download images |
@@ -24,7 +25,7 @@ pnpm monorepo of small independent Node.js APIs and UIs (Ts.ED, TypeScript ESM).
 | `@radoslavirha/miot-device` | Stateful MIoT device client: UDP transport, per-device stamp/handshake lifecycle |
 | `@radoslavirha/otel` | OpenTelemetry bootstrap — traces + custom metrics via OTLP; logs via stdout JSON (no OTLP log export) |
 | `@radoslavirha/resilience` | Transport-agnostic timeout / retry / circuit breaker over `AbortSignal`, backed by cockatiel |
-| `@radoslavirha/tsed-auth` | Ts.ED wiring for `auth` — the request guard, `@Authenticate` / `@Anonymous` / `@CurrentPrincipal`, OpenAPI security metadata, and a SuperTest helper |
+| `@radoslavirha/tsed-auth` | Ts.ED wiring for `auth` — the request guard, `@Authenticate` / `@Anonymous` / `@CurrentPrincipal`, `PrincipalService`, OpenAPI security metadata, and a SuperTest helper |
 | `@radoslavirha/tsed-health` | Ts.ED wiring for `health` — `/health/live`, `/health/ready`, `/health`, a `HEALTH_CHECKS` provider-type registry, and the SIGTERM drain sequence. Ships `MongoHealthCheck` on the `/mongoose` subpath (optional peers, so database-free apps never resolve mongoose) |
 | `@radoslavirha/tsed-http-provider` | Ts.ED wiring for `http-provider` — builds clients from `externalApis` config and adds redacted outbound request/response logging |
 | `@radoslavirha/tsed-resilience` | Ts.ED `@RequestSignal()` decorator — an `AbortSignal` tied to the HTTP request lifecycle |
@@ -42,6 +43,7 @@ private knowledge base (skill `knowledge-base`).
 |-----|-------|
 | `qr-manager-api` | **Enforcing.** `/qr-codes` answers `401` without a valid token. `GET /r/:slug`, `/health*` and `GET /qr-codes/:id/image` stay open |
 | `miot-bridge-api` | **Enforcing.** All 16 REST routes need a token; `/health*` stays open. Commands also arrive over MQTT, which no decorator reaches — that identity is the broker's. The UDP command listener is gone |
+| `knowledge-base-api` | **Enforcing.** One trust domain, `IDP`, on every route but `/health*` and the Swagger UI; `knowledge-base-api.reader` as the floor, `knowledge-base-api.editor` added on the write routes, `knowledge-base-api.admin` on `POST /reindex`. Each knowledge base's `readers` roles decide which ones a caller sees |
 | `interactive-map-feeder-api` | **Enforcing.** One trust domain, `IDP`, on all four routes. The LaskaKit map logs in against the same IdP from its own Authentik application, so it is a second row in `trustedIssuers` rather than a second domain. The map has no credential yet |
 
 An API's `auth` block is a map of trust domains it accepts, keyed by the service's own `AuthMethod`
@@ -172,6 +174,11 @@ graph LR
     MBA <-->|TCP| MongoDB1[("MongoDB")]
     MBA -->|MQTT · HTTP notifications| HA
 
+    Caller["knowledge-base MCP · chat filter\n(later)"] -->|REST /search /documents /notes| KBA["knowledge-base-api"]
+    KBA <-->|TCP| Postgres[("Postgres\npgvector")]
+    KBA -->|HTTP /api/embed| Ollama["Ollama\nserver2"]
+    KBA -->|HTTPS as GitHub App| GitHub["GitHub API\nexternal"]
+
     QRU["qr-manager-ui"] -->|REST| QRA["qr-manager-api"]
     Phone["Phone / scanner"] -->|HTTP GET /:slug| QRA
     QRA <-->|TCP| MongoDB2[("MongoDB")]
@@ -182,6 +189,9 @@ graph LR
 | App | System | Protocol | Direction | Purpose |
 |-----|--------|----------|-----------|---------|
 | `interactive-map-feeder-api` | ČHMÚ | HTTPS GET | outbound | Precipitation radar images |
+| `knowledge-base-api` | Postgres (pgvector) | TCP | bidirectional | Index, search, schema migrations, indexing lock |
+| `knowledge-base-api` | Ollama | HTTP | outbound | Embeds chunks and questions |
+| `knowledge-base-api` | GitHub REST API | HTTPS (GitHub App) | outbound | Reads the git source (installation, compare, tree, blobs); writes one file per commit through the contents API |
 | `miot-bridge-api` | Xiaomi devices (LAN) | MIoT binary UDP | bidirectional | Device control, property read |
 | `miot-bridge-api` | miot-spec.org | HTTPS GET | outbound | Device capability spec (on registration) |
 | `miot-bridge-api` | MQTT broker | MQTT | bidirectional | Inbound commands, outbound notifications |

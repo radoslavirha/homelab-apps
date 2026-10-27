@@ -1,54 +1,46 @@
 import { Injectable, Scope, ProviderScope } from '@tsed/di';
 import { DeviceNotification } from '../models/notifications/DeviceNotification.js';
-import { NotificationLocalStorageService } from './NotificationLocalStorageService.js';
-import { DeviceNotificationMongoService } from './DeviceNotificationMongoService.js';
-import { ConfigService } from './ConfigService.js';
-import { ObjectUtils } from '@radoslavirha/utils';
+import { DeviceNotificationMongoRepository } from '../storage/notification-mongo/DeviceNotificationMongoRepository.js';
+import { MongoNotificationMapper } from '../mappers/MongoNotificationMapper.js';
+import { CommonUtils } from '@radoslavirha/utils';
 
 /**
- * Facade for notification subscription persistence.
- * Selects the active backend at startup based on configuration:
- *  - mongodb.enabled → DeviceNotificationMongoService (MongoDB)
- *  - fallback → NotificationLocalStorageService (local JSON cache)
- *
- * Handlers depend only on this service and are unaware of the backend.
+ * Notification subscription persistence, backed by MongoDB.
+ * Bridges DeviceNotificationMongoRepository (DTO level) with the domain model using MongoNotificationMapper.
  */
 @Injectable()
 @Scope(ProviderScope.SINGLETON)
 export class NotificationStorageService {
-    private readonly storage: NotificationLocalStorageService | DeviceNotificationMongoService;
-
     constructor(
-        readonly config: ConfigService,
-        private readonly fileNotificationService: NotificationLocalStorageService,
-        private readonly mongoNotificationService: DeviceNotificationMongoService
-    ) {
-        this.storage = ObjectUtils.isEnabled(config.config.mongodb)
-            ? this.mongoNotificationService
-            : this.fileNotificationService;
+        private readonly repository: DeviceNotificationMongoRepository,
+        private readonly mapper: MongoNotificationMapper
+    ) {}
+
+    public async getAll(): Promise<DeviceNotification[]> {
+        const dtos = await this.repository.findAll();
+        return dtos.map(dto => this.mapper.mongoToModel(dto));
     }
 
-    getAll(): Promise<DeviceNotification[]> {
-        return this.storage.getAll();
+    public async getById(id: string): Promise<DeviceNotification | undefined> {
+        const dto = await this.repository.findById(id);
+        return CommonUtils.isNil(dto) ? undefined : this.mapper.mongoToModel(dto);
     }
 
-    getById(id: string): Promise<DeviceNotification | undefined> {
-        return this.storage.getById(id);
+    public async getAllByDeviceId(deviceId: string): Promise<DeviceNotification[]> {
+        const dtos = await this.repository.findAllByDeviceId(deviceId);
+        return dtos.map(dto => this.mapper.mongoToModel(dto));
     }
 
-    getAllByDeviceId(deviceId: string): Promise<DeviceNotification[]> {
-        return this.storage.getAllByDeviceId(deviceId);
+    public async create(notification: Omit<DeviceNotification, 'id' | 'createdAt' | 'updatedAt'>): Promise<DeviceNotification> {
+        const dto = await this.repository.create(this.mapper.buildMongoCreate(notification));
+        return this.mapper.mongoToModel(dto);
     }
 
-    create(notification: Omit<DeviceNotification, 'id' | 'createdAt' | 'updatedAt'>): Promise<DeviceNotification> {
-        return this.storage.create(notification);
+    public async deleteById(id: string): Promise<void> {
+        await this.repository.deleteById(id);
     }
 
-    deleteById(id: string): Promise<void> {
-        return this.storage.deleteById(id);
-    }
-
-    deleteAllByDeviceId(deviceId: string): Promise<void> {
-        return this.storage.deleteAllByDeviceId(deviceId);
+    public async deleteAllByDeviceId(deviceId: string): Promise<void> {
+        await this.repository.deleteAllByDeviceId(deviceId);
     }
 }

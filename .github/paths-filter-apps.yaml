@@ -2,7 +2,9 @@
 # Key is the full app path relative to repo root.
 # dorny/paths-filter outputs these paths verbatim in the 'changes' JSON array.
 apis/interactive-map-feeder-api: apis/interactive-map-feeder-api/**
+apis/knowledge-base-api: apis/knowledge-base-api/**
 apis/miot-bridge-api: apis/miot-bridge-api/**
 apis/qr-manager-api: apis/qr-manager-api/**
+mcp/knowledge-base: mcp/knowledge-base/**
 ui/homelab-dashboard-ui: ui/homelab-dashboard-ui/**
 ui/qr-manager-ui: ui/qr-manager-ui/**

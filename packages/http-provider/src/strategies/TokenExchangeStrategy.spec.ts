@@ -1,6 +1,6 @@
 import axios, { type AxiosInstance } from 'axios';
 import AxiosMockAdapter from 'axios-mock-adapter';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthStrategy, TokenExchangeAuthSchema } from '../schemas/auth.schema.js';
 import type { TokenExchangeAuth } from '../schemas/auth.schema.js';
 import { TokenExchangeStrategy } from './TokenExchangeStrategy.js';
@@ -57,6 +57,62 @@ describe('TokenExchangeStrategy', () => {
         await strategy.getCredentials();
         await strategy.getCredentials();
         expect(mock.history['post']).toHaveLength(1);
+    });
+
+    describe('expiresIn', () => {
+        const EXPIRING_CONFIG: TokenExchangeAuth = { ...POST_CONFIG, expiresIn: 'expires_in', expiryMargin: 30 };
+
+        beforeEach(() => {
+            vi.useFakeTimers();
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it('serves the cached token until the margin before expiry, then fetches a new one', async () => {
+            expect.assertions(4);
+            mock.onPost(TOKEN_URL).replyOnce(200, { access_token: 'tok1', expires_in: 600 });
+            mock.onPost(TOKEN_URL).reply(200, { access_token: 'tok2', expires_in: 600 });
+            const strategy = new TokenExchangeStrategy(EXPIRING_CONFIG);
+
+            expect(await strategy.getCredentials()).toEqual({ accessToken: 'tok1' });
+            vi.advanceTimersByTime(560_000);
+            expect(await strategy.getCredentials()).toEqual({ accessToken: 'tok1' });
+            vi.advanceTimersByTime(11_000);
+            expect(await strategy.getCredentials()).toEqual({ accessToken: 'tok2' });
+            expect(mock.history['post']).toHaveLength(2);
+        });
+
+        it('accepts a numeric string lifetime', async () => {
+            expect.assertions(1);
+            mock.onPost(TOKEN_URL).reply(200, { access_token: 'tok1', expires_in: '600' });
+            const strategy = new TokenExchangeStrategy(EXPIRING_CONFIG);
+            await strategy.getCredentials();
+            await strategy.getCredentials();
+            expect(mock.history['post']).toHaveLength(1);
+        });
+
+        it('applies the default 30 second margin when expiryMargin is omitted', async () => {
+            expect.assertions(3);
+            mock.onPost(TOKEN_URL).replyOnce(200, { access_token: 'tok1', expires_in: 600 });
+            mock.onPost(TOKEN_URL).reply(200, { access_token: 'tok2', expires_in: 600 });
+            const strategy = new TokenExchangeStrategy({ ...POST_CONFIG, expiresIn: 'expires_in' });
+
+            await strategy.getCredentials();
+            vi.advanceTimersByTime(560_000);
+            expect(await strategy.getCredentials()).toEqual({ accessToken: 'tok1' });
+            vi.advanceTimersByTime(11_000);
+            expect(await strategy.getCredentials()).toEqual({ accessToken: 'tok2' });
+            expect(mock.history['post']).toHaveLength(2);
+        });
+
+        it('rejects when the lifetime is missing from the response', async () => {
+            expect.assertions(1);
+            mock.onPost(TOKEN_URL).reply(200, { access_token: 'tok1' });
+            const strategy = new TokenExchangeStrategy(EXPIRING_CONFIG);
+            await expect(strategy.getCredentials()).rejects.toThrow('not a number');
+        });
     });
 
     it('deduplicates concurrent cold credential fetches', async () => {

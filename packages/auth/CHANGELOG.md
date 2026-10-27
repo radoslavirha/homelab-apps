@@ -1,5 +1,21 @@
 # @radoslavirha/auth
 
+## 0.3.0
+
+### Minor Changes
+
+- [#330](https://github.com/radoslavirha/homelab-apps/pull/330) [`20c61e5`](https://github.com/radoslavirha/homelab-apps/commit/20c61e558621cba57a2b2ae95d902d44ac35baab) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Verify a token with no `kid` against a JWKS holding several matching keys (as during key rotation) by trying each candidate key, instead of refusing it as `invalid`. Adds `AmbiguousKeyError`, an `UnresolvableKeyError` that carries the candidate keys.
+
+### Patch Changes
+
+- [`099d0cd`](https://github.com/radoslavirha/homelab-apps/commit/099d0cd52cbb08f3bc850569b2fd5e6ab9b31f4b) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update packages
+
+## 0.2.2
+
+### Patch Changes
+
+- [#304](https://github.com/radoslavirha/homelab-apps/pull/304) [`d5b67cb`](https://github.com/radoslavirha/homelab-apps/commit/d5b67cb7293177913233282fcac87de11563b933) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - One class per file for the key-source errors and AuthConfigurationError, and toolkit empty checks; exports unchanged.
+
 ## 0.2.1
 
 ### Patch Changes

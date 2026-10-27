@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { PlatformTest } from '@tsed/platform-http/testing';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommonUtils } from '@radoslavirha/utils';
 import { QrCode } from '../models/QrCode.js';
 import { QrType } from '../models/QrType.enum.js';
@@ -16,24 +17,39 @@ const sampleModel = (): QrCode => CommonUtils.buildModelStrict(QrCode, {
     active: true
 });
 
-const stubConfig = (baseURL: string): ConfigService =>
-    ({ config: { redirect: { baseURL } } } as unknown as ConfigService);
-
 describe('QrCodeResponseMapper', () => {
+    let mapper: QrCodeResponseMapper;
+    let configService: ConfigService;
+
+    const setBaseURL = (baseURL: string): void => {
+        vi.spyOn(configService, 'config', 'get').mockReturnValue({
+            ...configService.config,
+            redirect: { ...configService.config.redirect, baseURL }
+        });
+    };
+
+    beforeEach(PlatformTest.create);
+    beforeEach(() => {
+        mapper = PlatformTest.get<QrCodeResponseMapper>(QrCodeResponseMapper);
+        configService = PlatformTest.get<ConfigService>(ConfigService);
+    });
+    afterEach(PlatformTest.reset);
+    afterEach(() => vi.restoreAllMocks());
+
     it('composes qrURL by joining redirect.baseURL with the slug', () => {
-        const mapper = new QrCodeResponseMapper(stubConfig('https://qr.home'));
+        setBaseURL('https://qr.home');
         const response = mapper.toResponse(sampleModel());
         expect(response.qrURL).toBe('https://qr.home/x7k2');
     });
 
     it('strips trailing slashes from redirect.baseURL', () => {
-        const mapper = new QrCodeResponseMapper(stubConfig('https://qr.home///'));
+        setBaseURL('https://qr.home///');
         const response = mapper.toResponse(sampleModel());
         expect(response.qrURL).toBe('https://qr.home/x7k2');
     });
 
     it('preserves all domain fields on the response', () => {
-        const mapper = new QrCodeResponseMapper(stubConfig('https://qr.home'));
+        setBaseURL('https://qr.home');
         const response = mapper.toResponse(sampleModel());
         expect(response.slug).toBe('x7k2');
         expect(response.targetURL).toBe('https://iot-ui.home/devices/shelf-1');

@@ -11,11 +11,8 @@ export class DeviceMongoDTO extends BaseMongo {
     @Required() @Property(Number) public deviceId: number;
     @Required() @Property(String) public address: string;
     @Required() @Property(String) public token: string;
-    @Required() @Property(Number) public stamp: number;
     @Required() @Property(String) public modelName: string;
     @Required() @Property(String) public specURL: string;
-    /** Unix timestamp (ms) of last stamp refresh. 0 means unknown. */
-    @Property(Number) public stampUpdatedAt?: number;
     /** Raw MIoT spec stored as plain JSON object. */
     @Required() @Any() public rawSpec: unknown;
 }

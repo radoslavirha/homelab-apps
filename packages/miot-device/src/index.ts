@@ -11,4 +11,4 @@ export {
     MIOT_METHOD_SET_PROPERTIES
 } from './MiotError.js';
 export type { MiotErrorKind, MiotErrorOptions, MiotMethod } from './MiotError.js';
-export type { DiscoverResult, GetPropertiesResult, ILogger, IStampStore, MiotDeviceOptions, StampState } from './types.js';
+export type { ActionResult, DiscoverResult, GetPropertiesResult, ILogger, IStampStore, MiotDeviceOptions, StampState } from './types.js';

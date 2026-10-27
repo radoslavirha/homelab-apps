@@ -1,5 +1,20 @@
 # @radoslavirha/ui-kit
 
+## 1.1.3
+
+### Patch Changes
+
+- Updated dependencies [[`ea42b4a`](https://github.com/radoslavirha/homelab-apps/commit/ea42b4a40b23387f03dbd7907d7e9c7167b84814)]:
+  - @radoslavirha/ui-runtime@0.3.3
+
+## 1.1.2
+
+### Patch Changes
+
+- [`099d0cd`](https://github.com/radoslavirha/homelab-apps/commit/099d0cd52cbb08f3bc850569b2fd5e6ab9b31f4b) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update packages
+- Updated dependencies [[`099d0cd`](https://github.com/radoslavirha/homelab-apps/commit/099d0cd52cbb08f3bc850569b2fd5e6ab9b31f4b)]:
+  - @radoslavirha/ui-runtime@0.3.2
+
 ## 1.1.1
 
 ### Patch Changes

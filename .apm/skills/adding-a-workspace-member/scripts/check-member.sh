@@ -5,7 +5,7 @@
 #   check-member.sh <member-path> [--template <template-member-path>]
 #   check-member.sh --all
 #
-#   <member-path>  apis/<name>, ui/<name> or packages/<name>
+#   <member-path>  apis/<name>, mcp/<name>, ui/<name> or packages/<name>
 #   --template     also fail on leftovers of the copied member's name
 #   --all          check every member (no template check)
 #
@@ -38,7 +38,7 @@ check_member() { # <member-path> [template-path]
     echo "== $path"
 
     if [ ! -d "$path" ]; then fail "$path is not a directory"; return; fi
-    case "$kind" in apis|ui|packages) ;; *) fail "$path is not under apis/, ui/ or packages/"; return ;; esac
+    case "$kind" in apis|mcp|ui|packages) ;; *) fail "$path is not under apis/, mcp/, ui/ or packages/"; return ;; esac
     if ! [[ "$name" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then fail "'$name' is not kebab-case"; fi
 
     local expected_name=$name
@@ -73,6 +73,11 @@ check_member() { # <member-path> [template-path]
         fi
         if [ -f "$path/deploy.json" ] && jq -e 'to_entries | length > 0 and all(.value.file and .value.yamlPath)' "$path/deploy.json" >/dev/null 2>&1; then
             pass "deploy.json names a values file + yamlPath per env ($(jq -r 'keys | join(", ")' "$path/deploy.json"))"
+        elif [ "$kind" = mcp ] && jq -e '. == {}' "$path/deploy.json" >/dev/null 2>&1; then
+            # An MCP server is built before it is deployable: phase 1 has no inbound login. A
+            # dependency bump still versions it, and release.yaml refuses a released app with no
+            # deploy.json, so `{}`: the image is published and no environment is updated.
+            warn "deploy.json is {} — released, deployed nowhere yet"
         else
             fail "deploy.json missing or without {<env>: {file, yamlPath}} — release.yaml refuses to release the app"
         fi
@@ -82,16 +87,24 @@ check_member() { # <member-path> [template-path]
     fi
 
     if [ "$kind" = apis ]; then
+        check_files "$path" src/models/config/AuthMethod.enum.ts src/providers/AuthProvider.ts src/health/index.ts
+    fi
+
+    # MCP servers are Ts.ED servers like the APIs, minus AuthMethod/AuthProvider (their auth is
+    # per endpoint in `mcpServers`, checked by platform-mcp, not the controller guard) and minus
+    # health checks of their own.
+    if [ "$kind" = apis ] || [ "$kind" = mcp ]; then
         check_files "$path" tsconfig.json eslint.config.mjs nodemon.json .swcrc vitest.config.ts \
             config/localhost.json config/test.json \
-            src/index.ts src/Server.ts src/models/config/ConfigModel.ts src/models/config/AuthMethod.enum.ts \
-            src/services/ConfigService.ts src/providers/AuthProvider.ts src/health/index.ts src/otel/instrument.ts
+            src/index.ts src/Server.ts src/models/config/ConfigModel.ts \
+            src/services/ConfigService.ts src/otel/instrument.ts
         local port dup
         port=$(jq -r '.server.httpPort // empty' "$path/config/localhost.json" 2>/dev/null)
         if [ -z "$port" ]; then
             fail "config/localhost.json has no server.httpPort"
         else
-            dup=$(for c in apis/*/config/localhost.json; do
+            dup=$(for c in apis/*/config/localhost.json mcp/*/config/localhost.json; do
+                [ -f "$c" ] || continue
                 [ "$c" = "$path/config/localhost.json" ] && continue
                 [ "$(jq -r '.server.httpPort // empty' "$c")" = "$port" ] && echo "${c%/config/localhost.json}"
             done)
@@ -118,6 +131,11 @@ check_member() { # <member-path> [template-path]
         else pass "vite dev port $vport is unique"; fi
     fi
 
+    if [ -f "$path/vitest.config.ts" ]; then
+        if grep -q "silent: 'passed-only'" "$path/vitest.config.ts"; then pass "vitest.config.ts prints console output only for failing tests"
+        else fail "vitest.config.ts must set test.silent: 'passed-only' — passing tests would leak their logs into the run"; fi
+    fi
+
     if [ -n "$template" ]; then
         local tname=${template%/}; tname=${tname#*/}
         local hits
@@ -130,7 +148,7 @@ check_member() { # <member-path> [template-path]
 }
 
 if [ "${1:-}" = "--all" ]; then
-    for m in apis/*/ ui/*/ packages/*/; do check_member "$m"; done
+    for m in apis/*/ mcp/*/ ui/*/ packages/*/; do [ -d "$m" ] && check_member "$m"; done
 elif [ -n "${1:-}" ]; then
     member=$1; template=
     if [ "${2:-}" = "--template" ]; then template=${3:-}; fi

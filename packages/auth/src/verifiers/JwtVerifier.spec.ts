@@ -3,8 +3,9 @@ import { SignJWT, generateKeyPair, exportSPKI } from 'jose';
 import { JwtVerifier } from './JwtVerifier.js';
 import { StaticKeySource } from '../keys/StaticKeySource.js';
 import { TrustedIssuerSchema } from '../schemas/auth.schema.js';
-import { mintTestToken, TEST_SECRET } from '../test/mintTestToken.js';
-import type { IKeySource } from '../IKeySource.js';
+import { mintTestToken, TEST_SECRET, testSecretBytes } from '../test/mintTestToken.js';
+import { AmbiguousKeyError } from '../AmbiguousKeyError.js';
+import type { IKeySource, VerificationKey } from '../IKeySource.js';
 import { credentialSourceOf } from '../CredentialSource.js';
 
 const ISSUER = 'https://issuer.test/';
@@ -233,6 +234,78 @@ describe('JwtVerifier — key source failures', () => {
         const token = `${b64({ alg: 'RS256' })}.${b64({ iss: ISSUER })}.c2ln`;
 
         expect((await verifierFor(row).verify(token)).reason).not.toBe('indeterminate');
+    });
+});
+
+describe('JwtVerifier — several candidate keys', () => {
+    const WRONG_SECRET = 'wrong-secret-not-a-real-key-00000';
+
+    /**
+     * A source that, like a JWKS during rotation, cannot choose between keys.
+     * `yielded` counts how many candidates the verifier actually asked for.
+     */
+    const ambiguous = (...secrets: string[]) => {
+        const state = { yielded: 0 };
+        const keys: IKeySource = {
+            getKey: () => {
+                async function* candidates(): AsyncGenerator<VerificationKey> {
+                    for (const secret of secrets) {
+                        state.yielded++;
+                        yield testSecretBytes(secret);
+                    }
+                }
+                return Promise.reject(new AmbiguousKeyError('multiple matching keys found', candidates()));
+            }
+        };
+        return { keys, state };
+    };
+
+    it('tries each candidate until one verifies the signature', async () => {
+        expect.assertions(1);
+        const { keys } = ambiguous(WRONG_SECRET, TEST_SECRET);
+
+        const outcome = await new JwtVerifier([issuerRow()], keys).verify(await mintTestToken());
+
+        expect(outcome).toHaveProperty('principal.subject', 'test-subject');
+    });
+
+    it('refuses as invalid when no candidate verifies the signature', async () => {
+        expect.assertions(1);
+        const { keys } = ambiguous(WRONG_SECRET, 'another-wrong-secret-000000000000');
+
+        const outcome = await new JwtVerifier([issuerRow()], keys).verify(await mintTestToken());
+
+        expect(outcome).toEqual({ reason: 'invalid', detail: 'signature verification failed' });
+    });
+
+    it('reports what the matching key found, not the mismatch before it', async () => {
+        expect.assertions(1);
+        const { keys } = ambiguous(WRONG_SECRET, TEST_SECRET);
+
+        const outcome = await new JwtVerifier([issuerRow()], keys).verify(
+            await mintTestToken({ audience: 'someone-else' })
+        );
+
+        expect(outcome.reason).toBe('wrong-audience');
+    });
+
+    it('stops at the key that verifies the signature, even when the token is then refused', async () => {
+        expect.assertions(2);
+        const { keys, state } = ambiguous(TEST_SECRET, WRONG_SECRET);
+
+        const outcome = await new JwtVerifier([issuerRow()], keys).verify(await mintTestToken({ expiresIn: '-5m' }));
+
+        expect(outcome).toMatchObject({ reason: 'invalid', detail: expect.stringContaining('exp') });
+        expect(state.yielded).toBe(1);
+    });
+
+    it('refuses as invalid when the source offers no usable candidate at all', async () => {
+        expect.assertions(1);
+        const { keys } = ambiguous();
+
+        const outcome = await new JwtVerifier([issuerRow()], keys).verify(await mintTestToken());
+
+        expect(outcome).toEqual({ reason: 'invalid', detail: 'no candidate key verifies the signature' });
     });
 });
 

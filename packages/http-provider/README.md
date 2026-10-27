@@ -204,6 +204,11 @@ The string shorthand `"access_token"` is equivalent to `[{ "field": "access_toke
 }
 ```
 
+`expiresIn` (optional) is the dot-notation path to the token lifetime in seconds, e.g. `"expires_in"`.
+When set, the cached token counts as missing `expiryMargin` seconds (default `30`) before it expires,
+so the next call fetches a new one instead of being refused with `401`. Without it the token is cached
+until the upstream answers `401`. The `401` → invalidate → single retry stays as the fallback.
+
 ### 9. Token exchange — GET with Basic Auth header
 
 Static transport on the auth request itself (passed via `headers`/`queryParams` fields at the auth level).
@@ -385,7 +390,7 @@ const response = await client.get('/resource', {
 |---|---|---|
 | `AuthStrategy.None` | `"none"` | No credential acquisition; transport applies static values only |
 | `AuthStrategy.KubernetesServiceAccount` | `"kubernetes-service-account"` | Reads SA token from file; re-reads on invalidation |
-| `AuthStrategy.TokenExchange` | `"token-exchange"` | Calls an auth endpoint (GET/POST); caches response |
+| `AuthStrategy.TokenExchange` | `"token-exchange"` | Calls an auth endpoint (GET/POST); caches response (optionally until `expiresIn`) |
 | `AuthStrategy.JwtSelfSigned` | `"jwt-self-signed"` | Generates a signed JWT locally using `jose`; caches until near expiry |
 
 `TokenExchange` and `JwtSelfSigned` use single-flight acquisition: when credentials are missing

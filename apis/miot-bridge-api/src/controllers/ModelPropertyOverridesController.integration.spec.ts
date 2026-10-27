@@ -1,5 +1,6 @@
 import { describe, beforeEach, afterEach, expect, it } from 'vitest';
 import { PlatformTest } from '@tsed/platform-http/testing';
+import { TestContainersMongo } from '@tsed/testcontainers-mongo';
 import SuperTest from 'supertest';
 import { authenticateBearerJwt, mintTestToken } from '@radoslavirha/tsed-auth';
 import { Server } from '../Server.js';
@@ -16,7 +17,7 @@ describe('ModelPropertyOverridesController (integration)', () => {
     let request: SuperTest.Agent;
     let api: SuperTest.Agent;
 
-    beforeEach(PlatformTest.bootstrap(Server, {
+    beforeEach(TestContainersMongo.bootstrap(Server, {
         imports: [{ token: MqttClientProvider, use: null }]
     }));
     beforeEach(async () => {
@@ -26,7 +27,7 @@ describe('ModelPropertyOverridesController (integration)', () => {
         // agent cannot also serve the anonymous cases.
         api = await authenticateBearerJwt(SuperTest.agent(PlatformTest.callback()));
     });
-    afterEach(PlatformTest.reset);
+    afterEach(() => TestContainersMongo.reset());
 
     describe('Authentication', () => {
         const routes: ReadonlyArray<readonly [string, string]> = [
@@ -50,8 +51,8 @@ describe('ModelPropertyOverridesController (integration)', () => {
 
             it('does not answer 401 for a valid token', async () => {
                 // Deliberately not asserting a success status. Past the guard these
-                // routes want a body, a real device, or storage a bare test config
-                // does not have — what matters is that authentication stopped being
+                // routes want a body or a device the empty test database does not
+                // have — what matters is that authentication stopped being
                 // the reason for the refusal.
                 const response = await call(api);
 

@@ -44,7 +44,7 @@ CLI tools the workflows here assume. Check before starting work that needs them:
 | --- | --- | --- |
 | `pnpm` 11 + Node 24 | everything | `pnpm -v && node -v` |
 | `NODE_AUTH_TOKEN` | `pnpm install` (GitHub Packages) — it is in `.env` | `grep -q '^NODE_AUTH_TOKEN=.' .env` |
-| Docker, running | Mongo-backed tests (testcontainers) | `docker info >/dev/null` |
+| Docker, running | Mongo- and Postgres-backed tests (testcontainers) | `docker info >/dev/null` |
 | `apm` | deploying skills and rules after clone / after editing `.apm/` | `apm --version` |
 | `gh`, authenticated | anything touching GitHub (issues, PRs, the `homelab` repo) | `gh auth status` |
 
@@ -126,7 +126,7 @@ apis/<api-name>/
     models/               # Ts.ED schema models, enums, request/response types. Use sub-folders to group (`config/`, etc.).
     services/             # Reusable, stateless business logic. Includes ConfigService, storage facades, etc. SINGLETON scoped when possible.
     storage/
-      <storage group>/    # Per backend + entity (e.g. `qr-mongo/`, `device-local-storage/`).
+      <storage group>/    # Per backend + entity (e.g. `qr-mongo/`, `device-mongo/`).
         dto/              # DTO models for storage repositories.
         *Repository.ts    # Repository service that accepts/returns only DTOs. SINGLETON scoped when possible.
     otel/                 # OpenTelemetry bootstrap (`instrument.ts`), per-API OTel config, and `telemetry.ts` — the span names, tracer scopes, `job.name` values and app attribute keys this API emits.
@@ -137,6 +137,10 @@ apis/<api-name>/
 ```
 
 There is no `v1/` folder and no API version prefix in routes — all controllers mount at `/`. Versioning is handled at the package level via Changesets, not inside route paths.
+
+`mcp/<mcp-name>/` holds MCP servers: the same Ts.ED layout as `apis/`, without Swagger. CI, the
+Dockerfile, the release workflow and `check-member.sh` treat them like apps; an MCP server that is
+not deployable yet has `deploy.json` `{}`: released (image published) but deployed nowhere.
 
 ```text
 ui/<ui-name>/
@@ -166,6 +170,13 @@ ui/<ui-name>/
 - Avoid constructing DTOs and calling endpoints/repositories from handlers. Delegate DTO construction to services.
 - Use `@radoslavirha/*` packages from [toolkit-hub](https://github.com/radoslavirha/toolkit-hub)
 - always use class member visibility modifiers
+- **One class per file**, the file named after the class — DTOs, response models and test doubles
+  included. An interface or type used only by that class may sit beside it; a second class may not.
+- **Guards and helpers come from `@radoslavirha/utils`, never raw checks**: `CommonUtils.isNil` /
+  `notNil` / `isNull` / `isUndefined` / `isEmpty`, `StringUtils.isNotEmpty`, `DefaultsUtil` (the
+  `using-utils` skill has the table). API `lint` runs with `--max-warnings 0`, so a `PreferUtils`
+  warning fails it. Checks the linter cannot see — `x === ''`, the truthiness of a nullable,
+  `.length === 0` — fall under the same rule.
 
 ### Dependency Injection (Ts.ED)
 
@@ -182,6 +193,20 @@ ui/<ui-name>/
 - DTO models do not need `@Description` decorator, use JSDoc.
 - Endpoint request/response models follow CamelCase `{Resource}{HTTP Method}{Request/Response}` convention
 - always build models using `CommonUtils.buildModelStrict` / `CommonUtils.buildModelPartial` / `CommonUtils.buildModelCore` from `@radoslavirha/utils` (`buildModelStrict` for fully-defined models, `buildModelPartial` for partial/patch-like data, `buildModelCore` only for shared low-level model-building helpers)
+
+### Endpoints & DTOs
+
+- An endpoint accepts and returns **DTOs only**. A DTO is a `@tsed/schema`-decorated class that
+  mirrors the wire format — `@Name('wire_name')` where the wire spells a field differently,
+  `@AdditionalProperties(false)` — one per file under `endpoints/<group>/dto/` (storage:
+  `storage/<group>/dto/`).
+- **Responses are deserialized, requests serialized**, with `Serializer` from
+  `@radoslavirha/tsed-common`: `Serializer.deserialize(body, ResponseDTO)` (`deserializeArray` for a
+  list) and `Serializer.serialize(request, RequestDTO)`. Never return a client's raw body, an object
+  literal typed as a DTO, or an SDK's own types — an Octokit response is deserialized like any other.
+  Storage repositories deserialize their rows the same way.
+- No logic in an endpoint: filtering, decoding and mapping belong to its caller.
+- Details and examples: `.apm/instructions/tsed-api.instructions.md`.
 
 ### Enums
 
@@ -222,13 +247,28 @@ ui/<ui-name>/
 - One controller file per resource
 - Use `@Docs(version)` for Swagger grouping
 - Use `@Returns(...)` with proper content types
+- Declare each error a route raises with its exception class — `@Returns(NotFound.STATUS, NotFound)`, never a
+  bare `@Returns(404)`. The response model's `@Description` describes a success response; no `.Description()` on `@Returns`.
 - Export from `controllers/index.ts`
 
 ## Testing
 
 - Framework: **Vitest**. Unit specs `*.spec.ts` co-located with source; integration specs `*.integration.spec.ts` with `PlatformTest` from `@tsed/platform-http/testing`.
 - Run: `pnpm --filter ./<member-path> test` (or `pnpm test` inside the member).
-- Conventions are path-scoped rules in `.apm/instructions/` (`testing`, `tsed-testing`, `react-testing`); they load when you open a spec. A bug fix's test must fail without the fix — prove it with `bash scripts/check-regression-test.sh`.
+- Conventions are path-scoped rules in `.apm/instructions/` (`tsed-testing`, `react-testing`); they load when you open a spec. A bug fix's test must fail without the fix — prove it with `bash scripts/check-regression-test.sh`.
+- **A path-scoped rule loads when a matching file is *read*, not when a new one is written** — so in
+  a new member, read `.apm/instructions/tsed-testing.instructions.md` before the first spec. The
+  rules that get missed: every service, repository, mapper and endpoint has its own spec (handlers
+  are covered by controller integration tests); resolve providers through DI (`PlatformTest.create` +
+  `PlatformTest.get`, `vi.spyOn` on collaborators, `vi.spyOn(configService, 'config', 'get')` for
+  config) and never `new` one; `expect.assertions(n)` at the top of every async test; no tests of
+  decorators.
+- **A test run prints nothing but the reporter.** Every `vitest.config.ts` sets
+  `silent: 'passed-only'`, so the logger lines a passing test produces stay out of the output and a
+  failing test still shows its own. A warning that is not a log line (React `act()`, a library's
+  console notice) gets fixed at its source rather than left to that filter. Vitest switches to its
+  agent reporter under `CLAUDECODE` / `AI_AGENT`, which also hides passing tests' console output; to
+  see what a run would print, use `env -u CLAUDECODE -u AI_AGENT pnpm vitest run --silent=false`.
 
 ## Adding a workspace member
 
@@ -253,6 +293,9 @@ matter in every change:
   Local development uses the sandbox IdP's real JWKS (`config/localhost.json`); tests use an
   inline HS256 key (`config/test.json`).
 - **A misconfiguration must fail at boot** (`createAuthConfigSchema` makes it a parse error).
+- **A service that decides by the caller injects `PrincipalService`** and calls `require()` (or
+  `current()` where there may be none). Do not read `@CurrentPrincipal()` in a controller only to
+  pass it down through a handler; that parameter stays for a controller that uses the principal itself.
 
 ## Health checks
 
@@ -305,6 +348,25 @@ Pass extra instrumentations in from the app via `init`'s `extraInstrumentations`
 - During rollout, old and new versions may run concurrently.
 - Prefer additive config changes; remove legacy keys only after all workloads run a compatible version.
 - Do not enforce runtime strict rejection of unknown future keys when it can block older running versions.
+
+### Environment-specific values come from configuration (repository-wide rule)
+
+Write every app as if it ran in several environments on shared infrastructure, **even when it is
+deployed to one**. `production` and `sandbox` share one MongoDB, one Postgres, one MQTT broker and
+one Ollama, each environment with its own database, role and topics. Adding an environment later
+must then be deploy work only (values, a database, secrets), never a code change.
+
+- **Configurable, never a literal:** everything that would collide or differ between two
+  environments on one instance. That means connection details (host, port, credentials, TLS), the
+  **database name and user**, the MQTT topic prefix and client id, external base URLs, and auth
+  issuers and audience. Examples: `mongodb` in qr-manager-api (database per environment),
+  `mqtt.topicPrefix` in miot-bridge-api, `database.database` / `database.user` in
+  knowledge-base-api (deployed to `production` only).
+- **Fixed is fine** for names scoped inside the app's own database: collections, tables, the
+  migrations table, advisory lock keys. Two environments never share one database (sandbox would
+  run its migrations on production's schema).
+- **Role names are fixed** (`<app>.reader`, …): they are the Authentik contract. Environments are
+  told apart by the token's audience, which is configurable.
 
 ## Versioning & Changesets
 

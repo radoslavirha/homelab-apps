@@ -8,11 +8,17 @@
 apis/**/config/*.json
 !apis/**/config/custom-environment-variables.json
 !apis/**/config/test.json
+mcp/**/config/*.json
+!mcp/**/config/custom-environment-variables.json
+!mcp/**/config/test.json
 .env
 .env.local
 .env.*.local
 .act
 .npmrc.docker
+# Private keys (a GitHub App's, a TLS key) never belong in this public repo.
+*.pem
+*.key
 .vscode
 .husky
 

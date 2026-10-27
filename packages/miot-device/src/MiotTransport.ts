@@ -12,9 +12,10 @@ import {
     MIOT_METHOD_SET_PROPERTIES,
     type MiotMethod
 } from './MiotError.js';
+import type { DeviceClock } from './DeviceClock.js';
 import { NOOP_LOGGER } from './noopLogger.js';
 import { IncomingPacket, OutgoingPacket } from './packet/index.js';
-import type { DiscoverResult, GetPropertiesResult, ILogger } from './types.js';
+import type { ActionResult, DiscoverResult, GetPropertiesResult, ILogger } from './types.js';
 
 interface MiotPropertyResult {
     did: string;
@@ -73,7 +74,8 @@ const MIOT_TIMEOUT_MS = 10_000;
 
 /**
  * Stateless UDP transport layer for the Xiaomi MIoT binary protocol.
- * Handles socket lifecycle, packet encoding/decoding. No stamp logic here.
+ * Handles socket lifecycle, packet encoding/decoding. Stamps come from the caller's
+ * {@link DeviceClock}: one is taken per packet sent, and each response header is reported back.
  *
  * @internal — consumed by {@link MiotDevice}.
  */
@@ -150,10 +152,10 @@ export class MiotTransport {
     /**
      * Reads a single property value from the device.
      */
-    async getProperty(deviceId: number, stamp: number, siid: number, piid: number): Promise<string | number | undefined> {
+    async getProperty(deviceId: number, clock: DeviceClock, siid: number, piid: number): Promise<string | number | undefined> {
         const did = String(deviceId);
-        this.logger.debug(`get_properties`, { deviceId, siid, piid, stamp });
-        const response = await this.sendCommand(deviceId, stamp, {
+        this.logger.debug(`get_properties`, { deviceId, siid, piid });
+        const response = await this.sendCommand(deviceId, clock, {
             method: MIOT_METHOD_GET_PROPERTIES,
             params: [{ did, siid, piid }]
         });
@@ -182,23 +184,22 @@ export class MiotTransport {
      * A polling loop over consumer hardware should not depend on an optimisation it cannot check.
      * Reinstating batching needs evidence from a real device, not a reading of the spec.
      *
-     * Stamp handling is unchanged: one increment between packets, exactly as the chunk loop did.
+     * Each packet takes its stamp from the device clock when it is sent. Packets inside one second
+     * share a stamp; the device answers them. There is no increment per packet: the stamp is the
+     * device's clock, not a counter (see `DeviceClock`).
      *
      * @param props - Properties to read.
-     * @param stamp - Starting stamp.
-     * @returns All results and the last stamp actually used.
      */
     async getProperties(
         deviceId: number,
-        stamp: number,
+        clock: DeviceClock,
         props: Array<{ siid: number; piid: number }>
-    ): Promise<{ results: GetPropertiesResult[]; finalStamp: number }> {
+    ): Promise<GetPropertiesResult[]> {
         const did = String(deviceId);
         const results: GetPropertiesResult[] = [];
-        let currentStamp = stamp;
 
-        for (const [index, prop] of props.entries()) {
-            const response = await this.sendCommand(deviceId, currentStamp, {
+        for (const prop of props) {
+            const response = await this.sendCommand(deviceId, clock, {
                 method: MIOT_METHOD_GET_PROPERTIES,
                 params: [{ did, siid: prop.siid, piid: prop.piid }]
             });
@@ -207,22 +208,18 @@ export class MiotTransport {
             for (const item of raw ?? []) {
                 results.push({ siid: item.siid, piid: item.piid, value: item.value, code: item.code });
             }
-
-            if (index < props.length - 1) {
-                currentStamp++;
-            }
         }
 
-        return { results, finalStamp: currentStamp };
+        return results;
     }
 
     /**
      * Writes a property value to the device.
      */
-    async setProperty(deviceId: number, stamp: number, siid: number, piid: number, value: string | number): Promise<void> {
+    async setProperty(deviceId: number, clock: DeviceClock, siid: number, piid: number, value: string | number): Promise<void> {
         const did = String(deviceId);
-        this.logger.debug(`set_properties`, { deviceId, siid, piid, value, stamp });
-        const response = await this.sendCommand(deviceId, stamp, {
+        this.logger.debug(`set_properties`, { deviceId, siid, piid, value });
+        const response = await this.sendCommand(deviceId, clock, {
             method: MIOT_METHOD_SET_PROPERTIES,
             params: [{ did, siid, piid, value }]
         });
@@ -239,8 +236,10 @@ export class MiotTransport {
      * Executes an action on the device.
      *
      * @param args - Optional action arguments. Arrays are passed as-is; scalar values are wrapped.
+     * @returns The device's answer, so a caller can see an action the device acknowledged but did
+     *          not act on.
      */
-    async callAction(deviceId: number, stamp: number, siid: number, aiid: number, args?: unknown): Promise<void> {
+    async callAction(deviceId: number, clock: DeviceClock, siid: number, aiid: number, args?: unknown): Promise<ActionResult> {
         const did = String(deviceId);
         let inArgs: unknown[];
         if (CommonUtils.isUndefined(args)) {
@@ -251,8 +250,8 @@ export class MiotTransport {
             inArgs = [args];
         }
 
-        this.logger.debug(`action`, { deviceId, siid, aiid, stamp });
-        const response = await this.sendCommand(deviceId, stamp, {
+        this.logger.debug(`action`, { deviceId, siid, aiid });
+        const response = await this.sendCommand(deviceId, clock, {
             method: MIOT_METHOD_ACTION,
             params: { did, siid, aiid, in: inArgs }
         });
@@ -260,14 +259,17 @@ export class MiotTransport {
         // A refused action answers with a result object carrying a non-zero `code`; some firmware
         // answers a plain string (e.g. 'ok'), which stays a success.
         const result = response.result as string | Record<string, unknown> | null | undefined;
-        if (ObjectUtils.isPlainObject(result) && NumberUtils.isNumber(result.code) && result.code !== 0) {
-            this.logger.error(`action failed`, { deviceId, siid, aiid, code: result.code });
-            throw propertyError(MIOT_METHOD_ACTION, result.code);
+        const code = ObjectUtils.isPlainObject(result) && NumberUtils.isNumber(result.code) ? result.code : undefined;
+        if (CommonUtils.notUndefined(code) && code !== 0) {
+            this.logger.error(`action failed`, { deviceId, siid, aiid, code });
+            throw propertyError(MIOT_METHOD_ACTION, code);
         }
+        return { code, result };
     }
 
-    private async sendCommand(deviceId: number, stamp: number, payload: MiotRequestPayload): Promise<MiotResponse> {
+    private async sendCommand(deviceId: number, clock: DeviceClock, payload: MiotRequestPayload): Promise<MiotResponse> {
         const method = payload.method;
+        const stamp = clock.next();
         this.logger.debug(`Sending command`, { deviceId, method, stamp });
         const raw = new OutgoingPacket({ token: this.token, deviceId, stamp, payload }).raw;
 
@@ -308,6 +310,9 @@ export class MiotTransport {
                         reject(new MiotError('Empty response from device', { kind: MIOT_ERROR_TRANSPORT_ERROR, method }));
                         return;
                     }
+                    // A body decrypted under our token, so the checksum held and the header is the
+                    // device's own. Taken before the error check: a refusal still reports its clock.
+                    clock.observe(packet.stamp);
                     if (CommonUtils.notNil(json.error)) {
                         this.logger.error(`Device error`, {
                             address: this.address,

@@ -1,6 +1,7 @@
 import { createCipheriv, createHash } from 'crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HEADER_SIZE } from './Constants.js';
+import { DeviceClock } from './DeviceClock.js';
 import { MiotError, MIOT_ERROR_DEVICE_ERROR, MIOT_ERROR_TIMEOUT, MIOT_ERROR_TRANSPORT_ERROR, MIOT_METHOD_ACTION, MIOT_METHOD_GET_PROPERTIES } from './MiotError.js';
 import { MiotTransport } from './MiotTransport.js';
 
@@ -28,8 +29,20 @@ function buildHelloResponse(deviceId: number, stamp: number): Buffer {
     return buf;
 }
 
+/** A clock synced to `stamp`, as `MiotDevice` hands it over after a handshake. */
+function syncedClock(stamp: number = STAMP): DeviceClock {
+    const clock = new DeviceClock();
+    clock.sync(stamp);
+    return clock;
+}
+
+/** The stamp in the header of the packet a mock socket was asked to send. */
+function sentStamp(socket: { send: ReturnType<typeof vi.fn> }, call = 0): number {
+    return (socket.send.mock.calls[call][0] as Buffer).readUInt32BE(12);
+}
+
 /** Build a valid encrypted miot response packet. */
-function buildCommandResponse(payload: Record<string, unknown>): Buffer {
+function buildCommandResponse(payload: Record<string, unknown>, stamp: number = STAMP): Buffer {
     const plaintext = Buffer.from(JSON.stringify(payload), 'utf8');
     const cipher = createCipheriv('aes-128-cbc', TOKEN_KEY, TOKEN_IV);
     const encrypted = Buffer.concat([cipher.update(plaintext), cipher.final()]);
@@ -39,7 +52,7 @@ function buildCommandResponse(payload: Record<string, unknown>): Buffer {
     header.writeUInt16BE(HEADER_SIZE + encrypted.length, 2);
     header.writeUInt32BE(0, 4);
     header.writeUInt32BE(DEVICE_ID, 8);
-    header.writeUInt32BE(STAMP, 12);
+    header.writeUInt32BE(stamp, 12);
 
     const checksum = createHash('md5')
         .update(header.subarray(0, 16))
@@ -148,6 +161,8 @@ function createMockSocketLateMessage(sendError: Error, lateResponse: Buffer): {
 describe('MiotTransport', () => {
     beforeEach(() => {
         createSocketMock.mockReset();
+        // Time stands still unless a test moves it, so no stamp depends on how fast the suite runs.
+        vi.spyOn(performance, 'now').mockReturnValue(1_000_000);
     });
 
     afterEach(() => {
@@ -212,7 +227,7 @@ describe('MiotTransport', () => {
             createSocketMock.mockReturnValue(createMockSocket(response));
 
             const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
-            const value = await transport.getProperty(DEVICE_ID, STAMP, 2, 3);
+            const value = await transport.getProperty(DEVICE_ID, syncedClock(), 2, 3);
 
             expect(value).toBe(42);
         });
@@ -225,7 +240,7 @@ describe('MiotTransport', () => {
             createSocketMock.mockReturnValue(createMockSocket(response));
 
             const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
-            await expect(transport.getProperty(DEVICE_ID, STAMP, 2, 3)).rejects.toThrow('get_properties failed');
+            await expect(transport.getProperty(DEVICE_ID, syncedClock(), 2, 3)).rejects.toThrow('get_properties failed');
         });
 
         // miIO puts a per-property refusal in the *result*, not the error envelope. It is the same
@@ -239,7 +254,7 @@ describe('MiotTransport', () => {
             createSocketMock.mockReturnValue(createMockSocket(response));
 
             const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
-            const error = await transport.getProperty(DEVICE_ID, STAMP, 2, 3).catch((err: unknown) => err);
+            const error = await transport.getProperty(DEVICE_ID, syncedClock(), 2, 3).catch((err: unknown) => err);
 
             expect((error as MiotError).kind).toBe(MIOT_ERROR_DEVICE_ERROR);
             expect((error as MiotError).code).toBe(-4004);
@@ -251,7 +266,7 @@ describe('MiotTransport', () => {
             createSocketMock.mockReturnValue(createMockSocket(response));
 
             const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
-            await expect(transport.getProperty(DEVICE_ID, STAMP, 2, 3)).rejects.toThrow('get_properties failed');
+            await expect(transport.getProperty(DEVICE_ID, syncedClock(), 2, 3)).rejects.toThrow('get_properties failed');
         });
     });
 
@@ -262,11 +277,10 @@ describe('MiotTransport', () => {
             createSocketMock.mockReturnValue(createMockSocket(response));
 
             const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
-            const { results, finalStamp } = await transport.getProperties(DEVICE_ID, STAMP, [{ siid: 2, piid: 1 }]);
+            const results = await transport.getProperties(DEVICE_ID, syncedClock(), [{ siid: 2, piid: 1 }]);
 
             expect(results).toHaveLength(1);
             expect(results[0].value).toBe(100);
-            expect(finalStamp).toBe(STAMP);
         });
 
         // The behaviour the whole change is about: never more than one property per datagram,
@@ -286,9 +300,9 @@ describe('MiotTransport', () => {
             createSocketMock.mockReturnValueOnce(sockets[0]).mockReturnValueOnce(sockets[1]);
 
             const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
-            const { results, finalStamp } = await transport.getProperties(
+            const results = await transport.getProperties(
                 DEVICE_ID,
-                STAMP,
+                syncedClock(),
                 [{ siid: 2, piid: 1 }, { siid: 2, piid: 2 }]
             );
 
@@ -296,9 +310,41 @@ describe('MiotTransport', () => {
             expect(results).toHaveLength(2);
             expect(results[0].value).toBe(10);
             expect(results[1].value).toBe(20);
-            // One increment between the two packets, as the chunk loop did — stamp semantics
-            // are deliberately untouched by this change.
-            expect(finalStamp).toBe(STAMP + 1);
+        });
+
+        // The stamp is the device's clock in seconds, not a call counter. Adding one per packet
+        // ran the stamp ahead of the clock during a burst and, between polls, left the next one
+        // behind it — where the device drops the packet and the call waits out the 10 s timeout.
+        it('stamps packets sent within one second alike, rather than counting them', async () => {
+            expect.assertions(2);
+            const response = buildCommandResponse({ id: 1, result: [{ did: String(DEVICE_ID), siid: 2, piid: 1, value: 1, code: 0 }] });
+            const sockets = [createMockSocket(response), createMockSocket(response), createMockSocket(response)];
+            createSocketMock.mockReturnValueOnce(sockets[0]).mockReturnValueOnce(sockets[1]).mockReturnValueOnce(sockets[2]);
+
+            const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
+            await transport.getProperties(DEVICE_ID, syncedClock(), [{ siid: 2, piid: 1 }, { siid: 2, piid: 2 }, { siid: 2, piid: 3 }]);
+
+            expect(sockets.map((socket) => sentStamp(socket))).toEqual([STAMP + 1, STAMP + 1, STAMP + 1]);
+            expect(createSocketMock).toHaveBeenCalledTimes(3);
+        });
+
+        it('stamps each packet from the time it is sent', async () => {
+            expect.assertions(1);
+            const now = vi.spyOn(performance, 'now');
+            const response = buildCommandResponse({ id: 1, result: [{ did: String(DEVICE_ID), siid: 2, piid: 1, value: 1, code: 0 }] });
+            const sockets = [createMockSocket(response), createMockSocket(response)];
+            createSocketMock
+                .mockImplementationOnce(() => {
+                    // The first packet is stamped by now; its answer takes 3 s to arrive.
+                    now.mockReturnValue(1_003_000);
+                    return sockets[0];
+                })
+                .mockImplementationOnce(() => sockets[1]);
+
+            const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
+            await transport.getProperties(DEVICE_ID, syncedClock(), [{ siid: 2, piid: 1 }, { siid: 2, piid: 2 }]);
+
+            expect(sockets.map((socket) => sentStamp(socket))).toEqual([STAMP + 1, STAMP + 4]);
         });
 
         it('handles null result from device gracefully (covers raw ?? [] fallback)', async () => {
@@ -307,7 +353,7 @@ describe('MiotTransport', () => {
             createSocketMock.mockReturnValue(createMockSocket(response));
 
             const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
-            const { results } = await transport.getProperties(DEVICE_ID, STAMP, [{ siid: 2, piid: 1 }]);
+            const results = await transport.getProperties(DEVICE_ID, syncedClock(), [{ siid: 2, piid: 1 }]);
             expect(results).toHaveLength(0);
         });
     });
@@ -321,7 +367,7 @@ describe('MiotTransport', () => {
             createSocketMock.mockReturnValue(createMockSocket(response));
 
             const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
-            await expect(transport.setProperty(DEVICE_ID, STAMP, 2, 3, 'on')).resolves.toBeUndefined();
+            await expect(transport.setProperty(DEVICE_ID, syncedClock(), 2, 3, 'on')).resolves.toBeUndefined();
         });
 
         it('throws when device returns non-zero code', async () => {
@@ -332,7 +378,7 @@ describe('MiotTransport', () => {
             createSocketMock.mockReturnValue(createMockSocket(response));
 
             const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
-            await expect(transport.setProperty(DEVICE_ID, STAMP, 2, 3, 'on')).rejects.toThrow('set_properties failed');
+            await expect(transport.setProperty(DEVICE_ID, syncedClock(), 2, 3, 'on')).rejects.toThrow('set_properties failed');
         });
 
         it('throws when result array is empty', async () => {
@@ -341,7 +387,7 @@ describe('MiotTransport', () => {
             createSocketMock.mockReturnValue(createMockSocket(response));
 
             const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
-            await expect(transport.setProperty(DEVICE_ID, STAMP, 2, 3, 'on')).rejects.toThrow('set_properties failed');
+            await expect(transport.setProperty(DEVICE_ID, syncedClock(), 2, 3, 'on')).rejects.toThrow('set_properties failed');
         });
     });
 
@@ -351,7 +397,7 @@ describe('MiotTransport', () => {
             createSocketMock.mockReturnValue(createMockSocket(response));
 
             const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
-            await expect(transport.callAction(DEVICE_ID, STAMP, 2, 1)).resolves.toBeUndefined();
+            await expect(transport.callAction(DEVICE_ID, syncedClock(), 2, 1)).resolves.toEqual({ code: undefined, result: 'ok' });
         });
 
         it('rejects with device_error when the action result carries a non-zero code', async () => {
@@ -362,7 +408,7 @@ describe('MiotTransport', () => {
             createSocketMock.mockReturnValue(createMockSocket(response));
 
             const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
-            const error = await transport.callAction(DEVICE_ID, STAMP, 2, 1).catch((err: unknown) => err);
+            const error = await transport.callAction(DEVICE_ID, syncedClock(), 2, 1).catch((err: unknown) => err);
 
             expect(MiotError.is(error)).toBe(true);
             expect((error as MiotError).kind).toBe(MIOT_ERROR_DEVICE_ERROR);
@@ -378,7 +424,10 @@ describe('MiotTransport', () => {
             createSocketMock.mockReturnValue(createMockSocket(response));
 
             const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
-            await expect(transport.callAction(DEVICE_ID, STAMP, 2, 1)).resolves.toBeUndefined();
+            await expect(transport.callAction(DEVICE_ID, syncedClock(), 2, 1)).resolves.toEqual({
+                code: 0,
+                result: { did: String(DEVICE_ID), siid: 2, aiid: 1, code: 0, out: [] }
+            });
         });
 
         it('wraps scalar arg in an array', async () => {
@@ -387,7 +436,7 @@ describe('MiotTransport', () => {
             createSocketMock.mockReturnValue(socket);
 
             const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
-            await transport.callAction(DEVICE_ID, STAMP, 2, 1, 'start');
+            await transport.callAction(DEVICE_ID, syncedClock(), 2, 1, 'start');
 
             // Verify send was called (arg wrapping validated via OutgoingPacket internal test)
             expect(socket.send).toHaveBeenCalledOnce();
@@ -401,7 +450,7 @@ describe('MiotTransport', () => {
             createSocketMock.mockReturnValue(createMockSocket(response));
 
             const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
-            await expect(transport.callAction(DEVICE_ID, STAMP, 2, 1)).rejects.toThrow('Device error -9999: Device error');
+            await expect(transport.callAction(DEVICE_ID, syncedClock(), 2, 1)).rejects.toThrow('Device error -9999: Device error');
         });
 
         // The whole point of the typed error: a JSON-RPC `error` envelope is the device answering
@@ -412,7 +461,7 @@ describe('MiotTransport', () => {
             createSocketMock.mockReturnValue(createMockSocket(response));
 
             const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
-            const error = await transport.callAction(DEVICE_ID, STAMP, 2, 1).catch((err: unknown) => err);
+            const error = await transport.callAction(DEVICE_ID, syncedClock(), 2, 1).catch((err: unknown) => err);
 
             expect(MiotError.is(error)).toBe(true);
             expect((error as MiotError).kind).toBe(MIOT_ERROR_DEVICE_ERROR);
@@ -424,7 +473,7 @@ describe('MiotTransport', () => {
             createSocketMock.mockReturnValue(createMockSocket(undefined, new Error('EHOSTUNREACH')));
 
             const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
-            const error = await transport.callAction(DEVICE_ID, STAMP, 2, 1).catch((err: unknown) => err);
+            const error = await transport.callAction(DEVICE_ID, syncedClock(), 2, 1).catch((err: unknown) => err);
 
             expect((error as MiotError).kind).toBe(MIOT_ERROR_TRANSPORT_ERROR);
             expect((error as MiotError).method).toBe(MIOT_METHOD_ACTION);
@@ -438,7 +487,7 @@ describe('MiotTransport', () => {
             createSocketMock.mockReturnValue(createMockSocket());
 
             const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
-            const pending = transport.callAction(DEVICE_ID, STAMP, 2, 1).catch((err: unknown) => err);
+            const pending = transport.callAction(DEVICE_ID, syncedClock(), 2, 1).catch((err: unknown) => err);
             await vi.advanceTimersByTimeAsync(10_000);
             const error = await pending;
             vi.useRealTimers();
@@ -452,14 +501,14 @@ describe('MiotTransport', () => {
             createSocketMock.mockReturnValue(createMockSocket(undefined, undefined, new Error('UDP send error')));
 
             const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
-            await expect(transport.callAction(DEVICE_ID, STAMP, 2, 1)).rejects.toThrow('UDP send error');
+            await expect(transport.callAction(DEVICE_ID, syncedClock(), 2, 1)).rejects.toThrow('UDP send error');
         });
 
         it('rejects when socket emits an error event', async () => {
             createSocketMock.mockReturnValue(createMockSocket(undefined, new Error('Socket error')));
 
             const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
-            await expect(transport.callAction(DEVICE_ID, STAMP, 2, 1)).rejects.toThrow('Socket error');
+            await expect(transport.callAction(DEVICE_ID, syncedClock(), 2, 1)).rejects.toThrow('Socket error');
         });
 
         it('forwards array args as-is', async () => {
@@ -468,7 +517,44 @@ describe('MiotTransport', () => {
             createSocketMock.mockReturnValue(socket);
 
             const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
-            await expect(transport.callAction(DEVICE_ID, STAMP, 2, 1, [1, 2])).resolves.toBeUndefined();
+            await expect(transport.callAction(DEVICE_ID, syncedClock(), 2, 1, [1, 2])).resolves.toEqual({ code: undefined, result: 'ok' });
+        });
+    });
+
+    describe('sendCommand() — device clock', () => {
+        it('re-bases the clock on a response header that shows the device ahead of it', async () => {
+            expect.assertions(1);
+            const response = buildCommandResponse({ id: 1, result: 'ok' }, STAMP + 30);
+            createSocketMock.mockReturnValue(createMockSocket(response));
+
+            const clock = syncedClock();
+            await new MiotTransport('192.168.1.1', TOKEN_HEX).callAction(DEVICE_ID, clock, 2, 1);
+
+            expect(clock.next()).toBe(STAMP + 31);
+        });
+
+        it('reads the clock from a response that refuses the call', async () => {
+            expect.assertions(1);
+            const response = buildCommandResponse({ id: 1, error: { code: -9999, message: 'Device error' } }, STAMP + 30);
+            createSocketMock.mockReturnValue(createMockSocket(response));
+
+            const clock = syncedClock();
+            await new MiotTransport('192.168.1.1', TOKEN_HEX).callAction(DEVICE_ID, clock, 2, 1).catch(() => undefined);
+
+            expect(clock.next()).toBe(STAMP + 31);
+        });
+
+        // A header carrying the stamp we sent could be the device echoing it. Re-basing on it would
+        // move the estimate a second ahead on every call.
+        it('does not re-base on a response header that only repeats the stamp sent', async () => {
+            expect.assertions(1);
+            const response = buildCommandResponse({ id: 1, result: 'ok' }, STAMP + 1);
+            createSocketMock.mockReturnValue(createMockSocket(response));
+
+            const clock = syncedClock();
+            await new MiotTransport('192.168.1.1', TOKEN_HEX).callAction(DEVICE_ID, clock, 2, 1);
+
+            expect(clock.next()).toBe(STAMP + 1);
         });
     });
 
@@ -481,7 +567,7 @@ describe('MiotTransport', () => {
             createSocketMock.mockReturnValue(createMockSocket(headerOnly));
 
             const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
-            await expect(transport.callAction(DEVICE_ID, STAMP, 2, 1)).rejects.toThrow('Empty response from device');
+            await expect(transport.callAction(DEVICE_ID, syncedClock(), 2, 1)).rejects.toThrow('Empty response from device');
         });
 
         it('settled guard fires when a late message arrives after sendCommand already settled', async () => {
@@ -491,7 +577,7 @@ describe('MiotTransport', () => {
             createSocketMock.mockReturnValue(createMockSocketLateMessage(new Error('Send error'), lateResponse));
 
             const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
-            await expect(transport.callAction(DEVICE_ID, STAMP, 2, 1)).rejects.toThrow('Send error');
+            await expect(transport.callAction(DEVICE_ID, syncedClock(), 2, 1)).rejects.toThrow('Send error');
         });
     });
 });

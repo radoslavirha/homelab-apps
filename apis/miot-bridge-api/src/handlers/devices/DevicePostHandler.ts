@@ -16,7 +16,7 @@ export class DevicePostHandler {
     ) {}
 
     async execute(request: DeviceRequest): Promise<DevicePostResponse> {
-        const { deviceId, stamp, specUrl, rawSpec, deviceSpec } = await this.deviceDiscoveryService.discover(request);
+        const { deviceId, specUrl, rawSpec, deviceSpec } = await this.deviceDiscoveryService.discover(request);
 
         const existing = await this.deviceStorageService.getByDeviceId(deviceId);
         if (CommonUtils.notNil(existing)) {
@@ -28,8 +28,6 @@ export class DevicePostHandler {
                 deviceId: deviceId,
                 address: request.address,
                 token: request.token,
-                stamp: stamp,
-                stampUpdatedAt: 0,
                 model: request.model,
                 specURL: specUrl,
                 rawSpec: rawSpec
@@ -41,8 +39,6 @@ export class DevicePostHandler {
             deviceId: saved.deviceId,
             address: saved.address,
             token: saved.token,
-            stamp: saved.stamp,
-            stampUpdatedAt: saved.stampUpdatedAt,
             model: saved.model,
             specURL: saved.specURL,
             createdAt: saved.createdAt,

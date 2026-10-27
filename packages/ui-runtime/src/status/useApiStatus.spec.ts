@@ -110,6 +110,38 @@ describe('useApiStatus', () => {
         expect(result.current.status).toBe('unauthenticated');
     });
 
+    it('restores unauthenticated, not ok, after an offline→online blip', () => {
+        const { result } = renderHook(() => useApiStatus());
+
+        act(() => {
+            result.current.report(classifyResponse({ status: 401 }));
+        });
+        act(() => {
+            window.dispatchEvent(new Event('offline'));
+        });
+        act(() => {
+            window.dispatchEvent(new Event('online'));
+        });
+
+        expect(result.current.status).toBe('unauthenticated');
+    });
+
+    it('restores degraded, not ok, after an offline→online blip', () => {
+        const { result } = renderHook(() => useApiStatus());
+
+        act(() => {
+            result.current.report(classifyResponse({ status: 503 }));
+        });
+        act(() => {
+            window.dispatchEvent(new Event('offline'));
+        });
+        act(() => {
+            window.dispatchEvent(new Event('online'));
+        });
+
+        expect(result.current.status).toBe('degraded');
+    });
+
     it('does not run the recovery probe while ok', () => {
         const probe = vi.fn().mockResolvedValue(true);
         renderHook(() => useApiStatus({ recoveryProbe: { probe } }));

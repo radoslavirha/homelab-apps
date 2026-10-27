@@ -3,6 +3,7 @@ import { SignJWT, exportJWK, generateKeyPair } from 'jose';
 import type { FetchImplementation } from 'jose';
 import { readFile } from 'node:fs/promises';
 import { RemoteJwksSource, SERVICE_ACCOUNT_TOKEN_PATH } from './RemoteJwksSource.js';
+import type { AmbiguousKeyError } from '../AmbiguousKeyError.js';
 import { UnresolvableKeyError } from '../IKeySource.js';
 import { JwtVerifier } from '../verifiers/JwtVerifier.js';
 import { TrustedIssuerSchema } from '../schemas/auth.schema.js';
@@ -71,6 +72,44 @@ describe('RemoteJwksSource', () => {
         const verifier = new JwtVerifier([row()], source);
 
         expect(await verifier.verify(token)).toHaveProperty('principal.subject', 'someone');
+    });
+
+    it('verifies a token with no kid against a set holding several keys, as happens during rotation', async () => {
+        expect.assertions(1);
+        const retiring = await publishedKey('key-1');
+        const current = await publishedKey('key-2');
+        const { impl } = servingFetch({ keys: [retiring.jwk, current.jwk] });
+        const source = new RemoteJwksSource([row()], { fetch: impl });
+
+        // No kid in the header, so both keys match. Signed with the second, so
+        // the first candidate fails and the verifier must go on to the next.
+        const token = await new SignJWT({})
+            .setProtectedHeader({ alg: 'RS256' })
+            .setSubject('someone')
+            .setIssuer(ISSUER)
+            .setAudience(AUDIENCE)
+            .setExpirationTime('1h')
+            .sign(current.privateKey);
+
+        const verifier = new JwtVerifier([row()], source);
+
+        expect(await verifier.verify(token)).toHaveProperty('principal.subject', 'someone');
+    });
+
+    it('rejects a lookup with no kid that several keys match with every candidate attached', async () => {
+        expect.assertions(3);
+        const first = await publishedKey('key-1');
+        const second = await publishedKey('key-2');
+        const { impl } = servingFetch({ keys: [first.jwk, second.jwk] });
+        const source = new RemoteJwksSource([row()], { fetch: impl });
+
+        const error = await source.getKey({ issuer: ISSUER, algorithm: 'RS256' }).catch((e: unknown) => e);
+
+        // Still an `UnresolvableKeyError`, so a caller that knows nothing of
+        // candidates reports `invalid` exactly as it did before.
+        expect(error).toBeInstanceOf(UnresolvableKeyError);
+        expect(error).toHaveProperty('name', 'AmbiguousKeyError');
+        expect(await Array.fromAsync((error as AmbiguousKeyError).candidates)).toHaveLength(2);
     });
 
     it('reports an unknown kid as unresolvable, not as an outage', async () => {

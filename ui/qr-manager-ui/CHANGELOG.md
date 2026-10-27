@@ -1,5 +1,36 @@
 # qr-manager-ui
 
+## 0.13.7
+
+### Patch Changes
+
+- Updated dependencies [[`ea42b4a`](https://github.com/radoslavirha/homelab-apps/commit/ea42b4a40b23387f03dbd7907d7e9c7167b84814)]:
+  - @radoslavirha/ui-runtime@0.3.3
+  - @radoslavirha/ui-auth@0.2.3
+  - @radoslavirha/ui-kit@1.1.3
+
+## 0.13.6
+
+### Patch Changes
+
+- [#338](https://github.com/radoslavirha/homelab-apps/pull/338) [`0accb0e`](https://github.com/radoslavirha/homelab-apps/commit/0accb0ec2d569606d179772fa0ae8b0a297cb4ad) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Ship the previous release's changes. That release was tagged, but its run failed before any image was built (`mcp/knowledge-base` had no `deploy.json`), so it was never deployed.
+
+## 0.13.5
+
+### Patch Changes
+
+- [`099d0cd`](https://github.com/radoslavirha/homelab-apps/commit/099d0cd52cbb08f3bc850569b2fd5e6ab9b31f4b) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update packages
+- Updated dependencies [[`099d0cd`](https://github.com/radoslavirha/homelab-apps/commit/099d0cd52cbb08f3bc850569b2fd5e6ab9b31f4b)]:
+  - @radoslavirha/ui-auth@0.2.2
+  - @radoslavirha/ui-kit@1.1.2
+  - @radoslavirha/ui-runtime@0.3.2
+
+## 0.13.4
+
+### Patch Changes
+
+- [#299](https://github.com/radoslavirha/homelab-apps/pull/299) [`0842489`](https://github.com/radoslavirha/homelab-apps/commit/0842489fe755b786ba377a42f7d7917be2bf7278) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - A missing hashed asset now returns 404 and index.html is served with no-cache, so a deploy no longer leaves a blank page.
+
 ## 0.13.3
 
 ### Patch Changes

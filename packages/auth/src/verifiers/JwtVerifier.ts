@@ -1,7 +1,8 @@
 import { decodeJwt, decodeProtectedHeader, errors, jwtVerify } from 'jose';
 import type { JWTPayload } from 'jose';
+import { AmbiguousKeyError } from '../AmbiguousKeyError.js';
 import { UnresolvableKeyError } from '../IKeySource.js';
-import type { IKeySource } from '../IKeySource.js';
+import type { IKeySource, VerificationKey } from '../IKeySource.js';
 import type { CredentialSource } from '../CredentialSource.js';
 import type { Credential, ITokenVerifier } from '../ITokenVerifier.js';
 import type { Principal } from '../Principal.js';
@@ -113,42 +114,64 @@ export class JwtVerifier implements ITokenVerifier {
         // unreachable JWKS says nothing about the token, so counting it as a bad
         // one would make an outage look like an attack and `enforced` mode
         // indistinguishable from a broken dependency.
-        let key;
+        //
+        // `AmbiguousKeyError` is the exception: several keys fit and the source
+        // would not choose. Not a refusal — the loop below lets the signature
+        // choose instead.
+        let candidates: Iterable<VerificationKey> | AsyncIterable<VerificationKey>;
         try {
-            key = await this.#keys.getKey({ issuer, kid, algorithm });
+            candidates = [await this.#keys.getKey({ issuer, kid, algorithm })];
         } catch (error) {
-            return error instanceof UnresolvableKeyError
-                ? invalid(error)
-                : { reason: VerificationReason.Indeterminate, detail: messageOf(error) };
+            if (!(error instanceof AmbiguousKeyError)) {
+                return error instanceof UnresolvableKeyError
+                    ? invalid(error)
+                    : { reason: VerificationReason.Indeterminate, detail: messageOf(error) };
+            }
+            candidates = error.candidates;
         }
 
-        try {
-            const { payload } = await jwtVerify(credential, key, {
-                issuer: row.issuer,
-                audience: row.audience,
-                // The allowlist, never the header's own claim about itself.
-                algorithms: algorithmsFor(row),
-                // jose only checks `exp` when present; without this a token
-                // minted with no expiry would be valid forever.
-                requiredClaims: ['exp']
-            });
-            // No `sub`, no principal. Falling back to a placeholder would put a
-            // fabricated subject in an audit column, which is worse than an
-            // empty one because it is indistinguishable from a real subject
-            // later.
-            if (!StringUtils.isNotEmpty(payload.sub)) {
-                return { reason: VerificationReason.Invalid, detail: 'token carries no sub claim' };
+        let refusal: VerificationOutcome = {
+            reason: VerificationReason.Invalid,
+            detail: 'no candidate key verifies the signature'
+        };
+        for await (const key of candidates) {
+            try {
+                const { payload } = await jwtVerify(credential, key, {
+                    issuer: row.issuer,
+                    audience: row.audience,
+                    // The allowlist, never the header's own claim about itself.
+                    algorithms: algorithmsFor(row),
+                    // jose only checks `exp` when present; without this a token
+                    // minted with no expiry would be valid forever.
+                    requiredClaims: ['exp']
+                });
+                // No `sub`, no principal. Falling back to a placeholder would put a
+                // fabricated subject in an audit column, which is worse than an
+                // empty one because it is indistinguishable from a real subject
+                // later.
+                if (!StringUtils.isNotEmpty(payload.sub)) {
+                    return { reason: VerificationReason.Invalid, detail: 'token carries no sub claim' };
+                }
+                return { reason: VerificationReason.Ok, principal: toPrincipal(payload, payload.sub, row) };
+            } catch (error) {
+                // A signature that does not verify says only "not this key", so
+                // the next candidate gets its turn. Every other failure means this
+                // key *did* verify it — an expired or misaddressed token — and is
+                // the verdict; moving on would throw that verdict away.
+                if (error instanceof errors.JWSSignatureVerificationFailed) {
+                    refusal = invalid(error);
+                    continue;
+                }
+                // `aud` gets its own reason because it is the one failure that means
+                // "a real token, minted for somebody else" — a misrouted caller or a
+                // confused-deputy attempt, not a forged credential.
+                if (error instanceof errors.JWTClaimValidationFailed && error.claim === 'aud') {
+                    return { reason: VerificationReason.WrongAudience, detail: messageOf(error) };
+                }
+                return invalid(error);
             }
-            return { reason: VerificationReason.Ok, principal: toPrincipal(payload, payload.sub, row) };
-        } catch (error) {
-            // `aud` gets its own reason because it is the one failure that means
-            // "a real token, minted for somebody else" — a misrouted caller or a
-            // confused-deputy attempt, not a forged credential.
-            if (error instanceof errors.JWTClaimValidationFailed && error.claim === 'aud') {
-                return { reason: VerificationReason.WrongAudience, detail: messageOf(error) };
-            }
-            return invalid(error);
         }
+        return refusal;
     }
 }
 

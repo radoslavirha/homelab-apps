@@ -163,11 +163,12 @@ traffic: one call emits the CLIENT span **and** the metrics. Reach for it instea
 | --- | --- | --- |
 | `rpc.system.name` | `jsonrpc` | `rpc.system` is **deprecated** in its favour |
 | `rpc.method` | `get_properties` \| `set_properties` \| `action` \| `handshake` | fully qualified; `rpc.service` is deprecated and folded in |
-| `rpc.response.status_code` | the miIO code **as a string**, e.g. `"-4004"` | `rpc.jsonrpc.error_code` is deprecated in its favour |
+| `rpc.response.status_code` | the miIO code **as a string**, e.g. `"-4004"` | `rpc.jsonrpc.error_code` is deprecated in its favour. Also the `code` of an action the device accepted |
 | `error.type` | `timeout` \| `device_error` \| `transport_error` \| `rejected_locally` | stable semconv; **absent on success**, never `ok` |
 | span status description | the error message | `rpc.jsonrpc.error_message` is deprecated in its favour |
 | `miot.property.source` | `spec` \| `override` | single-property calls only |
 | `miot.stamp.refreshed` | boolean | set when the failure survived a stamp-refresh retry |
+| `miot.action.result` | the action's `result`, as JSON | successful actions only; the one record of an action acknowledged and not performed |
 
 Not emitted, deliberately: `jsonrpc.protocol.version` (a miIO packet carries no `jsonrpc` member —
 asserting `"2.0"` would be a fabrication) and `jsonrpc.request.id` (minted inside `OutgoingPacket`

@@ -42,6 +42,15 @@ const NO_SESSION_ERRORS = ['login_required', 'consent_required', 'interaction_re
  * every first-time visitor.
  */
 export const handleCallback = async (client: AuthClient): Promise<CallbackOutcome> => {
+    // A load of the callback route with no authorization response is what a
+    // reload of a failed attempt looks like (the response is stripped below),
+    // as is someone typing the URL. There is nothing to exchange, so it is the
+    // same answer as a probe that found nobody signed in: render the sign-in page.
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has('code') && !params.has('error')) {
+        return { result: 'no-session' };
+    }
+
     try {
         const user = await client.signinRedirectCallback();
         return {
@@ -64,6 +73,22 @@ export const handleCallback = async (client: AuthClient): Promise<CallbackOutcom
         // An ordinary outcome — a replayed code, a stale state entry, a user
         // who withdrew consent. The page shows a retry; it must not throw into
         // the router.
+        //
+        // oidc-client-ts deletes the stored state before the exchange, so the
+        // `code`/`state` left in the address bar can never succeed again.
+        // Remove them, so that reloading starts afresh instead of failing the
+        // same way.
+        stripAuthorizationResponse();
         return { result: 'failed' };
     }
+};
+
+const stripAuthorizationResponse = (): void => {
+    const { pathname, search, hash } = window.location;
+    const params = new URLSearchParams(search);
+    for (const key of ['code', 'state', 'error', 'error_description', 'error_uri', 'session_state', 'iss']) {
+        params.delete(key);
+    }
+    const rest = params.toString();
+    window.history.replaceState(window.history.state, '', `${pathname}${rest ? `?${rest}` : ''}${hash}`);
 };
