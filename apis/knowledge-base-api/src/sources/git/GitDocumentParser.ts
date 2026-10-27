@@ -21,6 +21,9 @@ const MIRROR_AREA = 'mirror';
  *   repo's mirrored docs the same way it finds notes that name the repo.
  * - `title` is the first H1, else a `title` field, else the file name.
  * - `date` is the frontmatter `date` (notes) or `created` (specs), when it is a real date.
+ * - `version` is the file's blob SHA: it changes exactly when the file does, and it is what
+ *   GitHub's contents API compares on a write, so a version from `GET /documents` can be sent
+ *   straight back to rewrite or delete the file.
  * - `url` points at the file at the indexed commit, so it shows what was indexed.
  */
 @Service()
@@ -36,7 +39,7 @@ export class GitDocumentParser {
         this.log = logger.child('GIT_SOURCE');
     }
 
-    public parse(path: string, text: string, commit: string, repository: GitHubRepositoryDTO): SourceDocument {
+    public parse(path: string, text: string, blob: string, commit: string, repository: GitHubRepositoryDTO): SourceDocument {
         const { data, body, error } = this.frontmatter.parse(text);
 
         if (CommonUtils.notUndefined(error)) {
@@ -60,7 +63,7 @@ export class GitDocumentParser {
             date: dateField(data.date) ?? dateField(data.created),
             url: `${repository.htmlUrl}/blob/${commit}/${path.split('/').map(encodeURIComponent).join('/')}`,
             content: text,
-            version: commit,
+            version: blob,
             metadata,
             ...(segments[segments.length - 1] === HISTORY_FILE ? { chunking: ChunkingMode.Entries } : {})
         };
