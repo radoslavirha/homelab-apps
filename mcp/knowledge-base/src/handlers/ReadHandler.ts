@@ -1,19 +1,13 @@
 import { CommonUtils } from '@radoslavirha/utils';
 import { Injectable, ProviderScope, Scope } from '@tsed/di';
-import { Exception, NotFound } from '@tsed/exceptions';
+import { NotFound } from '@tsed/exceptions';
 import { DocumentQueryDTO } from '../endpoints/knowledge-base-api/dto/DocumentQueryDTO.js';
 import { KnowledgeBaseApiEndpoint } from '../endpoints/knowledge-base-api/KnowledgeBaseApiEndpoint.js';
 import { KnowledgeBaseMapper } from '../mappers/KnowledgeBaseMapper.js';
 import type { ReadInput } from '../models/ReadInput.js';
 import type { ReadOutput } from '../models/ReadOutput.js';
 import { McpEndpointService } from '../services/McpEndpointService.js';
-
-/** The status the upstream answered with, kept by http-provider as the translated error's `origin`. */
-const upstreamStatus = (error: unknown): number | undefined => {
-    const origin = error instanceof Exception ? (error.origin as { response?: { status?: number } } | undefined) : undefined;
-
-    return origin?.response?.status;
-};
+import { upstreamStatus } from './upstreamStatus.js';
 
 @Injectable()
 @Scope(ProviderScope.SINGLETON)
