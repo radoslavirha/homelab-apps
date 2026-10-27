@@ -26,6 +26,8 @@ export interface CallbackOutcome {
 const safeReturnTo = (value: unknown): string | undefined =>
     typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') ? value : undefined;
 
+const NO_SESSION_ERRORS = ['login_required', 'consent_required', 'interaction_required'];
+
 /**
  * Completes the return leg of a top-level authorization redirect.
  *
@@ -40,21 +42,12 @@ const safeReturnTo = (value: unknown): string | undefined =>
  * every first-time visitor.
  */
 export const handleCallback = async (client: AuthClient): Promise<CallbackOutcome> => {
-    // Read the error before the exchange: signinRedirectCallback throws on an
-    // error response, and `login_required` needs telling apart from a genuine
-    // failure like a replayed code.
-    const params = new URLSearchParams(window.location.search);
-    const error = params.get('error');
-
     // A load of the callback route with no authorization response is what a
     // reload of a failed attempt looks like (the response is stripped below),
     // as is someone typing the URL. There is nothing to exchange, so it is the
     // same answer as a probe that found nobody signed in: render the sign-in page.
-    if (!params.has('code') && !error) {
-        return { result: 'no-session' };
-    }
-
-    if (error === 'login_required' || error === 'consent_required' || error === 'interaction_required') {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has('code') && !params.has('error')) {
         return { result: 'no-session' };
     }
 
@@ -64,7 +57,19 @@ export const handleCallback = async (client: AuthClient): Promise<CallbackOutcom
             result: 'signed-in',
             returnTo: safeReturnTo((user.state as { returnTo?: unknown } | undefined)?.returnTo)
         };
-    } catch {
+    } catch (err) {
+        // An error response is validated and its state consumed by the library,
+        // which then throws an ErrorResponse carrying the stored user state —
+        // that is how a no-session outcome keeps the deep link it began on.
+        // A missing state entry throws a plain Error, so the query string is
+        // the fallback for telling `login_required` from a genuine failure.
+        const error = (err as { error?: unknown } | null)?.error ?? new URLSearchParams(window.location.search).get('error');
+        if (typeof error === 'string' && NO_SESSION_ERRORS.includes(error)) {
+            return {
+                result: 'no-session',
+                returnTo: safeReturnTo(((err as { state?: { returnTo?: unknown } } | null)?.state)?.returnTo)
+            };
+        }
         // An ordinary outcome — a replayed code, a stale state entry, a user
         // who withdrew consent. The page shows a retry; it must not throw into
         // the router.
