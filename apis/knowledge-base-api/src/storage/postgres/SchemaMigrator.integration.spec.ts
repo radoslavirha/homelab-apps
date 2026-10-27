@@ -3,6 +3,7 @@ import pg from 'pg';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConfigService } from '../../services/ConfigService.js';
 import { bootstrapIndexed } from '../../test/bootstrapIndexed.js';
+import { chunkDTO, documentDTO, seedDocument } from '../../test/seed.js';
 import { PostgresService } from './PostgresService.js';
 import { SchemaMigrator } from './SchemaMigrator.js';
 
@@ -12,6 +13,7 @@ describe('SchemaMigrator (integration)', () => {
     const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
 
     beforeEach(async () => {
+        vi.clearAllMocks();
         await bootstrapIndexed();
         postgres = PlatformTest.get<PostgresService>(PostgresService);
 
@@ -37,12 +39,43 @@ describe('SchemaMigrator (integration)', () => {
     )).rows[0].n);
 
     it('is idempotent: a second run on a migrated database changes nothing', async () => {
-        expect.assertions(2);
+        expect.assertions(3);
 
         await migrate('english');
 
         expect(await matches('english', 'probes')).toBeGreaterThan(0);
         expect(logger.info).not.toHaveBeenCalledWith(expect.stringContaining('chunk vectors rewritten'), expect.anything());
+        expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    it('removes a knowledge base that is no longer configured, with its documents, chunks and embeddings', async () => {
+        expect.assertions(4);
+
+        const counts = async (kb: string): Promise<{ documents: string; chunks: string; embeddings: string }> => (await postgres.query<{ documents: string; chunks: string; embeddings: string }>(
+            `SELECT count(DISTINCT d.id) AS documents, count(DISTINCT c.id) AS chunks, count(e.chunk_id) AS embeddings
+             FROM documents d LEFT JOIN chunks c ON c.document_id = d.id LEFT JOIN embeddings e ON e.chunk_id = c.id
+             WHERE d.kb = $1`,
+            [kb]
+        )).rows[0];
+
+        // A knowledge base an earlier configuration declared (a renamed one's old id), indexed and embedded.
+        await postgres.query("INSERT INTO knowledge_bases (id, source, ts_config) VALUES ('retired', 'GIT', 'english')");
+        await seedDocument(documentDTO('raw/old.md', { kb: 'retired' }), [chunkDTO(0, 'A', 'alpha'), chunkDTO(1, 'B', 'beta')]);
+        await postgres.query(
+            `INSERT INTO embeddings (chunk_id, model, embedding)
+             SELECT c.id, 'test-embed:v1', '[1,0,0,0]' FROM chunks c JOIN documents d ON d.id = c.document_id WHERE d.kb = 'retired'`
+        );
+        const configured = await counts('development');
+
+        await migrate('english');
+
+        expect((await postgres.query<{ id: string }>('SELECT id FROM knowledge_bases ORDER BY id')).rows).toEqual([{ id: 'development' }]);
+        expect(await counts('retired')).toEqual({ documents: '0', chunks: '0', embeddings: '0' });
+        expect(await counts('development')).toEqual(configured);
+        expect(logger.warn).toHaveBeenCalledWith(
+            expect.stringContaining('no longer configured'),
+            { event: 'DB_MIGRATION', knowledgeBase: 'retired', documents: 1, chunks: 2 }
+        );
     });
 
     it('rewrites the full-text vectors of a knowledge base whose text search configuration changed', async () => {

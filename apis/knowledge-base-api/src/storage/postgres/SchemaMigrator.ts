@@ -29,14 +29,15 @@ export interface SchemaTarget {
  * 1. **Numbered migrations** (`src/migrations`) through node-pg-migrate — the tables. Two pods
  *    starting together queue on its advisory lock instead of racing the DDL.
  * 2. **Configuration**, which a numbered migration cannot know: one partial HNSW index per
- *    embedding model, and one `knowledge_bases` row per configured KB. Adding a model or a KB is
- *    a config change and needs no release. A KB whose `tsConfig` changed gets its full-text
- *    vectors rewritten here, since the old ones were built in the old language.
+ *    embedding model, and exactly one `knowledge_bases` row per configured KB. Adding, removing
+ *    or renaming a model or a KB is a config change and needs no release. A KB whose `tsConfig`
+ *    changed gets its full-text vectors rewritten here, since the old ones were built in the old
+ *    language.
  *
- * Nothing is ever dropped from configuration: removing a KB or a model leaves its rows and
- * index in place, unused. Cleaning up is a deliberate act, not a side effect of a values edit.
- * The one exception is a model's index under a dimension it no longer has, while no vector of
- * that size is stored — see {@link dropStaleModelIndexes}.
+ * A KB removed from configuration is deleted with everything indexed for it — see
+ * {@link removeUnconfiguredKnowledgeBases}. A model removed from configuration keeps its vectors
+ * and index, unused; the one exception is a model's index under a dimension it no longer has,
+ * while no vector of that size is stored — see {@link dropStaleModelIndexes}.
  */
 export class SchemaMigrator {
     public constructor(
@@ -71,6 +72,8 @@ export class SchemaMigrator {
                 await this.dropStaleModelIndexes(model);
                 await this.ensureModelIndex(model);
             }
+
+            await this.removeUnconfiguredKnowledgeBases(target.knowledgeBases);
 
             for (const kb of target.knowledgeBases) {
                 await this.ensureKnowledgeBase(kb);
@@ -135,6 +138,35 @@ export class SchemaMigrator {
                 model: model.name,
                 index: index.name,
                 dimensions: model.dimensions
+            });
+        }
+    }
+
+    /**
+     * Deletes every knowledge base that is no longer configured; `ON DELETE CASCADE` takes its
+     * documents, chunks and embeddings with it. The index is derived from the sources, so this
+     * loses nothing a `POST /reindex?full=true` cannot rebuild. A renamed KB is therefore the old
+     * id removed here and the new one added empty, then built by hand like any first build.
+     *
+     * One statement: the counts are read from the snapshot the delete starts from.
+     */
+    private async removeUnconfiguredKnowledgeBases(configured: readonly KnowledgeBaseConfig[]): Promise<void> {
+        const { rows } = await this.client.query<{ id: string; documents: string; chunks: string }>(
+            `WITH removed AS (DELETE FROM knowledge_bases WHERE id <> ALL($1::text[]) RETURNING id)
+             SELECT r.id,
+                    (SELECT count(*) FROM documents d WHERE d.kb = r.id) AS documents,
+                    (SELECT count(*) FROM chunks c JOIN documents d ON d.id = c.document_id WHERE d.kb = r.id) AS chunks
+             FROM removed r
+             ORDER BY r.id`,
+            [configured.map((kb) => kb.id)]
+        );
+
+        for (const row of rows) {
+            this.logger.warn('Removed a knowledge base that is no longer configured, with everything indexed for it.', {
+                event: 'DB_MIGRATION',
+                knowledgeBase: row.id,
+                documents: Number(row.documents),
+                chunks: Number(row.chunks)
             });
         }
     }
