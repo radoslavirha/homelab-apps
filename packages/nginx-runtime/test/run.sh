@@ -99,7 +99,7 @@ done
 
 echo
 echo "case: valid but unusual JSON config"
-for INPUT in 'null' 'false' '{"a":"NaN 08080 {}{}","b":1.5e-08,"c":-0.5}' '{"a":1E+5,"b":[0.5,-1.5e+3]}'; do
+for INPUT in 'null' 'false' '{"a":"NaN 08080 {}{}","b":1.5e-08,"c":-0.5}' '{"a":1E+5,"b":[0.5,-1.5e+3]}' '{"a":"\ud800"}' '{"a":"\\ud800 😀 \udc00x"}'; do
     CFG=$(config_at unusual.json "$INPUT")
     start -v "$CFG:/usr/share/nginx/html/config.json:ro" "$IMAGE"
     node -e 'JSON.parse(process.argv[1])' "$INPUT" || { bad "precondition: $INPUT should be valid for JSON.parse"; continue; }
