@@ -1,5 +1,17 @@
 # qr-manager-ui
 
+## 0.13.8
+
+### Patch Changes
+
+- [#349](https://github.com/radoslavirha/homelab-apps/pull/349) [`bf1b83b`](https://github.com/radoslavirha/homelab-apps/commit/bf1b83bfabedf99c4cb19eaaab0ffb0f846a7136) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Redirect slashless URLs to a relative path, so the browser stays on its own scheme and port instead of landing on http://host:8080/.
+
+- [#380](https://github.com/radoslavirha/homelab-apps/pull/380) [`30f0994`](https://github.com/radoslavirha/homelab-apps/commit/30f0994a9ed230684c8260f44dea565d701be89c) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - An unknown path now redirects to the QR code list instead of showing a blank page.
+
+- [#388](https://github.com/radoslavirha/homelab-apps/pull/388) [`04545d6`](https://github.com/radoslavirha/homelab-apps/commit/04545d6a5a819d5016cb9512e34ff2cc4a793a23) Thanks [@radoslavirha](https://github.com/radoslavirha)! - The 404 for a missing hashed asset no longer carries `Cache-Control: immutable, max-age=1y`, so a rollout race can no longer leave the browser with a 404 cached for a year.
+- Updated dependencies [[`8610efa`](https://github.com/radoslavirha/homelab-apps/commit/8610efadeef292ba1896c876eda0e489a2d36d5c), [`12cc17b`](https://github.com/radoslavirha/homelab-apps/commit/12cc17bf4dc1a7e751d930fb48bf997e891852d2)]:
+  - @radoslavirha/ui-auth@0.2.4
+
 ## 0.13.7
 
 ### Patch Changes

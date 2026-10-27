@@ -1,5 +1,17 @@
 # @radoslavirha/http-provider
 
+## 0.4.0
+
+### Minor Changes
+
+- [#348](https://github.com/radoslavirha/homelab-apps/pull/348) [`3fea33a`](https://github.com/radoslavirha/homelab-apps/commit/3fea33a040030485bc4c4c2c0213a362313b0f8d) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - token-exchange can cache the token until its `expiresIn` lifetime (minus `expiryMargin`) instead of waiting for a 401
+
+### Patch Changes
+
+- [#358](https://github.com/radoslavirha/homelab-apps/pull/358) [`c53337c`](https://github.com/radoslavirha/homelab-apps/commit/c53337cb91f48ba1ee815a9f018ddd3836ab0179) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - A 401 from a token-exchange endpoint now rejects the caller's request once instead of replaying the token request in an endless loop.
+
+- [#367](https://github.com/radoslavirha/homelab-apps/pull/367) [`5309d50`](https://github.com/radoslavirha/homelab-apps/commit/5309d5042d8b1a904879520a9b5f4f885dc65aa2) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - An `auth` block without a strategy (or `strategy: none`) now rejects credential transport entries at config load instead of failing every request.
+
 ## 0.3.3
 
 ### Patch Changes
