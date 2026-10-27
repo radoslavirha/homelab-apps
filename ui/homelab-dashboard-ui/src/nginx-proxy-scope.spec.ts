@@ -102,6 +102,13 @@ describe('nginx.conf.template Unifi proxy scope', () => {
             expect(response.status).toBe(404);
         });
 
+        it('never marks the 404 for a missing hashed asset immutable, so a rollout race is not cached for a year', async () => {
+            expect.assertions(2);
+            const response = await fetch(`${base}/assets/index-0ld.js`);
+            expect(response.status).toBe(404);
+            expect(response.headers.get('cache-control') ?? '').not.toMatch(/immutable|max-age/);
+        });
+
         it('serves an existing hashed asset as immutable', async () => {
             expect.assertions(2);
             const response = await fetch(`${base}/assets/index-n3w.js`);

@@ -19,6 +19,7 @@ describe('nginx.conf.template with the image default NGINX_BASE_PATH=/', () => {
         const html = mkdtempSync(join(tmpdir(), 'qr-ui-html-'));
         writeFileSync(join(html, 'index.html'), '<!doctype html><html><head><title>x</title></head><body></body></html>');
         mkdirSync(join(html, 'assets'));
+        writeFileSync(join(html, 'assets', 'index-n3w.js'), 'export {};');
         writeFileSync(join(html, 'config.json'), '{"apiBaseURL":"http://api"}');
         execFileSync('chmod', ['-R', 'a+rX', html]);
         container = docker(
@@ -67,6 +68,20 @@ describe('nginx.conf.template with the image default NGINX_BASE_PATH=/', () => {
         const response = await fetch(`${base}/assets/index-0ld4a5h.js`);
         expect(response.status).toBe(404);
         expect(await response.text()).not.toContain('<title>x</title>');
+    });
+
+    it('never marks the 404 for a missing hashed asset immutable, so a rollout race is not cached for a year', async () => {
+        expect.assertions(2);
+        const response = await fetch(`${base}/assets/index-0ld4a5h.js`);
+        expect(response.status).toBe(404);
+        expect(response.headers.get('cache-control') ?? '').not.toMatch(/immutable|max-age/);
+    });
+
+    it('serves an existing hashed asset as immutable', async () => {
+        expect.assertions(2);
+        const response = await fetch(`${base}/assets/index-n3w.js`);
+        expect(response.status).toBe(200);
+        expect(response.headers.get('cache-control')).toMatch(/immutable/);
     });
 
     it('redirects a slashless directory to a relative Location, not the container scheme and port', async () => {
