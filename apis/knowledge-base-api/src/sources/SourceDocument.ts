@@ -11,7 +11,10 @@ export interface SourceDocument {
     readonly url: string | null;
     /** The whole document as text. */
     readonly content: string;
-    /** Which revision this is — git: commit SHA; Paperless: modified timestamp. */
+    /**
+     * Which revision this is, as the source's write checks it — git: the file's blob SHA;
+     * Paperless: modified timestamp.
+     */
     readonly version: string;
     /** Source-specific, filterable fields. Must be JSON. */
     readonly metadata: Readonly<Record<string, unknown>>;

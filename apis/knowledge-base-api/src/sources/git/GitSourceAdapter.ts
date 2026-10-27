@@ -11,8 +11,10 @@ import type { GitKnowledgeBaseConfig } from '../../models/config/KnowledgeBaseCo
 import type { SourceAdapter } from '../SourceAdapter.js';
 import type { SourceChanges } from '../SourceChanges.js';
 import type { SourceDocument } from '../SourceDocument.js';
+import type { SourceWriter } from '../SourceWriter.js';
 import type { GitDocumentParser } from './GitDocumentParser.js';
 import type { GitHubRepositoryService } from './GitHubRepositoryService.js';
+import { GitSourceWriter } from './GitSourceWriter.js';
 
 /** GitHub lists at most this many files for a whole comparison; reaching it means "maybe more". */
 export const GITHUB_COMPARE_FILE_LIMIT = 300;
@@ -32,9 +34,13 @@ interface BlobRef {
  * commit is gone (a force-push), when history diverged, or when the comparison may have been
  * cut off at GitHub's 300-file limit.
  *
+ * It is writable: {@link writer} commits through GitHub's contents API.
+ *
  * Not a DI provider: one instance per knowledge base, built by `SourceAdapterFactory`.
  */
 export class GitSourceAdapter implements SourceAdapter {
+    public readonly writer: SourceWriter;
+
     public constructor(
         private readonly kb: GitKnowledgeBaseConfig,
         private readonly repositories: GitHubRepositoryService,
@@ -42,7 +48,9 @@ export class GitSourceAdapter implements SourceAdapter {
         private readonly parser: GitDocumentParser,
         private readonly concurrency: number,
         private readonly log: BaseLogger
-    ) {}
+    ) {
+        this.writer = new GitSourceWriter(kb, repositories, github);
+    }
 
     public async changes(cursor: string | null, signal?: AbortSignal): Promise<SourceChanges> {
         try {
@@ -177,7 +185,7 @@ export class GitSourceAdapter implements SourceAdapter {
                     const blob = blobs[index];
                     const text = GitSourceAdapter.text(await this.github.getBlob(repository, blob.sha, workerSignal));
 
-                    documents[index] = this.parser.parse(blob.path, text, commit, repository);
+                    documents[index] = this.parser.parse(blob.path, text, blob.sha, commit, repository);
                 }
             } catch (error) {
                 failure.abort(error);

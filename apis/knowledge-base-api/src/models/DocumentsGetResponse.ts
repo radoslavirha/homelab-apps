@@ -26,7 +26,7 @@ export class DocumentsGetResponse {
     @Nullable(String)
     public url: string | null;
 
-    @Description('Indexed revision — for git, the commit SHA.')
+    @Description('Indexed revision — for git, the file\'s blob SHA. Pass it back as `version` to rewrite or delete the document.')
     @Required()
     public version: string;
 

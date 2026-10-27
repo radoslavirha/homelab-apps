@@ -15,6 +15,7 @@ import { ConfigService } from '../../services/ConfigService.js';
 import { GitDocumentParser } from './GitDocumentParser.js';
 import { GitHubRepositoryService } from './GitHubRepositoryService.js';
 import { GITHUB_COMPARE_FILE_LIMIT, GitSourceAdapter } from './GitSourceAdapter.js';
+import { GitSourceWriter } from './GitSourceWriter.js';
 
 /** The wire shapes GitHub sends, deserialized the way the endpoint does it. */
 const REPOSITORY = Serializer.deserialize({
@@ -84,6 +85,10 @@ describe('GitSourceAdapter', () => {
     afterEach(PlatformTest.reset);
     afterEach(() => vi.restoreAllMocks());
 
+    it('is writable, through the contents API', () => {
+        expect(adapter().writer).toBeInstanceOf(GitSourceWriter);
+    });
+
     describe('first run', () => {
         it('lists the whole tree at the branch tip and reports a complete snapshot of the included files', async () => {
             expect.assertions(4);
@@ -101,7 +106,7 @@ describe('GitSourceAdapter', () => {
             ]);
         });
 
-        it('builds documents with metadata, title, date and a link to the indexed commit', async () => {
+        it('builds documents with metadata, title, date, the blob SHA as version and a link to the indexed commit', async () => {
             expect.assertions(5);
 
             const { upserts } = await adapter().changes(null);
@@ -111,7 +116,7 @@ describe('GitSourceAdapter', () => {
                 title: 'A note',
                 date: '2026-10-13',
                 url: 'https://github.test/someone/kb/blob/head/raw/2026-01-09-note.md',
-                version: 'head',
+                version: 'sha-note',
                 metadata: { area: 'raw', type: 'decision', repos: ['homelab'], date: '2026-10-13' }
             });
             expect(note.chunking).toBeUndefined();

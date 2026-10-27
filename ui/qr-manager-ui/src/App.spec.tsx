@@ -187,6 +187,15 @@ describe('the gate', () => {
         expect(screen.queryByRole('button', { name: /everywhere/i })).not.toBeInTheDocument();
     });
 
+    it('redirects an unknown route to the list instead of a blank page', async () => {
+        expect.assertions(1);
+        okFetch();
+        window.history.replaceState(null, '', '/qr-codes');
+        render(<App config={config()} />);
+
+        expect(await screen.findByRole('heading', { name: 'QR codes' })).toBeInTheDocument();
+    });
+
     it('shows an anonymous visitor the sign-in page and NONE of the app', async () => {
         useAuth.mockReturnValue({ ...authenticated, state: 'anonymous', username: undefined } as never);
         okFetch();

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { TransportSchema } from './transport.schema.js';
+import { StaticTransportSchema, TransportSchema } from './transport.schema.js';
 
 export enum AuthStrategy {
     None = 'none',
@@ -92,7 +92,7 @@ export const AuthConfigSchema = z.union([
     KubernetesServiceAccountAuthSchema,
     TokenExchangeAuthSchema,
     JwtSelfSignedAuthSchema,
-    NoAuthSchema.extend({ transport: TransportSchema.optional() })
+    NoAuthSchema.extend({ transport: StaticTransportSchema.optional() })
 ]);
 
 export type KubernetesServiceAccountAuth = z.infer<typeof KubernetesServiceAccountAuthSchema>;
