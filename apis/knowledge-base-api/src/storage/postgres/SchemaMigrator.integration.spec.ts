@@ -54,7 +54,7 @@ describe('SchemaMigrator (integration)', () => {
         await migrate('simple');
 
         expect(await matches('simple', 'probes')).toBeGreaterThan(0);
-        expect((await postgres.query<{ ts_config: string }>("SELECT ts_config::text FROM knowledge_bases WHERE id = 'dev'")).rows[0].ts_config).toBe('simple');
+        expect((await postgres.query<{ ts_config: string }>("SELECT ts_config::text FROM knowledge_bases WHERE id = 'development'")).rows[0].ts_config).toBe('simple');
     });
 
     it('creates the index of a model added to configuration', async () => {

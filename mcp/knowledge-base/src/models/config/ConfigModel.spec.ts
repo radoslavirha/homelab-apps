@@ -11,7 +11,7 @@ const UPSTREAM = {
             method: 'POST',
             url: 'https://auth.test/application/o/token/',
             headers: [{ name: 'Content-Type', value: 'application/x-www-form-urlencoded' }],
-            body: { grant_type: 'client_credentials', client_id: 'development-kb-mcp', client_secret: 'not-a-real-one', scope: 'openid profile email roles' }
+            body: { grant_type: 'client_credentials', client_id: 'knowledge-base-mcp', client_secret: 'not-a-real-one', scope: 'openid profile email roles' }
         },
         tokenExtractor: 'access_token',
         transport: { headers: [{ name: 'Authorization', credential: 'value', prefix: 'Bearer ' }] }

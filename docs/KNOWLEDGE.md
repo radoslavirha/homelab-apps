@@ -1,6 +1,6 @@
 # Homelab Apps — Knowledge Base
 
-> Maintained by `/updating-docs` skill. Last updated: 2026-10-14.
+> Maintained by `/updating-docs` skill. Last updated: 2026-10-27.
 
 pnpm monorepo of small independent Node.js APIs and UIs (Ts.ED, TypeScript ESM).
 
@@ -9,7 +9,8 @@ pnpm monorepo of small independent Node.js APIs and UIs (Ts.ED, TypeScript ESM).
 | Name | Type | Purpose |
 |------|------|---------|
 | `interactive-map-feeder-api` | API | Fetches ČHMÚ precipitation radar, composites image layers, serves city LED RGB values for LaskaKit IoT map |
-| `knowledge-base-api` | API | Indexes knowledge bases from pluggable sources (git via a GitHub App first) into Postgres + pgvector and serves hybrid (full-text + vector) search over an internal REST API |
+| `knowledge-base-api` | API | Indexes knowledge bases from pluggable sources (git via a GitHub App first) into Postgres + pgvector, serves hybrid (full-text + vector) search over an internal REST API, and commits notes and specs back to a writable source |
+| `knowledge-base` | MCP | MCP server in front of `knowledge-base-api`: one endpoint per audience (`/development` today), sign-in through Authentik; `search` and `read` for readers, `create_note`, `write_document` and `delete_document` for editors, each write one commit made for the signed-in user |
 | `miot-bridge-api` | API | Gateway between home automation controllers and Xiaomi MIoT devices. Manages device registry, translates commands, polls properties, dispatches change notifications |
 | `qr-manager-api` | API | QR code redirect manager: allocates slugs, stores slug→URL, resolves via 302 redirect, renders QR images |
 | `qr-manager-ui` | UI | Admin UI for `qr-manager-api`: create/edit/deactivate QR records, download images |
@@ -43,7 +44,8 @@ private knowledge base (skill `knowledge-base`).
 |-----|-------|
 | `qr-manager-api` | **Enforcing.** `/qr-codes` answers `401` without a valid token. `GET /r/:slug`, `/health*` and `GET /qr-codes/:id/image` stay open |
 | `miot-bridge-api` | **Enforcing.** All 16 REST routes need a token; `/health*` stays open. Commands also arrive over MQTT, which no decorator reaches — that identity is the broker's. The UDP command listener is gone |
-| `knowledge-base-api` | **Enforcing.** One trust domain, `IDP`, on every route but `/health*` and the Swagger UI; `knowledge-base-api.reader` as the floor, `knowledge-base-api.admin` added on `POST /reindex`. Each knowledge base's `readers` roles decide which ones a caller sees |
+| `knowledge-base-api` | **Enforcing.** One trust domain, `IDP`, on every route but `/health*` and the Swagger UI; `knowledge-base-api.reader` as the floor, `knowledge-base-api.editor` added on the write routes, `knowledge-base-api.admin` on `POST /reindex`. Each knowledge base's `readers` roles decide which ones a caller sees |
+| `knowledge-base` (MCP) | **Enforcing.** Every endpoint is an OAuth resource server; a token needs one of the endpoint's roles, and each tool its level (`reader` to search and read, `editor` to write). It calls the API with its own `knowledge-base-mcp` token, never the caller's, naming the caller in `On-Behalf-Of` on a write |
 | `interactive-map-feeder-api` | **Enforcing.** One trust domain, `IDP`, on all four routes. The LaskaKit map logs in against the same IdP from its own Authentik application, so it is a second row in `trustedIssuers` rather than a second domain. The map has no credential yet |
 
 An API's `auth` block is a map of trust domains it accepts, keyed by the service's own `AuthMethod`
@@ -174,7 +176,8 @@ graph LR
     MBA <-->|TCP| MongoDB1[("MongoDB")]
     MBA -->|MQTT · HTTP notifications| HA
 
-    Caller["MCP adapter · chat filter\n(later)"] -->|REST /search /documents| KBA["knowledge-base-api"]
+    Clients["MCP clients\nClaude Code, phone"] -->|MCP /development| KBM["knowledge-base\nMCP"]
+    KBM -->|REST /search /documents /notes| KBA["knowledge-base-api"]
     KBA <-->|TCP| Postgres[("Postgres\npgvector")]
     KBA -->|HTTP /api/embed| Ollama["Ollama\nserver2"]
     KBA -->|HTTPS as GitHub App| GitHub["GitHub API\nexternal"]
@@ -189,9 +192,10 @@ graph LR
 | App | System | Protocol | Direction | Purpose |
 |-----|--------|----------|-----------|---------|
 | `interactive-map-feeder-api` | ČHMÚ | HTTPS GET | outbound | Precipitation radar images |
+| `knowledge-base` (MCP) | `knowledge-base-api` | HTTPS (client credentials) | outbound | Search, read, and the writes: notes, specs and plans, deletes |
 | `knowledge-base-api` | Postgres (pgvector) | TCP | bidirectional | Index, search, schema migrations, indexing lock |
 | `knowledge-base-api` | Ollama | HTTP | outbound | Embeds chunks and questions |
-| `knowledge-base-api` | GitHub REST API | HTTPS (GitHub App) | outbound | Reads the git source: installation, compare, tree, blobs |
+| `knowledge-base-api` | GitHub REST API | HTTPS (GitHub App) | outbound | Reads the git source (installation, compare, tree, blobs); writes one file per commit through the contents API |
 | `miot-bridge-api` | Xiaomi devices (LAN) | MIoT binary UDP | bidirectional | Device control, property read |
 | `miot-bridge-api` | miot-spec.org | HTTPS GET | outbound | Device capability spec (on registration) |
 | `miot-bridge-api` | MQTT broker | MQTT | bidirectional | Inbound commands, outbound notifications |

@@ -1,4 +1,5 @@
 import z from 'zod';
+import { KNOWLEDGE_BASE_ID_PATTERN } from '../KnowledgeBaseId.js';
 import { ContentType } from './ContentType.enum.js';
 import { KnowledgeBaseSource } from './KnowledgeBaseSource.enum.js';
 
@@ -6,7 +7,7 @@ export const ChunkingConfigSchema = z.object({
     /**
      * A section longer than this is split at paragraph boundaries, the heading kept on every
      * part. 3000 is what the model measurement ran with: chunks p50 721, p95 2719, max 3226
-     * characters on the dev KB — inside embeddinggemma's 2k-token context.
+     * characters on the development KB — inside embeddinggemma's 2k-token context.
      */
     maxChars: z.number().int().min(200).default(3000),
     /** Trailing paragraphs of one part repeated at the start of the next, up to this length. */
@@ -14,7 +15,7 @@ export const ChunkingConfigSchema = z.object({
 }).prefault({});
 
 const KnowledgeBaseBaseSchema = z.object({
-    id: z.string().regex(/^[a-z][a-z0-9-]{0,31}$/).describe('Stored in `documents.kb`; what callers pass as `kb`.'),
+    id: z.string().regex(KNOWLEDGE_BASE_ID_PATTERN).describe('Stored in `documents.kb`; what callers pass as `kb`.'),
     contentType: z.enum(ContentType).default(ContentType.Markdown),
     tsConfig: z.string().regex(/^[a-z_]+$/).default('english')
         .describe('Postgres text search configuration for this KB\'s full-text index, e.g. `english`, `simple`.'),

@@ -1,9 +1,12 @@
 // Kept apart from `fakes.ts`: importing `@radoslavirha/tsed-auth` registers its `AuthenticationService`
 // provider, which a unit spec on `PlatformTest.create` cannot build without the app's `AuthProvider`.
 import { mintTestToken } from '@radoslavirha/tsed-auth';
-import { ROLE_ADMIN, ROLE_READER } from '../models/Roles.js';
+import { ROLE_ADMIN, ROLE_EDITOR, ROLE_READER } from '../models/Roles.js';
 
 export const readerToken = (): Promise<string> => mintTestToken({ claims: { roles: [ROLE_READER] } });
+
+/** Editor inherits reader in Authentik, so the token carries both. */
+export const editorToken = (): Promise<string> => mintTestToken({ claims: { roles: [ROLE_READER, ROLE_EDITOR] } });
 
 export const adminToken = (): Promise<string> => mintTestToken({ claims: { roles: [ROLE_READER, ROLE_ADMIN] } });
 

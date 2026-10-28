@@ -48,21 +48,21 @@ describe('SearchRepository', () => {
         it('matches any of the question\'s words, best rank first', async () => {
             expect.assertions(1);
 
-            expect(await search.fullText(['dev'], 'Why does my pod keep its old environment?', FullTextMatch.Any, NO_FILTER, 10))
+            expect(await search.fullText(['development'], 'Why does my pod keep its old environment?', FullTextMatch.Any, NO_FILTER, 10))
                 .toEqual([ids.configmap, ids.successor]);
         });
 
         it('needs every word with ALL, so a natural question finds nothing', async () => {
             expect.assertions(2);
 
-            expect(await search.fullText(['dev'], 'Why does my pod keep its old environment?', FullTextMatch.All, NO_FILTER, 10)).toEqual([]);
-            expect(await search.fullText(['dev'], 'kubelet probes', FullTextMatch.All, NO_FILTER, 10)).toEqual([ids.traefik]);
+            expect(await search.fullText(['development'], 'Why does my pod keep its old environment?', FullTextMatch.All, NO_FILTER, 10)).toEqual([]);
+            expect(await search.fullText(['development'], 'kubelet probes', FullTextMatch.All, NO_FILTER, 10)).toEqual([ids.traefik]);
         });
 
         it('finds nothing for a question of stop words, rather than failing', async () => {
             expect.assertions(1);
 
-            expect(await search.fullText(['dev'], 'the of and', FullTextMatch.Any, NO_FILTER, 10)).toEqual([]);
+            expect(await search.fullText(['development'], 'the of and', FullTextMatch.Any, NO_FILTER, 10)).toEqual([]);
         });
 
         it('keeps to chunks the given model has no vector for, when asked', async () => {
@@ -70,8 +70,8 @@ describe('SearchRepository', () => {
 
             const pending = await seedDocument(documentDTO('raw/pending.md'), [chunkDTO(0, 'Fact', 'The pod waits for its vector.')]);
 
-            expect(await search.fullText(['dev'], 'pod', FullTextMatch.Any, NO_FILTER, 10, 'test-embed:v1')).toEqual([pending.Fact]);
-            expect(await search.fullText(['dev'], 'pod', FullTextMatch.Any, NO_FILTER, 10, 'other-model:v1'))
+            expect(await search.fullText(['development'], 'pod', FullTextMatch.Any, NO_FILTER, 10, 'test-embed:v1')).toEqual([pending.Fact]);
+            expect(await search.fullText(['development'], 'pod', FullTextMatch.Any, NO_FILTER, 10, 'other-model:v1'))
                 .toEqual(expect.arrayContaining([ids.configmap, ids.successor, pending.Fact]));
         });
 
@@ -79,7 +79,7 @@ describe('SearchRepository', () => {
             expect.assertions(2);
 
             expect(await search.fullText(['other'], 'pod', FullTextMatch.Any, NO_FILTER, 10)).toEqual([]);
-            expect(await search.fullText(['dev'], 'pod configmap', FullTextMatch.Any, new Map([['type', ['gotcha']]]), 10)).toEqual([ids.configmap]);
+            expect(await search.fullText(['development'], 'pod configmap', FullTextMatch.Any, new Map([['type', ['gotcha']]]), 10)).toEqual([ids.configmap]);
         });
     });
 
@@ -89,8 +89,8 @@ describe('SearchRepository', () => {
 
             const model = PlatformTest.get<ConfigService>(ConfigService).config.embeddings.models[0];
 
-            expect(await search.vector(['dev'], model, [1, 0, 0, 0], NO_FILTER, 10)).toEqual([ids.configmap, ids.successor, ids.traefik]);
-            expect(await search.vector(['dev'], { ...model, name: 'other:1b' }, [1, 0, 0, 0], NO_FILTER, 10)).toEqual([]);
+            expect(await search.vector(['development'], model, [1, 0, 0, 0], NO_FILTER, 10)).toEqual([ids.configmap, ids.successor, ids.traefik]);
+            expect(await search.vector(['development'], { ...model, name: 'other:1b' }, [1, 0, 0, 0], NO_FILTER, 10)).toEqual([]);
         });
 
         it('is answered from the model\'s partial HNSW index, which needs the cast and the literal model name', async () => {
@@ -118,7 +118,7 @@ describe('SearchRepository', () => {
                 return query.apply(this, args);
             } as never);
 
-            await search.vector(['dev'], model, [1, 0, 0, 0], NO_FILTER, 10);
+            await search.vector(['development'], model, [1, 0, 0, 0], NO_FILTER, 10);
 
             expect(plans.join('\n')).toContain(`Index Scan using ${modelIndexName(model.name, model.dimensions)}`);
         });
@@ -128,7 +128,7 @@ describe('SearchRepository', () => {
 
             const model = PlatformTest.get<ConfigService>(ConfigService).config.embeddings.models[0];
 
-            expect(await search.vector(['dev'], model, [1, 0, 0, 0], new Map([['repos', ['homelab-apps']]]), 10)).toEqual([ids.traefik]);
+            expect(await search.vector(['development'], model, [1, 0, 0, 0], new Map([['repos', ['homelab-apps']]]), 10)).toEqual([ids.traefik]);
         });
     });
 

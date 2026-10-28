@@ -1,5 +1,13 @@
 # @radoslavirha/ui-auth
 
+## 0.2.4
+
+### Patch Changes
+
+- [#306](https://github.com/radoslavirha/homelab-apps/pull/306) [`8610efa`](https://github.com/radoslavirha/homelab-apps/commit/8610efadeef292ba1896c876eda0e489a2d36d5c) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - A failed sign-in callback no longer leaves a dead `code`/`state` in the address bar, so reloading lands on the sign-in page instead of failing again.
+
+- [#307](https://github.com/radoslavirha/homelab-apps/pull/307) [`12cc17b`](https://github.com/radoslavirha/homelab-apps/commit/12cc17bf4dc1a7e751d930fb48bf997e891852d2) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - A signed-out deep link, or a renewal after the IdP session ended, now keeps its return path instead of landing on the default route.
+
 ## 0.2.3
 
 ### Patch Changes

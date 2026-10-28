@@ -20,7 +20,7 @@ const onRequestTo = <T>(url: string, fn: () => T, roles?: string[]): Promise<T> 
 describe('McpEndpointService', () => {
     let endpoint: McpEndpointService;
 
-    // config/test.json: DEVELOPMENT_KB at /development serves `dev`.
+    // config/test.json: DEVELOPMENT_KB at /development serves `development`.
     beforeEach(PlatformTest.create);
     beforeEach(() => {
         endpoint = PlatformTest.get<McpEndpointService>(McpEndpointService);
@@ -30,20 +30,20 @@ describe('McpEndpointService', () => {
     it('gives the knowledge base of the endpoint the request came in on', async () => {
         expect.assertions(1);
 
-        await expect(onRequestTo('/development', () => endpoint.knowledgeBase())).resolves.toBe('dev');
+        await expect(onRequestTo('/development', () => endpoint.knowledgeBase())).resolves.toBe('development');
     });
 
     it('matches the path whatever the query string or a trailing slash Express also routes', async () => {
         expect.assertions(2);
 
-        await expect(onRequestTo('/development?x=1', () => endpoint.knowledgeBase())).resolves.toBe('dev');
-        await expect(onRequestTo('/development/', () => endpoint.knowledgeBase())).resolves.toBe('dev');
+        await expect(onRequestTo('/development?x=1', () => endpoint.knowledgeBase())).resolves.toBe('development');
+        await expect(onRequestTo('/development/', () => endpoint.knowledgeBase())).resolves.toBe('development');
     });
 
     it('matches the path whatever its case, as Express routes it', async () => {
         expect.assertions(1);
 
-        await expect(onRequestTo('/Development', () => endpoint.knowledgeBase())).resolves.toBe('dev');
+        await expect(onRequestTo('/Development', () => endpoint.knowledgeBase())).resolves.toBe('development');
     });
 
     it('refuses a path no endpoint is mounted at, rather than guessing a knowledge base', async () => {
@@ -72,6 +72,20 @@ describe('McpEndpointService', () => {
             expect.assertions(1);
 
             await expect(onRequestTo('/development', () => endpoint.requireRole(KnowledgeBaseRole.Reader))).rejects.toThrow(new Forbidden('Insufficient permissions.'));
+        });
+    });
+
+    describe('username', () => {
+        it('is the subject of the verified token', async () => {
+            expect.assertions(1);
+
+            await expect(onRequestTo('/development', () => endpoint.username(), [TEST_ROLES.EDITOR])).resolves.toBe('s');
+        });
+
+        it('refuses a request nobody was verified on: a write is never made for nobody', async () => {
+            expect.assertions(1);
+
+            await expect(onRequestTo('/development', () => endpoint.username())).rejects.toThrow(new Forbidden('Insufficient permissions.'));
         });
     });
 

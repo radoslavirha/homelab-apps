@@ -125,6 +125,12 @@ Stop instead — comment on the issue with your analysis and options, replace
   in a real browser against the real IdP (`.apm/skills/verifying-auth-in-browser`),
   which this environment can't do. Once the owner has answered and you do resolve it,
   the PR gets `needs-e2e` (see "Needs E2E")
+- it touches `packages/miot-device`, or the device path in `apis/miot-bridge-api`
+  (`DeviceCommandService`, `DevicePropertyPollerService`, `MiotDeviceRegistry`,
+  `MqttListenerService`): that code drives a real vacuum the tests only imitate, and a
+  wrong assumption there passes every test. Unless the issue is labeled `agent-todo`,
+  or the owner has commented approving this fix, stop for the owner. Once they have and
+  you do resolve it, the PR gets `needs-e2e`
 
 # 5. Verify
 First decide whether the fix **needs E2E** — see "Needs E2E" below. Unit tests are still

@@ -17,11 +17,11 @@ describe('DocumentMapper', () => {
 
     it('maps a source document to a storage DTO of its knowledge base, metadata copied rather than shared', () => {
         const source = sourceDocument('raw/a.md', '# A', { date: '2026-01-01', metadata: { area: 'raw', repos: ['x'] } });
-        const dto = mapper.sourceToStorage('dev', source);
+        const dto = mapper.sourceToStorage('development', source);
 
         expect(dto).toBeInstanceOf(DocumentDTO);
         expect(dto).toEqual(expect.objectContaining({
-            kb: 'dev',
+            kb: 'development',
             externalId: 'raw/a.md',
             title: 'raw/a.md',
             date: '2026-01-01',
@@ -37,6 +37,6 @@ describe('DocumentMapper', () => {
         const response = mapper.storageToResponse(documentDTO('raw/a.md', { date: '2026-01-01' }));
 
         expect(response).toBeInstanceOf(DocumentsGetResponse);
-        expect(response).toEqual(expect.objectContaining({ kb: 'dev', externalId: 'raw/a.md', date: '2026-01-01', version: 'c1', metadata: { area: 'raw' } }));
+        expect(response).toEqual(expect.objectContaining({ kb: 'development', externalId: 'raw/a.md', date: '2026-01-01', version: 'c1', metadata: { area: 'raw' } }));
     });
 });

@@ -14,7 +14,7 @@ const STARTED = new Date('2026-10-15T08:00:00Z');
 const FINISHED = new Date('2026-10-15T08:01:00Z');
 
 const row = (overrides: Partial<KnowledgeBaseDTO> = {}): KnowledgeBaseDTO => CommonUtils.buildModelStrict(KnowledgeBaseDTO, {
-    id: 'dev',
+    id: 'development',
     source: 'GIT',
     tsConfig: 'english',
     cursor: 'abc',
@@ -49,7 +49,7 @@ describe('StatusMapper', () => {
         const status = mapper.toKnowledgeBase({ config: { ...config, models: ['test-embed:v1', 'other:1b'] }, row: row(), stats, models });
 
         expect(status).toEqual(expect.objectContaining({
-            id: 'dev',
+            id: 'development',
             source: 'GIT',
             cursor: 'abc',
             lastRun: expect.objectContaining({ startedAt: STARTED, finishedAt: FINISHED, outcome: RunOutcome.Success, error: null }),

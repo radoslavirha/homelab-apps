@@ -90,7 +90,7 @@ grep -q 'not valid JSON' <<<"$LOGS" && ok "log says not valid JSON" || bad "log 
 
 echo
 echo "case: jq-accepted but JSON.parse-rejected config"
-for INPUT in '{"a":1}{"b":2}' '{"a":1} 1' '{"a":NaN}' '{"a":Infinity}' '{"port":08080}'; do
+for INPUT in '{"a":1}{"b":2}' '{"a":1} 1' '{"a":NaN}' '{"a":Infinity}' '{"port":08080}' '{"a":.5}' '{"a":1.}' '{"a":0.}' '{"a":+1}' '{"a":-.5}'; do
     CFG=$(config_at lenient.json "$INPUT")
     start -v "$CFG:/usr/share/nginx/html/config.json:ro" "$IMAGE"
     node -e 'try{JSON.parse(process.argv[1]);process.exit(1)}catch{}' "$INPUT" || { bad "precondition: $INPUT should be invalid for JSON.parse"; continue; }
@@ -99,7 +99,7 @@ done
 
 echo
 echo "case: valid but unusual JSON config"
-for INPUT in 'null' 'false' '{"a":"NaN 08080 {}{}","b":1.5e-08,"c":-0.5}'; do
+for INPUT in 'null' 'false' '{"a":"NaN 08080 {}{}","b":1.5e-08,"c":-0.5}' '{"a":1E+5,"b":[0.5,-1.5e+3]}' '{"a":"\ud800"}' '{"a":"\\ud800 😀 \udc00x"}'; do
     CFG=$(config_at unusual.json "$INPUT")
     start -v "$CFG:/usr/share/nginx/html/config.json:ro" "$IMAGE"
     node -e 'JSON.parse(process.argv[1])' "$INPUT" || { bad "precondition: $INPUT should be valid for JSON.parse"; continue; }

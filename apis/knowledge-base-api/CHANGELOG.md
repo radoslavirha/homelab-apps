@@ -1,5 +1,17 @@
 # knowledge-base-api
 
+## 0.3.0
+
+### Minor Changes
+
+- [#385](https://github.com/radoslavirha/homelab-apps/pull/385) [`115f9ae`](https://github.com/radoslavirha/homelab-apps/commit/115f9ae88af48374bea52c3c1b838dfe46475891) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Write routes: `POST /notes` (a `raw/` note rendered from fields), `PUT /documents` (a whole `work/` spec or plan) and `DELETE /documents`, each one commit through GitHub's contents API as the App, for the user named in the `On-Behalf-Of` header. They need the new `knowledge-base-api.editor` role, enforce the knowledge base's area, format and naming rules, refuse anything that looks like a secret, run one at a time, answer a stale `version` with `409` and the document as it is now (the `CURRENT` entry of `errors`), and start an incremental indexing run. A document's `version` is now the file's blob SHA instead of the indexed commit. **After deploying, run `POST /reindex?full=true` once** so every stored version becomes a blob SHA (unchanged documents are not embedded again).
+
+### Patch Changes
+
+- [#386](https://github.com/radoslavirha/homelab-apps/pull/386) [`290de7a`](https://github.com/radoslavirha/homelab-apps/commit/290de7ab8c488a6e84bb16d9b51adfe1928f799e) Thanks [@radoslavirha](https://github.com/radoslavirha)! - OpenAPI examples name the knowledge base `development` instead of `dev`, the id it is deployed under from now on.
+- Updated dependencies []:
+  - @radoslavirha/tsed-http-provider@0.2.11
+
 ## 0.2.3
 
 ### Patch Changes

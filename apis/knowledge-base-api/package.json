@@ -1,6 +1,6 @@
 {
   "name": "knowledge-base-api",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "private": true,
   "description": "Knowledge base service: indexes knowledge bases from pluggable sources into Postgres (full-text and pgvector) and serves hybrid search over an internal REST API",
   "type": "module",

@@ -19,21 +19,21 @@ describe('PostgresService', () => {
         it('commits what the callback wrote', async () => {
             expect.assertions(1);
 
-            await postgres.transaction((client) => client.query("UPDATE knowledge_bases SET cursor = 'tx' WHERE id = 'dev'"));
+            await postgres.transaction((client) => client.query("UPDATE knowledge_bases SET cursor = 'tx' WHERE id = 'development'"));
 
-            expect((await postgres.query<{ cursor: string }>("SELECT cursor FROM knowledge_bases WHERE id = 'dev'")).rows[0].cursor).toBe('tx');
+            expect((await postgres.query<{ cursor: string }>("SELECT cursor FROM knowledge_bases WHERE id = 'development'")).rows[0].cursor).toBe('tx');
         });
 
         it('rolls back everything when the callback throws', async () => {
             expect.assertions(2);
 
-            await postgres.query("UPDATE knowledge_bases SET cursor = 'before' WHERE id = 'dev'");
+            await postgres.query("UPDATE knowledge_bases SET cursor = 'before' WHERE id = 'development'");
 
             await expect(postgres.transaction(async (client) => {
-                await client.query("UPDATE knowledge_bases SET cursor = 'inside' WHERE id = 'dev'");
+                await client.query("UPDATE knowledge_bases SET cursor = 'inside' WHERE id = 'development'");
                 throw new Error('boom');
             })).rejects.toThrow('boom');
-            expect((await postgres.query<{ cursor: string }>("SELECT cursor FROM knowledge_bases WHERE id = 'dev'")).rows[0].cursor).toBe('before');
+            expect((await postgres.query<{ cursor: string }>("SELECT cursor FROM knowledge_bases WHERE id = 'development'")).rows[0].cursor).toBe('before');
         });
     });
 

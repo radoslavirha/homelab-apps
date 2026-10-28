@@ -76,7 +76,7 @@ describe('SearchController (integration)', () => {
             expect(response.body.mode).toBe(SearchMode.Vector);
             expect(response.body.models).toEqual(['test-embed:v1']);
             expect(response.body.results[0]).toMatchObject({
-                kb: 'dev',
+                kb: 'development',
                 externalId: 'raw/2026-01-01-configmap-env-restart.md',
                 anchor: 'raw/2026-01-01-configmap-env-restart.md#fact',
                 title: 'ConfigMap envFrom changes don\'t restart pods',
@@ -209,7 +209,7 @@ describe('SearchController (integration)', () => {
         it('searches a named, readable knowledge base', async () => {
             expect.assertions(1);
 
-            expect((await search({ q: 'pods', kb: 'dev' })).status).toBe(200);
+            expect((await search({ q: 'pods', kb: 'development' })).status).toBe(200);
         });
     });
 

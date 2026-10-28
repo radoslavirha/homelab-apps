@@ -4,7 +4,7 @@
  */
 export enum ExternalApi {
     /**
-     * knowledge-base-api, called as this server's own client (`development-kb-mcp`,
+     * knowledge-base-api, called as this server's own client (`knowledge-base-mcp`,
      * `client_credentials`) — never with the token an MCP client presented.
      */
     KnowledgeBaseApi = 'KNOWLEDGE_BASE_API'

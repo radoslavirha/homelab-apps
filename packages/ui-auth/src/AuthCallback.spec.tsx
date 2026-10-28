@@ -43,6 +43,14 @@ describe('AuthCallback', () => {
         expect(navigate).toHaveBeenCalledWith('/admin', { replace: true });
     });
 
+    it('lands on the deep link a signed-out user opened, so login() can return there', async () => {
+        handleCallback.mockResolvedValue({ result: 'no-session', returnTo: '/admin/671b' });
+        renderAt();
+
+        await waitFor(() => expect(resolveAnonymous).toHaveBeenCalled());
+        expect(navigate).toHaveBeenCalledWith('/admin/671b', { replace: true });
+    });
+
     it('renders nothing but a status while the exchange is in flight', () => {
         handleCallback.mockReturnValue(new Promise(() => undefined));
         renderAt();

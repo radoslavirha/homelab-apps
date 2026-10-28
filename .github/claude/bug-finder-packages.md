@@ -35,7 +35,9 @@ Everywhere:
   validation gaps
 - behavior that contradicts the member's README or the toolkit skill
 NOT bugs: style, naming, refactors, missing docs, type-only nits, "could be cleaner",
-missing tests on their own.
+missing tests on their own, and paths no consumer in this repo reaches — an exported
+option, branch or config value that no app or UI here sets. If you would have to write
+"no app in this repo passes X today", it is not a bug: drop it.
 
 This area — shared libraries consumed by apps and UIs:
 - exported behavior that contradicts the package README or its types
@@ -45,6 +47,19 @@ This area — shared libraries consumed by apps and UIs:
 - health/resilience packages: checks or policies that don't do what they claim
 - packages/nginx-runtime has no tests (`"test": "true"`): file only with an airtight
   argument
+
+Owner-gated — `packages/miot-device`. It speaks the miIO protocol to a real vacuum that
+the tests only imitate, and its docs have been wrong about the device before: the stamp
+was documented and implemented as a per-call counter for months, while it is the device's
+clock. A fix written from the docs and a mock passes every test and can still break the
+device. File an issue against it only when all of these hold:
+- the bug is a secret leak, a crash or unhandled rejection, or a failure you can show in
+  production telemetry from miot-bridge-api (a Loki line or a Tempo trace), not one
+  derived from reading the protocol docs or the mocks
+- severity is high or critical, on a path miot-bridge-api actually uses
+- the proposed fix does not change protocol behaviour: stamp, message id, retries,
+  timeouts, packet shape or request pacing
+Anything else in this package goes in your Finish summary for the owner, not into an issue.
 
 # 3. Deduplicate before filing
 Search issues and PRs in radoslavirha/homelab-apps, open AND closed, by file path

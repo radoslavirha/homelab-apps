@@ -19,7 +19,7 @@ const pathOf = (url: string): string => {
 /**
  * The MCP endpoint a tool call came in on, and who made it.
  *
- * An endpoint is its knowledge base: `/development` serves `dev` and nothing else, as configured
+ * An endpoint is its knowledge base: `/development` serves `development` and nothing else, as configured
  * in `mcpServers.<key>.kb`. A caller never names one. platform-mcp registers tool names globally,
  * so every endpoint shares the same tool instances; a tool asks this service, which matches the
  * path of the request being handled against the mounted endpoints.
@@ -42,11 +42,31 @@ export class McpEndpointService {
      */
     public requireRole(level: KnowledgeBaseRole): void {
         const { endpoint, ctx } = this.current();
-        const principal = (ctx.getReq() as IncomingMessage & { auth?: AuthInfo }).auth?.extra?.principal as Principal | undefined;
+        const principal = McpEndpointService.principalOf(ctx);
 
         if (CommonUtils.isUndefined(principal) || !principal.roles.includes(endpoint.auth.roles[level])) {
             throw new Forbidden('Insufficient permissions.');
         }
+    }
+
+    /**
+     * The username of the person making this call, from their verified token — never from tool
+     * input: a write names them to the API as the person it is for. Authentik issues `sub` as the
+     * username.
+     */
+    public username(): string {
+        const principal = McpEndpointService.principalOf(this.current().ctx);
+
+        if (CommonUtils.isUndefined(principal)) {
+            throw new Forbidden('Insufficient permissions.');
+        }
+
+        return principal.subject;
+    }
+
+    /** The caller `McpTokenVerifier` verified, as platform-mcp parks it on the request. */
+    private static principalOf(ctx: PlatformContext): Principal | undefined {
+        return (ctx.getReq() as IncomingMessage & { auth?: AuthInfo }).auth?.extra?.principal as Principal | undefined;
     }
 
     /**

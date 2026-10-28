@@ -341,6 +341,40 @@ describe('HttpProviderFactory', () => {
             // 1 cold fetch + 1 shared refresh after the expiry.
             expect(tokenCalls).toBe(2);
         });
+
+        it('does not replay the token-exchange request when the auth endpoint itself answers 401', async () => {
+            expect.assertions(3);
+            const created: AxiosInstance[] = [];
+            const factory = new HttpProviderFactory({
+                'svc': {
+                    baseURL: 'http://svc.local',
+                    auth: {
+                        strategy: AuthStrategy.TokenExchange,
+                        request: { method: 'POST', url: 'http://auth.local/token' },
+                        tokenExtractor: 'access_token',
+                        transport: { headers: [{ name: 'Authorization', credential: 'value', prefix: 'Bearer ' }] }
+                    }
+                }
+            }, { onInstanceCreated: (instance) => created.push(instance) });
+            const client = factory.get('svc');
+            const authMock = new MockAdapter(created[1]!);
+            const svcMock = new MockAdapter(transport(client));
+            svcMock.onGet('/x').reply(200, 'ok');
+
+            // Rejected client credentials: the token endpoint answers 401. The cap only
+            // stops the loop this test would otherwise never leave.
+            let tokenCalls = 0;
+            authMock.onPost('http://auth.local/token').reply(() => {
+                tokenCalls++;
+                return tokenCalls < 20 ? [401] : [500];
+            });
+
+            const error = await client.get('/x').catch((e: unknown) => e) as { response?: { status?: number } };
+
+            expect(tokenCalls).toBe(1);
+            expect(error.response?.status).toBe(401);
+            expect(svcMock.history['get']).toHaveLength(0);
+        });
     });
 
     describe('token-exchange blank credential', () => {

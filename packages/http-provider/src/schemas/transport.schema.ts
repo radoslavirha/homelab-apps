@@ -60,6 +60,16 @@ export const TransportSchema = z.object({
     queryParams: z.array(TransportQueryParamSchema).optional()
 });
 
+/**
+ * Transport for a provider with no credential-producing strategy: static
+ * entries only. A `credential` entry would name a key nothing produces, so it
+ * is rejected at config load instead of failing on every request.
+ */
+export const StaticTransportSchema = z.object({
+    headers: z.array(StaticEntrySchema).optional(),
+    queryParams: z.array(StaticEntrySchema).optional()
+});
+
 export type TransportStaticEntry = z.infer<typeof StaticEntrySchema>;
 export type TransportCredentialEntry = z.infer<typeof CredentialEntrySchema>;
 export type TransportEntry = z.infer<typeof TransportEntrySchema>;

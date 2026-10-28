@@ -6,6 +6,6 @@
 export enum KnowledgeBaseRole {
     /** Search and read. */
     Reader = 'READER',
-    /** Change the knowledge base; no tool needs it yet. Authentik gives an editor the reader role too. */
+    /** Create, rewrite and delete documents. Authentik gives an editor the reader role too. */
     Editor = 'EDITOR'
 }

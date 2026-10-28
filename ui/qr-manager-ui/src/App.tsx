@@ -142,6 +142,7 @@ export const App = ({ config }: Props) => {
                                     <Route path="/admin" element={<QrCodeListPage />} />
                                     <Route path="/admin/new" element={<QrCodeCreatePage />} />
                                     <Route path="/admin/:id" element={<QrCodeDetailPage />} />
+                                    <Route path="*" element={<Navigate to="/admin" replace />} />
                                 </Routes>
                             </Protected>
                         }
