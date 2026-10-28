@@ -1,5 +1,13 @@
 # @radoslavirha/http-provider
 
+## 0.4.2
+
+### Patch Changes
+
+- [#402](https://github.com/radoslavirha/homelab-apps/pull/402) [`e108147`](https://github.com/radoslavirha/homelab-apps/commit/e108147df23ae2606812a2fdd711280f0aba81b1) Thanks [@radoslavirha](https://github.com/radoslavirha)! - `resilience.retry` no longer replays a `POST` or `PATCH`: a request that failed may still have written upstream, and sending it again is a second write. Idempotent methods (`GET`, `HEAD`, `OPTIONS`, `QUERY`, `PUT`, `DELETE`) are retried as before. A new per-call option, `retry`, overrides that: `false` sends a request once whatever its method, `true` lets a `POST` that is safe to repeat be retried. The token-exchange request is still retried, and the 401 credential refresh still replays any request once.
+- Updated dependencies [[`e108147`](https://github.com/radoslavirha/homelab-apps/commit/e108147df23ae2606812a2fdd711280f0aba81b1)]:
+  - @radoslavirha/resilience@0.2.6
+
 ## 0.4.1
 
 ### Patch Changes

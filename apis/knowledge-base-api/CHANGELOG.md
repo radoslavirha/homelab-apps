@@ -1,5 +1,16 @@
 # knowledge-base-api
 
+## 0.3.2
+
+### Patch Changes
+
+- [#402](https://github.com/radoslavirha/homelab-apps/pull/402) [`e108147`](https://github.com/radoslavirha/homelab-apps/commit/e108147df23ae2606812a2fdd711280f0aba81b1) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Ollama embed calls opt in to retry, so they are still retried now that http-provider no longer retries a `POST` by default.
+
+- [#400](https://github.com/radoslavirha/homelab-apps/pull/400) [`51cc723`](https://github.com/radoslavirha/homelab-apps/commit/51cc7238144d4bd4d781d57c4acb116e911b9ab3) Thanks [@radoslavirha](https://github.com/radoslavirha)! - A delete refused at a stale version now says to show the current document and delete it only if it should still go, instead of telling the caller to write it.
+- Updated dependencies []:
+  - @radoslavirha/tsed-http-provider@0.2.13
+  - @radoslavirha/tsed-health@0.3.6
+
 ## 0.3.1
 
 ### Patch Changes

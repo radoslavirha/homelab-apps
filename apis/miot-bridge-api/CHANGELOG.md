@@ -1,5 +1,13 @@
 # miot-bridge
 
+## 0.30.3
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @radoslavirha/tsed-http-provider@0.2.13
+  - @radoslavirha/tsed-health@0.3.6
+
 ## 0.30.2
 
 ### Patch Changes
