@@ -325,6 +325,20 @@ describe('Tools (integration, through MCP)', () => {
         expect(JSON.stringify(result.content)).toContain('Take the id from a search hit');
     });
 
+    it('search: a filter that is not key:value is reported as the caller\'s mistake, not as the API failing', async () => {
+        expect.assertions(2);
+
+        // As http-provider reports knowledge-base-api's 400 `Invalid filter "area"; expected key:value.`
+        const upstream = Object.assign(new Error('Request failed with status code 400'), { response: { status: 400 } });
+
+        vi.spyOn(api, 'search').mockRejectedValue(new BadGateway('External API KNOWLEDGE_BASE_API responded with 400.', upstream));
+
+        const result = await callTool('search', { query: 'q', filter: 'area' });
+
+        expect(result.isError).toBe(true);
+        expect(JSON.stringify(result.content)).toContain('filter');
+    });
+
     it('read: an error that is no HTTP exception at all reaches the caller as it is', async () => {
         expect.assertions(2);
 
