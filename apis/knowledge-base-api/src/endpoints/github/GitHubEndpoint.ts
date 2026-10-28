@@ -30,11 +30,20 @@ export const isGitHubWriteRefusal = (error: unknown): boolean =>
     error instanceof RequestError && [404, 409, 422].includes(error.status);
 
 /**
+ * Statuses Octokit's retry plugin gives up on at once: its own defaults plus `409`, which they
+ * leave out. A contents write refused for a stale `sha` is a 409 no retry can fix; retried, it
+ * held the write queue for 14 s of backoff (1 + 4 + 9 s) before the caller heard of it. The option
+ * replaces the defaults rather than adding to them, so they are repeated here.
+ */
+const DO_NOT_RETRY = [400, 401, 403, 404, 409, 410, 422, 451];
+
+/**
  * GitHub, as the `knowledge-base-updater` GitHub App, through Octokit.
  *
  * Octokit owns the App's token dance: it signs the App JWT from the private key (PKCS#1 as
  * GitHub issues it), finds the installations, mints installation tokens and renews them before
- * they expire. Retries on server errors and waiting out rate limits are its plugins too.
+ * they expire. Retries on server errors and waiting out rate limits are its plugins too; a
+ * refusal is never retried ({@link DO_NOT_RETRY}).
  * `github.timeoutMs` bounds each attempt, not the call: see {@link fetchWithTimeout}.
  *
  * Every read takes an optional `signal` — the indexing run's — that aborts it, retries included.
@@ -184,7 +193,7 @@ export class GitHubEndpoint {
                 Octokit: Octokit.defaults({
                     baseUrl: config.baseUrl,
                     userAgent: this.configService.api.service,
-                    retry: { retries: config.retries },
+                    retry: { retries: config.retries, doNotRetry: DO_NOT_RETRY },
                     // Every request of the App and its installations, the repository listing included.
                     request: { fetch: fetchWithTimeout(config.timeoutMs) }
                 }),

@@ -3,6 +3,7 @@ import { CommonUtils } from '@radoslavirha/utils';
 import { PlatformTest } from '@tsed/platform-http/testing';
 import { Octokit, RequestError } from 'octokit';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ConfigService } from '../../services/ConfigService.js';
 import { GitHubBlobDTO } from './dto/GitHubBlobDTO.js';
 import { GitHubBranchDTO } from './dto/GitHubBranchDTO.js';
 import { GitHubCompareDTO } from './dto/GitHubCompareDTO.js';
@@ -83,6 +84,46 @@ describe('GitHubEndpoint', () => {
         await github.listRepositories();
 
         expect(defaults).toHaveBeenCalledWith(expect.objectContaining({ request: { fetch: expect.any(Function) } }));
+    });
+
+    describe('retries, with the client options it builds', () => {
+        const PUT_CONTENT = 'PUT /repos/{owner}/{repo}/contents/{path}';
+        const PUT_PARAMS = { owner: 'someone', repo: 'kb', path: 'raw/a.md', message: 'm', content: 'YQ==', sha: 'stale' };
+        const reply = (status: number): Response => new Response(JSON.stringify({ message: 'x' }), { status, headers: { 'content-type': 'application/json' } });
+
+        /** An Octokit with the endpoint's options and `retries` as configured, answering through `fetch`. */
+        const clientWith = async (retries: number, fetch: typeof globalThis.fetch): Promise<Octokit> => {
+            const configService = PlatformTest.get<ConfigService>(ConfigService);
+            const github = configService.config.github!;
+            const defaults = vi.spyOn(Octokit, 'defaults');
+
+            vi.spyOn(configService, 'config', 'get').mockReturnValue({ ...configService.config, github: { ...github, retries } });
+            await PlatformTest.get<GitHubEndpoint>(GitHubEndpoint).listRepositories();
+
+            const [options] = defaults.mock.calls[0];
+
+            return new Octokit({ ...options, request: { fetch } });
+        };
+
+        it('never retries a 409, so a stale version is refused at once', async () => {
+            expect.assertions(2);
+
+            const fetch = vi.fn<typeof globalThis.fetch>().mockImplementation(async () => reply(409));
+            const client = await clientWith(3, fetch);
+
+            await expect(client.request(PUT_CONTENT, PUT_PARAMS)).rejects.toMatchObject({ status: 409 });
+            expect(fetch).toHaveBeenCalledOnce();
+        });
+
+        it('still retries a server error', async () => {
+            expect.assertions(2);
+
+            const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValueOnce(reply(502)).mockResolvedValueOnce(reply(200));
+            const client = await clientWith(1, fetch);
+
+            await expect(client.request(PUT_CONTENT, PUT_PARAMS)).resolves.toMatchObject({ status: 200 });
+            expect(fetch).toHaveBeenCalledTimes(2);
+        });
     });
 
     it('deserializes the repositories the installations can read', async () => {
