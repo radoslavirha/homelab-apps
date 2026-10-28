@@ -24,7 +24,7 @@ export class WriteDocumentTool {
         'last write of it returned — keep that one for the next edit; there is no need to `read` again. ' +
         'If the document changed meanwhile, the result is an error holding it under `current`: apply your change to ' +
         '`current.content`, show the user the result again (it is not what they approved), and retry with `current.version`. ' +
-        'After a timeout the write may have landed: `read` the document before retrying.'
+        'After a timeout or a server error (5xx) the write may have landed: `read` the document before retrying.'
     )
     @RequireRole(KnowledgeBaseRole.Editor)
     @Returns(200, WriteDocumentOutput)

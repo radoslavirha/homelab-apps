@@ -75,7 +75,7 @@ describe('KnowledgeBaseApiEndpoint', () => {
         expect(document.content).toBe('# A note');
     });
 
-    it('creates a note with its fields as the body, naming the user it is for in On-Behalf-Of', async () => {
+    it('creates a note with its fields as the body, naming the user it is for in On-Behalf-Of, sent once', async () => {
         expect.assertions(3);
 
         post.mockResolvedValue({ id: 'raw/2026-10-20-a.md', version: 'b1', commit: 'c1' });
@@ -87,13 +87,13 @@ describe('KnowledgeBaseApiEndpoint', () => {
         expect(post).toHaveBeenCalledWith(
             '/notes',
             { kb: 'development', title: 'A', type: 'GOTCHA', context: 'c', decisionOrFact: 'd' },
-            { headers: { 'On-Behalf-Of': 'radoslav' } }
+            { headers: { 'On-Behalf-Of': 'radoslav' }, retry: false }
         );
         expect(response).toBeInstanceOf(NoteCreateResponseDTO);
         expect(response).toEqual(expect.objectContaining({ id: 'raw/2026-10-20-a.md', version: 'b1', commit: 'c1' }));
     });
 
-    it('writes a whole document, naming the user it is for in On-Behalf-Of', async () => {
+    it('writes a whole document, naming the user it is for in On-Behalf-Of, sent once', async () => {
         expect.assertions(3);
 
         put.mockResolvedValue({ id: 'work/2026-10-20-x/spec.md', version: 'b2', commit: 'c2' });
@@ -105,13 +105,13 @@ describe('KnowledgeBaseApiEndpoint', () => {
         expect(put).toHaveBeenCalledWith(
             '/documents',
             { kb: 'development', id: 'work/2026-10-20-x/spec.md', content: '# X', version: 'b1', message: 'why' },
-            { headers: { 'On-Behalf-Of': 'radoslav' } }
+            { headers: { 'On-Behalf-Of': 'radoslav' }, retry: false }
         );
         expect(response).toBeInstanceOf(DocumentWriteResponseDTO);
         expect(response.version).toBe('b2');
     });
 
-    it('deletes a document with a body, which DELETE carries here, naming the user it is for in On-Behalf-Of', async () => {
+    it('deletes a document with a body, which DELETE carries here, naming the user it is for in On-Behalf-Of, sent once', async () => {
         expect.assertions(3);
 
         request.mockResolvedValue({ id: 'raw/a.md', commit: 'c3' });
@@ -124,7 +124,8 @@ describe('KnowledgeBaseApiEndpoint', () => {
             method: 'DELETE',
             url: '/documents',
             body: { kb: 'development', id: 'raw/a.md', version: 'b1', reason: 'mistake' },
-            headers: { 'On-Behalf-Of': 'radoslav' }
+            headers: { 'On-Behalf-Of': 'radoslav' },
+            retry: false
         });
         expect(response).toBeInstanceOf(DocumentDeleteResponseDTO);
         expect(response.commit).toBe('c3');

@@ -6,6 +6,10 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 // registers the HttpProviderService override bound to this server's config
 import '../../providers/HttpProviderProvider.js';
 import { ConfigService } from '../../services/ConfigService.js';
+import { DocumentDeleteRequestDTO } from './dto/DocumentDeleteRequestDTO.js';
+import { DocumentWriteRequestDTO } from './dto/DocumentWriteRequestDTO.js';
+import { NoteCreateRequestDTO } from './dto/NoteCreateRequestDTO.js';
+import { NoteTypeDTO } from './dto/NoteTypeDTO.enum.js';
 import { SearchQueryDTO } from './dto/SearchQueryDTO.js';
 import { KnowledgeBaseApiEndpoint } from './KnowledgeBaseApiEndpoint.js';
 
@@ -155,5 +159,87 @@ describe('KnowledgeBaseApiEndpoint (integration): the token flow', () => {
 
         await expect(search()).rejects.toThrow();
         expect(upstream.apiCalls.length).toBe(calls + 2);
+    });
+});
+
+describe('KnowledgeBaseApiEndpoint (integration): writes', () => {
+    const writes: string[] = [];
+    let server: Server;
+    let endpoint: KnowledgeBaseApiEndpoint;
+
+    beforeAll(async () => {
+        server = createServer(async (request, response) => {
+            if (request.url === '/token') {
+                response.writeHead(200, { 'content-type': 'application/json' });
+                response.end(JSON.stringify({ access_token: 't', token_type: 'Bearer', expires_in: 600 }));
+
+                return;
+            }
+            await readBody(request);
+            writes.push(`${request.method} ${request.url}`);
+            // The first attempt commits, then the API's answer is lost to a 502; a replay finds its own write.
+            if (writes.length === 1) {
+                response.writeHead(502, { 'content-type': 'application/json' });
+                response.end(JSON.stringify({ name: 'BAD_GATEWAY', message: 'GitHub responded with 502', status: 502 }));
+
+                return;
+            }
+            if (request.method === 'DELETE') {
+                response.writeHead(404, { 'content-type': 'application/json' });
+                response.end(JSON.stringify({ name: 'NOT_FOUND', message: 'raw/a.md no longer exists.', status: 404 }));
+
+                return;
+            }
+            response.writeHead(409, { 'content-type': 'application/json' });
+            response.end(JSON.stringify({ name: 'CONFLICT', message: 'raw/a.md already exists.', status: 409, errors: [{ name: 'CURRENT', content: '# A note', version: 'c1' }] }));
+        });
+        await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+
+        const { port } = server.address() as AddressInfo;
+        const base = new URL(`http://127.0.0.1:${port}`);
+        const original = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(ConfigService.prototype), 'config')!.get!;
+
+        // Keeps config/test.json's resilience (the production one): timeout, one retry on 5xx.
+        vi.spyOn(ConfigService.prototype, 'config', 'get').mockImplementation(function (this: ConfigService) {
+            const value = original.call(this) as ConfigService['config'];
+            const api = value.externalApis.KNOWLEDGE_BASE_API;
+
+            if (api.auth?.strategy === 'token-exchange') {
+                api.auth.request.url = new URL('/token', base).toString();
+            }
+
+            return { ...value, externalApis: { KNOWLEDGE_BASE_API: { ...api, baseURL: base.toString() } } };
+        });
+    });
+    afterAll(async () => {
+        vi.restoreAllMocks();
+        await new Promise((resolve) => server.close(resolve));
+    });
+
+    beforeEach(PlatformTest.create);
+    beforeEach(() => {
+        endpoint = PlatformTest.get<KnowledgeBaseApiEndpoint>(KnowledgeBaseApiEndpoint);
+        writes.length = 0;
+    });
+    afterEach(PlatformTest.reset);
+
+    it.each([
+        ['create_note', 'POST /notes', (): Promise<unknown> => endpoint.createNote(
+            CommonUtils.buildModelStrict(NoteCreateRequestDTO, { kb: 'development', title: 'A note', type: NoteTypeDTO.Gotcha, context: 'c', decisionOrFact: 'f' }),
+            'radoslav'
+        )],
+        ['write_document', 'PUT /documents', (): Promise<unknown> => endpoint.writeDocument(
+            CommonUtils.buildModelStrict(DocumentWriteRequestDTO, { kb: 'development', id: 'raw/a.md', content: '# A', version: 'c0' }),
+            'radoslav'
+        )],
+        ['delete_document', 'DELETE /documents', (): Promise<unknown> => endpoint.deleteDocument(
+            CommonUtils.buildModelStrict(DocumentDeleteRequestDTO, { kb: 'development', id: 'raw/a.md', version: 'c0', reason: 'r' }),
+            'radoslav'
+        )]
+    ])('sends %s once: a write that failed with a 5xx may have committed, and a replay is a second write', async (_tool, call, write) => {
+        expect.assertions(2);
+
+        await expect(write()).rejects.toThrow();
+        expect(writes).toEqual([call]);
     });
 });

@@ -18,7 +18,8 @@ import { NoAuthStrategy } from './strategies/NoAuthStrategy.js';
 import { TokenExchangeStrategy } from './strategies/TokenExchangeStrategy.js';
 import type { IAuthStrategy } from './strategies/IAuthStrategy.js';
 import { AxiosHttpClient } from './client/AxiosHttpClient.js';
-import type { HttpClient } from './client/HttpClient.js';
+import type { HttpClient, HttpMethod } from './client/HttpClient.js';
+import type { RetryRequestConfig } from './client/RetryRequestConfig.js';
 import { applyTransport } from './utils/applyTransport.js';
 
 interface RetriableRequestConfig extends InternalAxiosRequestConfig {
@@ -26,8 +27,20 @@ interface RetriableRequestConfig extends InternalAxiosRequestConfig {
     _authGeneration?: number;
 }
 
-interface PolicyRequestConfig extends InternalAxiosRequestConfig {
+interface PolicyRequestConfig extends InternalAxiosRequestConfig, Pick<RetryRequestConfig, '_retry'> {
     _resilienceBaseAdapter?: AxiosAdapter;
+}
+
+/**
+ * Methods `resilience.retry` replays unless the call says otherwise: the ones RFC 9110 §9.2.2
+ * defines as idempotent, plus `QUERY`. `POST` and `PATCH` are left out, since a request that
+ * failed may still have taken effect, and sending it again would be a second write.
+ */
+const RETRIED_METHODS: ReadonlySet<HttpMethod> = new Set<HttpMethod>(['GET', 'HEAD', 'OPTIONS', 'QUERY', 'PUT', 'DELETE']);
+
+/** The call's own {@link HttpRequestOptions.retry}, else whether its method is idempotent. */
+function mayRetry(config: PolicyRequestConfig): boolean {
+    return config._retry ?? RETRIED_METHODS.has((config.method ?? 'GET').toUpperCase() as HttpMethod);
 }
 
 /**
@@ -157,7 +170,9 @@ export class HttpProviderFactory<K extends string> {
 
     /**
      * Routes every request through a cockatiel resilience policy (retry +
-     * circuit breaker + timeout) when `resilience` is configured.
+     * circuit breaker + timeout) when `resilience` is configured. Retry applies
+     * only to a request {@link mayRetry} allows; the others run once, still
+     * under the breaker and timeout.
      *
      * The policy wraps the resolved axios **adapter** (the network call) via a
      * request interceptor, so it composes with auth interceptors and survives a
@@ -220,8 +235,8 @@ export class HttpProviderFactory<K extends string> {
         const parentSignal = requestConfig.signal as AbortSignal | undefined;
 
         requestConfig._resilienceBaseAdapter = baseAdapter;
-        requestConfig.adapter = (config) =>
-            policy.execute((signal) => baseAdapter({ ...config, signal }), parentSignal);
+        requestConfig.adapter = (config: PolicyRequestConfig) =>
+            policy.execute((signal) => baseAdapter({ ...config, signal }), parentSignal, { retry: mayRetry(config) });
     }
 
     private createStrategy(entry: ResolvedHttpProviderEntry, key: K): IAuthStrategy {

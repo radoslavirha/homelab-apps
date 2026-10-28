@@ -30,6 +30,17 @@ export interface HttpRequestOptions {
     signal?: AbortSignal;
     /** Defaults to `json`. */
     responseType?: HttpResponseType;
+    /**
+     * Whether `resilience.retry` may send this request again after a retriable failure.
+     *
+     * Defaults to `true` for the idempotent methods (`GET`, `HEAD`, `OPTIONS`, `QUERY`, `PUT`,
+     * `DELETE`) and `false` for `POST` and `PATCH`: a failed request may still have taken
+     * effect upstream, so a replay can be a second write. Pass `false` for a request whose
+     * replay is not harmless whatever its method (a conditional `PUT`), and `true` for a
+     * `POST` that is safe to repeat. The timeout and circuit breaker apply either way, and the
+     * 401 credential refresh still replays the request once.
+     */
+    retry?: boolean;
 }
 
 /** A full request description, for the generic {@link HttpClient.request}. */

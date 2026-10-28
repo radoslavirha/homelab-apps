@@ -39,7 +39,7 @@ describe('OllamaEndpoint', () => {
         const signal = new AbortController().signal;
         const response = await endpoint.embed(request(), signal);
 
-        expect(post).toHaveBeenCalledWith('/api/embed', { model: 'm', input: ['x'], keep_alive: '1m', truncate: true }, { signal });
+        expect(post).toHaveBeenCalledWith('/api/embed', { model: 'm', input: ['x'], keep_alive: '1m', truncate: true }, { signal, retry: true });
         expect(response).toBeInstanceOf(OllamaEmbedResponseDTO);
         expect(response).toEqual(expect.objectContaining({ model: 'm', embeddings: [[1, 2]] }));
     });
@@ -49,7 +49,7 @@ describe('OllamaEndpoint', () => {
 
         const response = await endpoint.embedQuestion(request());
 
-        expect(searchPost).toHaveBeenCalledWith('/api/embed', { model: 'm', input: ['x'], keep_alive: '1m', truncate: true }, { signal: undefined });
+        expect(searchPost).toHaveBeenCalledWith('/api/embed', { model: 'm', input: ['x'], keep_alive: '1m', truncate: true }, { signal: undefined, retry: true });
         expect(post).not.toHaveBeenCalled();
         expect(response).toBeInstanceOf(OllamaEmbedResponseDTO);
     });

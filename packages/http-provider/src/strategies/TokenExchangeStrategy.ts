@@ -1,5 +1,6 @@
 import { CommonUtils } from '@radoslavirha/utils';
 import axios, { type AxiosInstance } from 'axios';
+import type { RetryRequestConfig } from '../client/RetryRequestConfig.js';
 import type { TokenExchangeAuth, TokenExtractorEntry } from '../schemas/auth.schema.js';
 import { extractByPath, extractNumberByPath } from '../utils/extractByPath.js';
 import type { IAuthStrategy } from './IAuthStrategy.js';
@@ -81,13 +82,16 @@ export class TokenExchangeStrategy implements IAuthStrategy {
             }
         }
 
-        const response = await this.client.request<unknown>({
+        const request: RetryRequestConfig = {
             method,
             url,
             headers: requestHeaders,
             params: requestParams,
-            data: body
-        });
+            data: body,
+            // A token request only mints a token, so a replay is harmless whatever its method.
+            _retry: true
+        };
+        const response = await this.client.request<unknown>(request);
 
         const credentials: Record<string, string> = {};
         for (const extractor of this.extractors) {

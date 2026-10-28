@@ -238,6 +238,29 @@ describe('HttpProviderFactory', () => {
             mock.restore();
         });
 
+        it('replays a 401 for a request that opted out of retry', async () => {
+            expect.assertions(2);
+            const factory = new HttpProviderFactory({
+                'svc': {
+                    baseURL: 'http://svc.local',
+                    auth: {
+                        transport: {
+                            headers: [{ name: 'X-Api-Key', value: 'static-key' }]
+                        }
+                    },
+                    resilience: { retry: { count: 2, backoffMs: 0 } }
+                }
+            });
+            const instance = factory.get('svc');
+            const mock = new MockAdapter(transport(instance));
+            // A 401 means nothing was written, so the credential refresh still replays the write.
+            mock.onPut('/data').replyOnce(401).onPut('/data').replyOnce(200, { data: 'ok' });
+
+            await expect(instance.put('/data', { a: 1 }, { retry: false })).resolves.toEqual({ data: 'ok' });
+            expect(mock.history['put']).toHaveLength(2);
+            mock.restore();
+        });
+
         it('does not retry a second 401 (no infinite loop)', async () => {
             vi.mocked(readFile).mockResolvedValue('token' as never);
 
@@ -586,6 +609,110 @@ describe('HttpProviderFactory', () => {
             await expect(instance.get('/throw')).rejects.toThrow('not-an-axios-error');
             expect(mock.history['get']).toHaveLength(1); // shouldHandle returned false → not retried
             mock.restore();
+        });
+    });
+
+    describe('retry by method and per call', () => {
+        const retrying = (): HttpProviderFactory<'api'> => new HttpProviderFactory({
+            'api': {
+                baseURL: 'http://api.example.com',
+                resilience: { retry: { count: 1, backoffMs: 0 } }
+            }
+        });
+
+        it.each([
+            ['post', 'onPost'],
+            ['patch', 'onPatch']
+        ] as const)('does not retry a %s by default: it may have written before it failed', async (verb, onVerb) => {
+            expect.assertions(2);
+            const instance = retrying().get('api');
+            const mock = new MockAdapter(transport(instance));
+            mock[onVerb]('/write').replyOnce(502).onAny('/write').reply(200);
+
+            await expect(instance[verb]('/write', { a: 1 })).rejects.toThrow();
+            expect(mock.history[verb]).toHaveLength(1);
+            mock.restore();
+        });
+
+        it.each([
+            ['PUT', 'put', 'onPut'],
+            ['DELETE', 'delete', 'onDelete']
+        ] as const)('retries an idempotent %s by default', async (method, verb, onVerb) => {
+            expect.assertions(2);
+            const instance = retrying().get('api');
+            const mock = new MockAdapter(transport(instance));
+            mock[onVerb]('/thing').replyOnce(502).onAny('/thing').reply(200, { ok: true });
+
+            await expect(instance.request({ method, url: '/thing' })).resolves.toEqual({ ok: true });
+            expect(mock.history[verb]).toHaveLength(2);
+            mock.restore();
+        });
+
+        it('does not retry a request that opts out, whatever its method', async () => {
+            expect.assertions(2);
+            const instance = retrying().get('api');
+            const mock = new MockAdapter(transport(instance));
+            mock.onPut('/conditional').replyOnce(502).onPut('/conditional').reply(200);
+
+            await expect(instance.put('/conditional', { version: 'v1' }, { retry: false })).rejects.toThrow();
+            expect(mock.history['put']).toHaveLength(1);
+            mock.restore();
+        });
+
+        it('retries a POST that opts in', async () => {
+            expect.assertions(2);
+            const instance = retrying().get('api');
+            const mock = new MockAdapter(transport(instance));
+            mock.onPost('/embed').replyOnce(503).onPost('/embed').reply(200, { ok: true });
+
+            await expect(instance.post('/embed', { input: 'x' }, { retry: true })).resolves.toEqual({ ok: true });
+            expect(mock.history['post']).toHaveLength(2);
+            mock.restore();
+        });
+
+        it('counts a request that did not retry toward the circuit breaker', async () => {
+            expect.assertions(2);
+            const factory = new HttpProviderFactory({
+                'api': {
+                    baseURL: 'http://api.example.com',
+                    resilience: {
+                        retry: { count: 1, backoffMs: 0 },
+                        circuitBreaker: { minimumThroughput: 1, samplingDurationMs: 1000, threshold: 0.5 }
+                    }
+                }
+            });
+            const instance = factory.get('api');
+            const mock = new MockAdapter(transport(instance));
+            mock.onPost('/write').reply(502);
+
+            await expect(instance.post('/write', {})).rejects.toThrow();
+            expect(factory.breakers().get('api')?.state).toBe(CircuitState.Open);
+            mock.restore();
+        });
+
+        it('retries the token-exchange request, a POST that only mints a token', async () => {
+            expect.assertions(2);
+            const created: AxiosInstance[] = [];
+            const factory = new HttpProviderFactory({
+                'svc': {
+                    baseURL: 'http://svc.local',
+                    auth: {
+                        strategy: AuthStrategy.TokenExchange,
+                        request: { method: 'POST', url: 'http://auth.local/token' },
+                        tokenExtractor: 'access_token',
+                        transport: { headers: [{ name: 'Authorization', credential: 'value', prefix: 'Bearer ' }] }
+                    },
+                    resilience: { retry: { count: 1, backoffMs: 0 } }
+                }
+            }, { onInstanceCreated: (instance) => created.push(instance) });
+            const client = factory.get('svc');
+            const authMock = new MockAdapter(created[1]!);
+            const svcMock = new MockAdapter(transport(client));
+            authMock.onPost('http://auth.local/token').replyOnce(503).onPost('http://auth.local/token').reply(200, { access_token: 't' });
+            svcMock.onGet('/x').reply(200, 'ok');
+
+            await expect(client.get('/x')).resolves.toBe('ok');
+            expect(authMock.history['post']).toHaveLength(2);
         });
     });
 

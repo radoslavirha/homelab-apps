@@ -37,7 +37,8 @@ export class OllamaEndpoint {
         const response = await client.post<object>(
             EMBED_PATH,
             Serializer.serialize(request, OllamaEmbedRequestDTO),
-            { signal }
+            // http-provider does not retry a POST by default; an embedding writes nothing, so a replay is harmless.
+            { signal, retry: true }
         );
 
         return Serializer.deserialize(response, OllamaEmbedResponseDTO);

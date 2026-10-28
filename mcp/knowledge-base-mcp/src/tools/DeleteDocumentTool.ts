@@ -21,7 +21,7 @@ export class DeleteDocumentTool {
         'Before calling, tell the user which document goes and why, and get their yes. ' +
         'Pass the version you read or last wrote. If the document changed meanwhile, the result is an error holding it under ' +
         '`current`: show the user, and delete with `current.version` only if they still want it gone. ' +
-        'After a timeout the delete may have landed: `read` the document before retrying.'
+        'After a timeout or a server error (5xx) the delete may have landed: `read` the document before retrying.'
     )
     @RequireRole(KnowledgeBaseRole.Editor)
     @Returns(200, DeleteDocumentOutput)

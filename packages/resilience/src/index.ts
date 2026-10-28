@@ -1,5 +1,5 @@
 export { createResiliencePolicy } from './ResiliencePolicy.js';
-export type { ResiliencePolicy, ResiliencePolicyOptions, ResilienceHooks } from './ResiliencePolicy.js';
+export type { ResilienceExecuteOptions, ResiliencePolicy, ResiliencePolicyOptions, ResilienceHooks } from './ResiliencePolicy.js';
 export { CircuitState } from './breaker.js';
 export type { CircuitStateLike } from './breaker.js';
 export { ResiliencePolicyFactory } from './ResiliencePolicyFactory.js';

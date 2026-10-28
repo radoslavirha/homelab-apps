@@ -40,13 +40,27 @@ export interface ResiliencePolicyOptions {
     hooks?: ResilienceHooks;
 }
 
+/** Per-call options for {@link ResiliencePolicy.execute}. */
+export interface ResilienceExecuteOptions {
+    /**
+     * `false` runs the work once, whatever `retry.count` says. The circuit breaker and the
+     * timeout still apply. For work whose replay is not harmless, such as a write that may
+     * have taken effect before it failed. Defaults to `true`.
+     */
+    retry?: boolean;
+}
+
 /**
  * A composed resilience policy. `execute` threads an {@link AbortSignal} into
  * the wrapped work; the signal aborts on timeout (or when `parentSignal`
  * aborts), giving real cancellation to any signal-aware transport.
  */
 export interface ResiliencePolicy {
-    execute<T>(fn: (signal: AbortSignal) => Promise<T>, parentSignal?: AbortSignal): Promise<T>;
+    execute<T>(
+        fn: (signal: AbortSignal) => Promise<T>,
+        parentSignal?: AbortSignal,
+        options?: ResilienceExecuteOptions
+    ): Promise<T>;
     /** The underlying circuit breaker, when configured (for state inspection). */
     readonly breaker?: CircuitBreakerPolicy;
 }
@@ -244,8 +258,12 @@ export function createResiliencePolicy(
 
     return {
         breaker,
-        async execute<T>(fn: (signal: AbortSignal) => Promise<T>, parentSignal?: AbortSignal): Promise<T> {
-            const maxRetries = cfg.retry?.count ?? 0;
+        async execute<T>(
+            fn: (signal: AbortSignal) => Promise<T>,
+            parentSignal?: AbortSignal,
+            executeOptions: ResilienceExecuteOptions = {}
+        ): Promise<T> {
+            const maxRetries = executeOptions.retry === false ? 0 : cfg.retry?.count ?? 0;
             const backoffMs = cfg.retry?.backoffMs ?? 0;
 
             for (let attempt = 0;; attempt++) {
