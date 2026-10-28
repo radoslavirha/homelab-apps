@@ -63,6 +63,27 @@ class ParentCancellationError extends TaskCancelledError {}
 const isParentCancellationError = (error: unknown): error is ParentCancellationError =>
     error instanceof ParentCancellationError;
 
+/**
+ * Rejects as soon as the parent aborts, even while cockatiel still holds the call (a call queued
+ * behind the half-open trial is parked before our callback, and its abort listener, exists).
+ * The held call may settle later; that outcome is swallowed.
+ */
+const rejectOnParentAbort = <T>(attempt: Promise<T>, parentSignal: AbortSignal | undefined): Promise<T> => {
+    if (!parentSignal) {
+        return attempt;
+    }
+    attempt.catch(() => undefined);
+
+    return new Promise<T>((resolve, reject) => {
+        const onAbort = (): void => reject(new ParentCancellationError());
+        parentSignal.addEventListener('abort', onAbort, { once: true });
+        if (parentSignal.aborted) {
+            onAbort();
+        }
+        attempt.then(resolve, reject).finally(() => parentSignal.removeEventListener('abort', onAbort));
+    });
+};
+
 const executeWithParentCancellation = <T>(
     fn: (signal: AbortSignal) => Promise<T>,
     timeoutSignal: AbortSignal | undefined,
@@ -234,12 +255,13 @@ export function createResiliencePolicy(
 
                 try {
                     const ctx: AttemptContext = {};
-                    return await attemptContext.run(ctx, () =>
+                    const attemptResult = attemptContext.run(ctx, () =>
                         attemptPolicy.execute((context) => {
                             ctx.startState = breaker?.state;
                             return executeWithParentCancellation(fn, context.signal, parentSignal);
                         })
                     );
+                    return await rejectOnParentAbort(attemptResult, parentSignal);
                 } catch (error) {
                     if (isParentCancellationError(error) || parentSignal?.aborted) {
                         throw new ParentCancellationError();
