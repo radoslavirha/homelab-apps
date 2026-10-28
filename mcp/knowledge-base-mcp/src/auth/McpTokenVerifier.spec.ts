@@ -27,11 +27,11 @@ describe('McpTokenVerifier', () => {
     it('accepts a reader, with what the SDK needs and the principal for the per-tool check', async () => {
         expect.assertions(1);
 
-        const token = await userToken({ subject: 'radoslav', claims: { azp: 'knowledge-base-clients', scope: 'openid profile email roles' } });
+        const token = await userToken({ subject: 'radoslav', claims: { azp: 'knowledge-base-mcp-clients', scope: 'openid profile email roles' } });
 
         await expect(verifier.verifyAccessToken(token)).resolves.toEqual({
             token,
-            clientId: 'knowledge-base-clients',
+            clientId: 'knowledge-base-mcp-clients',
             scopes: ['openid', 'profile', 'email', 'roles'],
             expiresAt: expect.any(Number),
             extra: { principal: expect.objectContaining({ subject: 'radoslav', kind: 'human', roles: [TEST_ROLES.READER], issuer: 'https://issuer.test/' }) }

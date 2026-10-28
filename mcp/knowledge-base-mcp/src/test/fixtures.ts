@@ -3,7 +3,7 @@ import { DEFAULT_SCOPES } from '../models/config/McpServerAuthConfig.js';
 import type { McpServerConfig } from '../models/config/McpServerConfig.js';
 
 /** config/test.json's endpoint roles, by level. */
-export const TEST_ROLES = { READER: 'kb-development.reader', EDITOR: 'kb-development.editor' };
+export const TEST_ROLES = { READER: 'knowledge-base-mcp-development.reader', EDITOR: 'knowledge-base-mcp-development.editor' };
 
 export const TEST_PUBLIC_URL = 'http://localhost:4004';
 

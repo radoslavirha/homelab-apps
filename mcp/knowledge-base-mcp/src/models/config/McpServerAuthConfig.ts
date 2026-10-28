@@ -21,10 +21,10 @@ const RolesSchema = z.object(
  * it off.
  */
 export const McpServerAuthConfigSchema = z.object({
-    issuer: z.url().describe('The authorization server clients log in at: the shared client registration\'s Authentik issuer, e.g. `https://auth.irha.cz/application/o/knowledge-base-clients/`. Advertised in the Protected Resource Metadata, and the only `iss` a token may carry — compared exactly, trailing slash included.'),
-    audience: z.string().min(1).describe('The `aud` a token must carry: the endpoint\'s Authentik application for this environment, e.g. `kb-development-server1-production`.'),
+    issuer: z.url().describe('The authorization server clients log in at: the shared client registration\'s Authentik issuer, e.g. `https://auth.irha.cz/application/o/knowledge-base-mcp-clients/`. Advertised in the Protected Resource Metadata, and the only `iss` a token may carry — compared exactly, trailing slash included.'),
+    audience: z.string().min(1).describe('The `aud` a token must carry: the endpoint\'s Authentik application for this environment, e.g. `knowledge-base-mcp-development-server1-production`.'),
     key: KeySchema.describe('Where the signing keys come from: the issuer\'s JWKS (`source: jwks`), or an inline key in tests.'),
-    roles: RolesSchema.describe('The endpoint\'s Authentik role for each level, e.g. `{ READER: kb-development.reader, EDITOR: kb-development.editor }`. A token holding none of them is refused with 403; each tool then requires its own level.'),
+    roles: RolesSchema.describe('The endpoint\'s Authentik role for each level, e.g. `{ READER: knowledge-base-mcp-development.reader, EDITOR: knowledge-base-mcp-development.editor }`. A token holding none of them is refused with 403; each tool then requires its own level.'),
     scopes: z.array(z.string().min(1)).default(DEFAULT_SCOPES)
         .refine((scopes) => REQUIRED_SCOPES.every((scope) => scopes.includes(scope)), {
             message: `must include ${REQUIRED_SCOPES.join(' and ')}: without profile the token's aud is the bare client id, without roles it carries no role`
