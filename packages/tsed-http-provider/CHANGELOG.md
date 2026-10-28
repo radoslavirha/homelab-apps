@@ -1,5 +1,13 @@
 # @radoslavirha/tsed-http-provider
 
+## 0.2.13
+
+### Patch Changes
+
+- Updated dependencies [[`e108147`](https://github.com/radoslavirha/homelab-apps/commit/e108147df23ae2606812a2fdd711280f0aba81b1), [`e108147`](https://github.com/radoslavirha/homelab-apps/commit/e108147df23ae2606812a2fdd711280f0aba81b1)]:
+  - @radoslavirha/http-provider@0.4.2
+  - @radoslavirha/resilience@0.2.6
+
 ## 0.2.12
 
 ### Patch Changes

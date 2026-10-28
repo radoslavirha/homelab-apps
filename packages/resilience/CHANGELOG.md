@@ -1,5 +1,11 @@
 # @radoslavirha/resilience
 
+## 0.2.6
+
+### Patch Changes
+
+- [#402](https://github.com/radoslavirha/homelab-apps/pull/402) [`e108147`](https://github.com/radoslavirha/homelab-apps/commit/e108147df23ae2606812a2fdd711280f0aba81b1) Thanks [@radoslavirha](https://github.com/radoslavirha)! - `execute` takes an optional third argument: `{ retry: false }` runs the work once, whatever `retry.count` says. The circuit breaker still counts it and the timeout still bounds it.
+
 ## 0.2.5
 
 ### Patch Changes

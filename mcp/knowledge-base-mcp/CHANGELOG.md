@@ -1,5 +1,14 @@
 # knowledge-base
 
+## 0.4.1
+
+### Patch Changes
+
+- [#402](https://github.com/radoslavirha/homelab-apps/pull/402) [`e108147`](https://github.com/radoslavirha/homelab-apps/commit/e108147df23ae2606812a2fdd711280f0aba81b1) Thanks [@radoslavirha](https://github.com/radoslavirha)! - `create_note`, `write_document` and `delete_document` are sent to knowledge-base-api once, never retried. A write that failed with a 5xx may already have committed, and its replay reported "already exists", "no longer exists" or "has changed" for a write that succeeded ([#392](https://github.com/radoslavirha/homelab-apps/issues/392)). The tool descriptions now say to read before retrying after a server error as well as after a timeout.
+- Updated dependencies []:
+  - @radoslavirha/tsed-http-provider@0.2.13
+  - @radoslavirha/tsed-health@0.3.6
+
 ## 0.4.0
 
 ### Minor Changes

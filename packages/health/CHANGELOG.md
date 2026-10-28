@@ -1,5 +1,12 @@
 # @radoslavirha/health
 
+## 0.1.7
+
+### Patch Changes
+
+- Updated dependencies [[`e108147`](https://github.com/radoslavirha/homelab-apps/commit/e108147df23ae2606812a2fdd711280f0aba81b1)]:
+  - @radoslavirha/resilience@0.2.6
+
 ## 0.1.6
 
 ### Patch Changes

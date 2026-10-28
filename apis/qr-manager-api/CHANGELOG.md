@@ -1,5 +1,13 @@
 # qr-manager-api
 
+## 0.10.9
+
+### Patch Changes
+
+- Updated dependencies [[`e108147`](https://github.com/radoslavirha/homelab-apps/commit/e108147df23ae2606812a2fdd711280f0aba81b1)]:
+  - @radoslavirha/resilience@0.2.6
+  - @radoslavirha/tsed-health@0.3.6
+
 ## 0.10.8
 
 ### Patch Changes
