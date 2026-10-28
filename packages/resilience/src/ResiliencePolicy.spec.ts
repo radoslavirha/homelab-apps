@@ -239,6 +239,45 @@ describe('createResiliencePolicy', () => {
     });
 
     describe('circuit breaker', () => {
+        it('rejects immediately when the parent aborts a call queued behind the half-open trial', async () => {
+            expect.assertions(5);
+            const policy = createResiliencePolicy({
+                circuitBreaker: {
+                    halfOpenAfterMs: 0,
+                    minimumThroughput: 1,
+                    samplingDurationMs: 1000,
+                    threshold: 0.5
+                }
+            });
+
+            await expect(policy.execute(async () => {
+                throw new Error('dependency failed');
+            })).rejects.toThrow('dependency failed');
+
+            // The half-open trial hangs (e.g. a slow dependency, bounded only by the timeout).
+            let finishProbe: ((value: string) => void) | undefined;
+            const probe = policy.execute(() => new Promise<string>((resolve) => {
+                finishProbe = resolve;
+            }));
+            await vi.waitFor(() => expect(finishProbe).toBeDefined());
+            expect(policy.breaker?.state).toBe(CircuitState.HalfOpen);
+
+            // A second request arrives while the trial is in flight; its client then disconnects.
+            const controller = new AbortController();
+            const queued = policy.execute(async () => 'queued', controller.signal);
+            controller.abort();
+
+            const outcome = await Promise.race([
+                queued.then(() => 'resolved', () => 'rejected'),
+                new Promise<string>((resolve) => setTimeout(() => resolve('still pending'), 50))
+            ]);
+            expect(outcome).toBe('rejected');
+
+            finishProbe?.('ok');
+            await probe;
+            await queued.catch(() => undefined);
+        });
+
         it('exposes the breaker and short-circuits when open, firing break/reset hooks', async () => {
             const onBreak = vi.fn();
             const onReset = vi.fn();
