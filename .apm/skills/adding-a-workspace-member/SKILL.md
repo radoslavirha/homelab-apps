@@ -42,7 +42,7 @@ Member: <type>/<name>   Template: <template path>
 | --- | --- | --- |
 | api | `apis/qr-manager-api` | has its own MongoDB |
 | api | `apis/interactive-map-feeder-api` | no database, calls external HTTP APIs |
-| mcp | `mcp/knowledge-base` | an MCP server |
+| mcp | `mcp/knowledge-base-mcp` | an MCP server |
 | ui | `ui/qr-manager-ui` | signs users in (`@radoslavirha/ui-auth`) |
 | ui | `ui/homelab-dashboard-ui` | no sign-in |
 | package | the existing package closest in kind (`tsed-*` for Ts.ED glue, `ui-*` for React) | — |

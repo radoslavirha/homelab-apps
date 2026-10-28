@@ -1,0 +1,6 @@
+{
+  "production": {
+    "file": "gitops/helm-values/server1/apps/knowledge-base-mcp/values-production.yaml",
+    "yamlPath": ".image.tag"
+  }
+}

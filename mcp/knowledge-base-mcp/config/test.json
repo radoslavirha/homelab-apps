@@ -19,8 +19,8 @@
                     "value": "test-secret-not-a-real-key-000000"
                 },
                 "roles": {
-                    "READER": "kb-development.reader",
-                    "EDITOR": "kb-development.editor"
+                    "READER": "knowledge-base-mcp-development.reader",
+                    "EDITOR": "knowledge-base-mcp-development.editor"
                 }
             }
         }

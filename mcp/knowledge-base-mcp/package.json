@@ -1,5 +1,5 @@
 {
-  "name": "knowledge-base",
+  "name": "knowledge-base-mcp",
   "version": "0.3.0",
   "private": true,
   "description": "MCP server for the knowledge bases: search, read and write them from any MCP client, one endpoint per audience",

@@ -1,4 +1,4 @@
-# knowledge-base
+# knowledge-base-mcp
 
 MCP server for the knowledge bases in `knowledge-base-api`: search, read and write them from any MCP client (Claude Code, Claude on the web or phone, ChatGPT, Cursor, a CI agent). One app, one MCP endpoint per audience — today the development knowledge base.
 
@@ -7,7 +7,7 @@ MCP server for the knowledge bases in `knowledge-base-api`: search, read and wri
 ## Run it
 
 ```bash
-pnpm --filter ./mcp/knowledge-base start     # NODE_ENV=localhost, config/localhost.json
+pnpm --filter ./mcp/knowledge-base-mcp start     # NODE_ENV=localhost, config/localhost.json
 ```
 
 Listens on port `4004`.
@@ -35,7 +35,7 @@ Each endpoint is an OAuth resource server. A request without a valid token gets 
 
 The token is checked by `@radoslavirha/auth` (issuer, audience, signature, expiry), as in the APIs, then for one of the endpoint's roles. It never leaves this server: tools call knowledge-base-api with the server's own token (*Upstream token*).
 
-Each tool then requires its own level: `search` and `read` need `READER` (`kb-development.reader`); `create_note`, `write_document` and `delete_document` need `EDITOR` (`kb-development.editor`, whose holders Authentik also gives the reader role). A caller below a tool's level gets the tool error "Insufficient permissions." and the API is not called.
+Each tool then requires its own level: `search` and `read` need `READER` (`knowledge-base-mcp-development.reader`); `create_note`, `write_document` and `delete_document` need `EDITOR` (`knowledge-base-mcp-development.editor`, whose holders Authentik also gives the reader role). A caller below a tool's level gets the tool error "Insufficient permissions." and the API is not called.
 
 Claude Code uses a pre-registered client with a fixed callback port:
 
@@ -73,7 +73,7 @@ All work on the endpoint's own knowledge base; none takes a `kb` (an extra `kb` 
 | `server.httpPort` | Port to listen on |
 | `publicURL` | Required. Public base URL: scheme, host and route prefix, no endpoint path — `http://localhost:4004` locally, `https://mcp.irha.cz/kb` deployed. An endpoint's resource identifier (and the audience clients ask Authentik for) is this plus its `path` |
 | `mcpServers.<McpServer>` | One entry per MCP endpoint the app mounts (`DEVELOPMENT_KB` today): `path` (in the app; the public route adds its prefix, `/kb`, and Traefik strips it), `kb` (the knowledge base it serves, its id in knowledge-base-api, e.g. `development`), `name`, `title`, optional `description` (what clients are told the endpoint holds; defaults to the package's), and `auth`. Every key is required and paths must differ |
-| `mcpServers.<McpServer>.auth` | Required. `issuer` (the shared client registration's Authentik issuer, advertised as the authorization server and the only `iss` accepted), `audience` (the endpoint's Authentik application for this environment), `key` (`{ source: jwks, uri: <issuer>jwks/ }`; an inline HS256 key in tests), `roles` (the endpoint's Authentik role per level: `READER` → `kb-development.reader`, `EDITOR` → `kb-development.editor`), `scopes` (default `openid profile email roles`; must include `profile` and `roles`) |
+| `mcpServers.<McpServer>.auth` | Required. `issuer` (the shared client registration's Authentik issuer, advertised as the authorization server and the only `iss` accepted), `audience` (the endpoint's Authentik application for this environment), `key` (`{ source: jwks, uri: <issuer>jwks/ }`; an inline HS256 key in tests), `roles` (the endpoint's Authentik role per level: `READER` → `knowledge-base-mcp-development.reader`, `EDITOR` → `knowledge-base-mcp-development.editor`), `scopes` (default `openid profile email roles`; must include `profile` and `roles`) |
 | `externalApis.KNOWLEDGE_BASE_API` | knowledge-base-api: `baseURL` (from a laptop, the LAN route `https://api.server1.homelab.irha.cz/kb/knowledge-base`), resilience, and `auth` — `token-exchange` with a `client_credentials` request for `knowledge-base-mcp` (which holds `knowledge-base-api.editor`) to Authentik's token endpoint, form-encoded, scope `openid profile email roles` (without `profile`, `aud` is the bare client id and the API refuses the token) |
 | `health` | Health endpoint configuration (optional) |
 | `logger` | Log level and options (optional) |
@@ -85,4 +85,4 @@ The server calls knowledge-base-api as itself, never with a caller's token. http
 
 ## Build and release
 
-CI lints, builds and tests it and builds its image (`knowledge-base` stage of the root `Dockerfile`) on every change under this folder. A release deploys it to **production** on server1 (`deploy.json` → homelab `values-production.yaml`), at `https://mcp.irha.cz/kb/development` — Traefik strips `/kb`, and rewrites the Protected Resource Metadata path `/.well-known/oauth-protected-resource/kb/…` to the app's own. Production only: the knowledge bases exist nowhere else.
+CI lints, builds and tests it and builds its image (`knowledge-base-mcp` stage of the root `Dockerfile`) on every change under this folder. A release deploys it to **production** on server1 (`deploy.json` → homelab `values-production.yaml`), at `https://mcp.irha.cz/kb/development` — Traefik strips `/kb`, and rewrites the Protected Resource Metadata path `/.well-known/oauth-protected-resource/kb/…` to the app's own. Production only: the knowledge bases exist nowhere else.
