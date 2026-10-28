@@ -1,5 +1,16 @@
 # knowledge-base-api
 
+## 0.3.1
+
+### Patch Changes
+
+- [#365](https://github.com/radoslavirha/homelab-apps/pull/365) [`2327e2e`](https://github.com/radoslavirha/homelab-apps/commit/2327e2e730dfbbcb51108acc86b213769dc65fd9) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - A document holding a NUL byte (e.g. a UTF-16 markdown file) is skipped and logged with its path instead of failing every knowledge base run; any other storage error still fails the run.
+
+- [#397](https://github.com/radoslavirha/homelab-apps/pull/397) [`98c1be3`](https://github.com/radoslavirha/homelab-apps/commit/98c1be31a88c54694ca2292c8b68b418733b871f) Thanks [@radoslavirha](https://github.com/radoslavirha)! - A write refused by GitHub for a stale version (`409`) is no longer retried, so the `409` with the current document answers at once instead of after 14 s of backoff.
+- Updated dependencies []:
+  - @radoslavirha/tsed-http-provider@0.2.12
+  - @radoslavirha/tsed-health@0.3.5
+
 ## 0.3.0
 
 ### Minor Changes

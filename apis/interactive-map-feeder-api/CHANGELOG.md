@@ -1,5 +1,13 @@
 # interactive-map-feeder
 
+## 0.16.9
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @radoslavirha/tsed-http-provider@0.2.12
+  - @radoslavirha/tsed-health@0.3.5
+
 ## 0.16.8
 
 ### Patch Changes
