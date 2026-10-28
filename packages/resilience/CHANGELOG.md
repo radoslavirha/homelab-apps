@@ -1,5 +1,11 @@
 # @radoslavirha/resilience
 
+## 0.2.5
+
+### Patch Changes
+
+- [#394](https://github.com/radoslavirha/homelab-apps/pull/394) [`4cff1d9`](https://github.com/radoslavirha/homelab-apps/commit/4cff1d92dd56689bd05694bc697dd3c7bef3acaf) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - A parent abort now rejects a call queued behind the half-open circuit-breaker trial immediately instead of after the trial settles.
+
 ## 0.2.4
 
 ### Patch Changes

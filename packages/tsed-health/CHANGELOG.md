@@ -1,5 +1,12 @@
 # @radoslavirha/tsed-health
 
+## 0.3.5
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @radoslavirha/health@0.1.6
+
 ## 0.3.4
 
 ### Patch Changes

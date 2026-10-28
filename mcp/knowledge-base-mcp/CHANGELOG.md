@@ -1,5 +1,22 @@
 # knowledge-base
 
+## 0.4.0
+
+### Minor Changes
+
+- [#399](https://github.com/radoslavirha/homelab-apps/pull/399) [`76028c3`](https://github.com/radoslavirha/homelab-apps/commit/76028c37b51235ae712c5fe4fccbd9a4349e3d04) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Renamed from `knowledge-base` to `knowledge-base-mcp` (folder, package, image `ghcr.io/radoslavirha/knowledge-base-mcp`). The `/development` endpoint's Authentik application is now `knowledge-base-mcp-development` and the shared login client `knowledge-base-mcp-clients`, so `auth.issuer`, `auth.audience` and `auth.roles` change with the deployment's config.
+
+### Patch Changes
+
+- [#366](https://github.com/radoslavirha/homelab-apps/pull/366) [`e2dbd20`](https://github.com/radoslavirha/homelab-apps/commit/e2dbd206d214bac1ae2cce11fc10288fa8a2c7d0) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - /health now reports `warn` while the knowledge-base-api circuit breaker is open.
+
+- [#382](https://github.com/radoslavirha/homelab-apps/pull/382) [`44a0427`](https://github.com/radoslavirha/homelab-apps/commit/44a0427edd97d124853731ba98af7064214bf050) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - A malformed `search` filter is reported to the agent as its own mistake (400) instead of a bad gateway.
+
+- [#397](https://github.com/radoslavirha/homelab-apps/pull/397) [`98c1be3`](https://github.com/radoslavirha/homelab-apps/commit/98c1be31a88c54694ca2292c8b68b418733b871f) Thanks [@radoslavirha](https://github.com/radoslavirha)! - The write tools' descriptions say that after a timeout the write may have landed, so the agent reads the document before retrying.
+- Updated dependencies []:
+  - @radoslavirha/tsed-http-provider@0.2.12
+  - @radoslavirha/tsed-health@0.3.5
+
 ## 0.3.0
 
 ### Minor Changes
