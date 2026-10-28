@@ -24,7 +24,8 @@ export class CreateNoteTool {
         'rewritten. ' +
         'Before calling, show the user the full note and get their yes; call only with what they approved. ' +
         'If a note with this title and date already exists, the result is an error holding it under `current`: show the user, and ' +
-        'change the title if theirs is a different note.'
+        'change the title if theirs is a different note. ' +
+        'After a timeout the note may have landed: `search` or `read` for it before retrying.'
     )
     @RequireRole(KnowledgeBaseRole.Editor)
     @Returns(200, CreateNoteOutput)

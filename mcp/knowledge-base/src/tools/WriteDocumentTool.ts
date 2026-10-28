@@ -23,7 +23,8 @@ export class WriteDocumentTool {
         'To create, leave out `version`. To rewrite, pass the version your change was made to: from `read`, or the `version` your ' +
         'last write of it returned — keep that one for the next edit; there is no need to `read` again. ' +
         'If the document changed meanwhile, the result is an error holding it under `current`: apply your change to ' +
-        '`current.content`, show the user the result again (it is not what they approved), and retry with `current.version`.'
+        '`current.content`, show the user the result again (it is not what they approved), and retry with `current.version`. ' +
+        'After a timeout the write may have landed: `read` the document before retrying.'
     )
     @RequireRole(KnowledgeBaseRole.Editor)
     @Returns(200, WriteDocumentOutput)
