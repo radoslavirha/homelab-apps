@@ -30,6 +30,10 @@ const MAX_ATTEMPTS = 2;
  */
 export const CURRENT_ERROR_NAME = 'CURRENT';
 
+/** What a refusal tells the caller to do with the current document, per kind of write. */
+const REWRITE_ADVICE = 'Apply your change to the current document and write it with its version.';
+const DELETE_ADVICE = 'Show the current document, and delete it with its version only if it should still go.';
+
 /** Names the path through which every write arrives, in the commit's `Via:` trailer. */
 const VIA = 'knowledge-base MCP';
 
@@ -77,14 +81,14 @@ export class DocumentWriteService {
         const writer = this.writer(kb);
         const message = this.commitMessage(provenance);
 
-        return this.run(kb, writer, id, version, () => writer.write(id, content, version, message));
+        return this.run(kb, writer, id, version, REWRITE_ADVICE, () => writer.write(id, content, version, message));
     }
 
     public delete(kb: KnowledgeBaseConfig, id: string, version: string, provenance: WriteProvenance): Promise<SourceDeleteResult> {
         const writer = this.writer(kb);
         const message = this.commitMessage(provenance);
 
-        return this.run(kb, writer, id, version, () => writer.delete(id, version, message));
+        return this.run(kb, writer, id, version, DELETE_ADVICE, () => writer.delete(id, version, message));
     }
 
     /**
@@ -120,6 +124,7 @@ export class DocumentWriteService {
         writer: SourceWriter,
         id: string,
         version: string | null,
+        advice: string,
         write: () => Promise<T>
     ): Promise<T> {
         const result = this.queue.then(async () => {
@@ -144,7 +149,7 @@ export class DocumentWriteService {
                         attempt,
                         exists: CommonUtils.notNull(current)
                     });
-                    this.explain(id, version, current, attempt);
+                    this.explain(id, version, current, attempt, advice);
                 }
             }
         });
@@ -160,12 +165,12 @@ export class DocumentWriteService {
     }
 
     /** Throws the answer to a refusal; returns when the write is worth one more try. */
-    private explain(id: string, version: string | null, current: SourceFile | null, attempt: number): void {
+    private explain(id: string, version: string | null, current: SourceFile | null, attempt: number, advice: string): void {
         const retry = attempt < MAX_ATTEMPTS;
 
         if (CommonUtils.isNull(version)) {
             if (CommonUtils.notNull(current)) {
-                throw conflict(`${id} already exists. Apply your change to the current document and write it with its version.`, current);
+                throw conflict(`${id} already exists. ${REWRITE_ADVICE}`, current);
             }
 
             if (!retry) {
@@ -180,7 +185,7 @@ export class DocumentWriteService {
         }
 
         if (current.version !== version || !retry) {
-            throw conflict(`${id} has changed since version ${version}. Apply your change to the current document and write it with its version.`, current);
+            throw conflict(`${id} has changed since version ${version}. ${advice}`, current);
         }
     }
 
