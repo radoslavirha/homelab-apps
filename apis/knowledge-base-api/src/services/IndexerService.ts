@@ -1,6 +1,6 @@
 import { withSpan } from '@radoslavirha/otel';
 import { type BaseLogger, Logger } from '@radoslavirha/tsed-logger';
-import { CommonUtils } from '@radoslavirha/utils';
+import { CommonUtils, StringUtils } from '@radoslavirha/utils';
 import { Inject, ProviderScope, Scope, Service } from '@tsed/di';
 import { DocumentMapper } from '../mappers/DocumentMapper.js';
 import { ChunkingMode } from '../models/ChunkingMode.enum.js';
@@ -19,7 +19,6 @@ import {
     ATTR_KNOWLEDGE_BASE_SOURCE,
     DOCUMENT_CHANGE_VALUE_DELETE,
     DOCUMENT_CHANGE_VALUE_UNCHANGED,
-    type DocumentChange,
     EMBEDDING_OUTCOME_VALUE_FAILURE,
     EMBEDDING_OUTCOME_VALUE_SUCCESS,
     INDEXER_TRACER_NAME,
@@ -114,26 +113,24 @@ export class IndexerService {
             for (const document of changes.upserts) {
                 options.signal?.throwIfAborted();
 
-                let change: DocumentChange;
-
-                try {
-                    change = await this.documents.upsert(
-                        this.documentMapper.sourceToStorage(kb.id, document),
-                        kb.tsConfig,
-                        this.chunk(kb, document)
-                    );
-                } catch (error) {
-                    options.signal?.throwIfAborted();
-                    // One unstorable file (a NUL byte, say) must not freeze the whole knowledge base.
-                    // Its id stays in `upsertedIds`, so a complete snapshot does not delete it either.
-                    this.log.error('Document could not be indexed; skipped.', {
-                        event: 'INDEXER_DOCUMENT_FAILED',
+                // Postgres refuses a NUL byte in text and jsonb on every run, so one such file (a
+                // UTF-16 markdown file, say) would fail the knowledge base forever. Skip only that:
+                // any other storage error is worth a retry and still fails the run, cursor untouched.
+                // Its id stays in `upsertedIds`, so a complete snapshot does not delete it either.
+                if (this.holdsNul(document)) {
+                    this.log.error('Document holds a NUL byte, which Postgres cannot store; skipped.', {
+                        event: 'INDEXER_DOCUMENT_SKIPPED',
                         knowledgeBase: kb.id,
-                        externalId: document.externalId,
-                        error: error instanceof Error ? error.message : String(error)
+                        externalId: document.externalId
                     });
                     continue;
                 }
+
+                const change = await this.documents.upsert(
+                    this.documentMapper.sourceToStorage(kb.id, document),
+                    kb.tsConfig,
+                    this.chunk(kb, document)
+                );
 
                 if (change === DOCUMENT_CHANGE_VALUE_UNCHANGED) {
                     unchanged++;
@@ -232,6 +229,21 @@ export class IndexerService {
                     hash: chunk.hash
                 }));
         }
+    }
+
+    /** Whether any text of the document, its metadata keys and values included, holds a NUL byte. */
+    private holdsNul(document: SourceDocument): boolean {
+        let found = false;
+
+        JSON.stringify(document, (key: string, value: string | object | null) => {
+            if (key.includes('\0') || (StringUtils.isString(value) && value.includes('\0'))) {
+                found = true;
+            }
+
+            return value;
+        });
+
+        return found;
     }
 
     /**

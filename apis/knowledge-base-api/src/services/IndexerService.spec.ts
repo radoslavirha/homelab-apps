@@ -4,6 +4,7 @@ import { OllamaEndpoint } from '../endpoints/ollama/OllamaEndpoint.js';
 import { ChunkingMode } from '../models/ChunkingMode.enum.js';
 import type { KnowledgeBaseConfig } from '../models/config/KnowledgeBaseConfig.js';
 import { SourceAdapterFactory } from '../sources/SourceAdapterFactory.js';
+import { DocumentRepository } from '../storage/postgres/DocumentRepository.js';
 import { EmbeddingRepository } from '../storage/postgres/EmbeddingRepository.js';
 import { KnowledgeBaseRepository } from '../storage/postgres/KnowledgeBaseRepository.js';
 import { PostgresService } from '../storage/postgres/PostgresService.js';
@@ -241,6 +242,32 @@ describe('IndexerService', () => {
         await expect(indexer.index(dev, MANUAL)).resolves.toMatchObject({ cursor: 'c1', upserted: 1 });
         expect(await count("SELECT count(*) AS n FROM documents WHERE external_id = 'raw/note.md'")).toBe(1);
         expect(await count("SELECT count(*) AS n FROM documents WHERE external_id = 'raw/utf16.md'")).toBe(0);
+    });
+
+    it('skips a document whose frontmatter metadata holds a NUL byte, which jsonb refuses too', async () => {
+        expect.assertions(2);
+
+        sources.adapter.next = {
+            upserts: [sourceDocument('raw/meta.md', NOTE, { metadata: { area: 'raw', tag: 'a\0b' } }), sourceDocument('raw/note.md', NOTE)],
+            deletes: [],
+            cursor: 'c1',
+            complete: true
+        };
+
+        await expect(indexer.index(dev, MANUAL)).resolves.toMatchObject({ cursor: 'c1', upserted: 1 });
+        expect((await postgres.query<{ external_id: string }>('SELECT external_id FROM documents')).rows).toEqual([{ external_id: 'raw/note.md' }]);
+    });
+
+    it('fails the run and keeps the cursor when storing a document fails for any other reason', async () => {
+        expect.assertions(2);
+
+        const outage = new Error('Connection terminated unexpectedly');
+
+        vi.spyOn(PlatformTest.get<DocumentRepository>(DocumentRepository), 'upsert').mockRejectedValueOnce(outage);
+        sources.adapter.next = { upserts: [sourceDocument('raw/note.md', NOTE)], deletes: [], cursor: 'c1', complete: true };
+
+        await expect(indexer.index(dev, MANUAL)).rejects.toBe(outage);
+        expect(await PlatformTest.get<KnowledgeBaseRepository>(KnowledgeBaseRepository).getCursor('development')).toBeNull();
     });
 
     describe('a stopped run', () => {
