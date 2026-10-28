@@ -1,7 +1,9 @@
-import { HealthCheckService, ShutdownState } from '@radoslavirha/tsed-health';
+import { CircuitState, HealthCheckService, ShutdownState } from '@radoslavirha/tsed-health';
+import { HttpProviderService } from '@radoslavirha/tsed-http-provider';
 import { PlatformTest } from '@tsed/platform-http/testing';
 import SuperTest from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ExternalApi } from './models/config/ExternalApi.enum.js';
 import { toMcpSettings } from './mcp/toMcpSettings.js';
 import { Server } from './Server.js';
 import { TEST_PUBLIC_URL, TEST_SERVER, userToken } from './test/fixtures.js';
@@ -69,8 +71,21 @@ describe('Server (integration)', () => {
     });
 
     describe('health', () => {
-        it('registers no check yet: nothing it depends on exists', () => {
-            expect(PlatformTest.get<HealthCheckService>(HealthCheckService).checks()).toEqual([]);
+        it('registers the upstream check, non-critical', () => {
+            expect(PlatformTest.get<HealthCheckService>(HealthCheckService).checks().map((c) => [c.name, c.critical])).toEqual([['upstream-apis', false]]);
+        });
+
+        it('reports knowledge-base-api degraded while its circuit breaker is open, and stays ready', async () => {
+            expect.assertions(3);
+
+            vi.spyOn(PlatformTest.get<HttpProviderService<ExternalApi>>(HttpProviderService), 'breakers')
+                .mockReturnValue(new Map([[ExternalApi.KnowledgeBaseApi, { state: CircuitState.Open }]]) as never);
+
+            const response = await request.get('/health');
+
+            expect(response.status).toBe(200);
+            expect(response.body.status).toBe('warn');
+            expect((await request.get('/health/ready')).status).toBe(200);
         });
 
         it('answers liveness', async () => {
