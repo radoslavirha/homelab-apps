@@ -139,6 +139,32 @@ describe('createResiliencePolicy', () => {
             expect(fn).toHaveBeenCalledTimes(1);
         });
 
+        it('runs the work once when the call opts out of retry', async () => {
+            expect.assertions(2);
+
+            const policy = createResiliencePolicy({ retry: { count: 2, backoffMs: 0 } });
+            const fn = vi.fn(async () => {
+                throw new Error('boom');
+            });
+
+            await expect(policy.execute(fn, undefined, { retry: false })).rejects.toThrow('boom');
+            expect(fn).toHaveBeenCalledOnce();
+        });
+
+        it('counts a call that opted out of retry toward the circuit breaker', async () => {
+            expect.assertions(2);
+
+            const policy = createResiliencePolicy({
+                retry: { count: 2, backoffMs: 0 },
+                circuitBreaker: { minimumThroughput: 1, samplingDurationMs: 1000, threshold: 0.5 }
+            });
+
+            await expect(policy.execute(async () => {
+                throw new Error('dependency failed');
+            }, undefined, { retry: false })).rejects.toThrow('dependency failed');
+            expect(policy.breaker?.state).toBe(CircuitState.Open);
+        });
+
         it('does not invoke shouldHandle without retry or circuit breaker', async () => {
             const operationError = new Error('operation failed');
             const shouldHandle = vi.fn(() => {

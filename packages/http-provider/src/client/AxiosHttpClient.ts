@@ -1,10 +1,11 @@
-import type { AxiosInstance, AxiosRequestConfig, ResponseType } from 'axios';
+import type { AxiosInstance, ResponseType } from 'axios';
 import type {
     HttpClient,
     HttpRequest,
     HttpRequestOptions,
     HttpResponseType
 } from './HttpClient.js';
+import type { RetryRequestConfig } from './RetryRequestConfig.js';
 import { CommonUtils } from '@radoslavirha/utils';
 
 /** Our neutral response types mapped onto axios' vocabulary. */
@@ -57,8 +58,8 @@ export class AxiosHttpClient implements HttpClient {
         return response.data;
     }
 
-    private toRequestConfig(request: HttpRequest): AxiosRequestConfig {
-        const { method, url, body, headers, params, signal, responseType } = request;
+    private toRequestConfig(request: HttpRequest): RetryRequestConfig {
+        const { method, url, body, headers, params, signal, responseType, retry } = request;
 
         return {
             method: method ?? 'GET',
@@ -67,7 +68,8 @@ export class AxiosHttpClient implements HttpClient {
             ...(CommonUtils.isUndefined(headers) ? {} : { headers }),
             ...(CommonUtils.isUndefined(params) ? {} : { params }),
             ...(CommonUtils.isUndefined(signal) ? {} : { signal }),
-            ...(CommonUtils.isUndefined(responseType) ? {} : { responseType: RESPONSE_TYPES[responseType] })
+            ...(CommonUtils.isUndefined(responseType) ? {} : { responseType: RESPONSE_TYPES[responseType] }),
+            ...(CommonUtils.isUndefined(retry) ? {} : { _retry: retry })
         };
     }
 }

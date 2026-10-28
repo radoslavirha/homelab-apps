@@ -83,6 +83,8 @@ All work on the endpoint's own knowledge base; none takes a `kb` (an extra `kb` 
 
 The server calls knowledge-base-api as itself, never with a caller's token. http-provider's `token-exchange` caches the token until the API answers `401` — the token expired after its 10 minutes — then fetches a new one and retries that call once. No refresh code of its own: one refused call per token lifetime, and only while the server is in use.
 
+`resilience.retry` applies to `search` and `read` only. A write is sent once: one that failed may still have committed, and a replay would report `409`/`404` for a write that succeeded. After a timeout or a `5xx` the agent reads before trying again.
+
 ## Build and release
 
 CI lints, builds and tests it and builds its image (`knowledge-base-mcp` stage of the root `Dockerfile`) on every change under this folder. A release deploys it to **production** on server1 (`deploy.json` → homelab `values-production.yaml`), at `https://mcp.irha.cz/kb/development` — Traefik strips `/kb`, and rewrites the Protected Resource Metadata path `/.well-known/oauth-protected-resource/kb/…` to the app's own. Production only: the knowledge bases exist nowhere else.

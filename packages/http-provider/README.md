@@ -11,6 +11,7 @@ Deliberately has **no logging** — see [`@radoslavirha/tsed-http-provider`](../
 - **Credential-to-header mapping**: a transport entry names the `credential` it carries, with optional `prefix`/`suffix` — no templating syntax, so no config renderer can eat it
 - **Static values**: API keys, bearer tokens, or any fixed header/query param go directly in `transport`
 - **Resilience policy** integration (timeout, retry, circuit breaker) with configurable retriable statuses
+- **No replayed writes** — `POST` and `PATCH` are not retried unless the call says `retry: true`; any call can opt out with `retry: false`
 - **401 retry** — on a 401 response, credentials are invalidated and one retry is attempted automatically
 - **Credential single-flight** — concurrent cold/expired auth fetches share one in-flight acquisition per strategy
 - **Transport-neutral client** — `HttpClient` is this package's own contract, not a third-party client's API
@@ -450,6 +451,29 @@ Everything else — 4xx responses, non-axios errors thrown from an interceptor, 
 (`ERR_CANCELED`, i.e. our own timeout or an aborted caller signal) — is **not** retried and does
 not trip the breaker.
 
+### Which requests are retried
+
+A failed request may still have taken effect upstream — the write committed, then the answer
+was lost to a 502 or a reset connection — and sending it again is a second write. So
+`resilience.retry` replays only what is safe to repeat:
+
+| Request | Retried? |
+|---|---|
+| `GET`, `HEAD`, `OPTIONS`, `QUERY`, `PUT`, `DELETE` (idempotent, RFC 9110 §9.2.2) | yes |
+| `POST`, `PATCH` | no |
+| any method with `retry: true` / `retry: false` | as the call says |
+| the token-exchange request | yes — it only mints a token |
+
+A request that is not retried still runs under the timeout, and the circuit breaker still
+counts its failure. Pass `retry: false` where a replay is not harmless whatever the method — a
+`PUT` or `DELETE` conditional on a version would come back `409`/`404` for a write that
+succeeded — and `retry: true` on a `POST` that is a pure function of its input:
+
+```ts
+await client.put('/documents', body, { retry: false });   // conditional write: send it once
+await client.post('/api/embed', body, { retry: true });   // embedding: safe to repeat
+```
+
 ### Cancellation
 
 The policy's `AbortSignal` is threaded into the axios adapter, and a `signal` passed on the
@@ -465,7 +489,8 @@ await client.get('/spec', { signal: requestSignal });
 
 The automatic single retry on a `401` response is a separate auth concern and is **always
 active** when an auth strategy is configured — it is unrelated to `resilience.retry` and is not
-governed by `retriableStatusCodes`.
+governed by `retriableStatusCodes` or `retry: false`. A `401` means the request was refused
+before anything was written, so replaying it with fresh credentials is safe for a write too.
 
 The two compose without multiplying: the 401 replay re-enters the resilience policy exactly
 once, so a `401` followed by persistent `500`s costs `1 + (1 + retry.count)` requests, not
@@ -492,7 +517,8 @@ interface HttpClient {
 ```
 
 Methods resolve to the **response body** — no envelope unwrapping. Options are transport-neutral
-(`headers`, `params`, `signal`, `responseType: 'json' | 'text' | 'binary'`).
+(`headers`, `params`, `signal`, `responseType: 'json' | 'text' | 'binary'`, `retry` — see
+[Which requests are retried](#which-requests-are-retried)).
 
 `raw` exists for integrations that must attach interceptors and for tests that mock the
 transport. Application code using it is coupled to the current transport; swapping transports

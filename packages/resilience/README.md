@@ -63,6 +63,16 @@ Consequences worth knowing:
   `shouldHandle` that returns `false` for it (a transport-specific predicate normally does so
   naturally, since a `BrokenCircuitError` is not a transport error).
 
+### Opting one call out of retry
+
+Retry suits work that is safe to repeat. A call whose replay is not — a write that may have taken
+effect before its answer was lost — passes `{ retry: false }` as the third argument and runs once.
+The circuit breaker still counts it and the timeout still bounds it:
+
+```ts
+await policy.execute((signal) => createOrder(order, signal), parentSignal, { retry: false });
+```
+
 ### `shouldHandle` — the transport seam
 
 `shouldHandle` decides which errors count as failures for **both** retry and the breaker. It
