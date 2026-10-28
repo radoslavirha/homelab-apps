@@ -95,6 +95,8 @@ every intervalMs (default 5 min), one pod at a time (Postgres advisory lock), in
 
 **A run stops when the pod does.** On shutdown (a deploy) the run is aborted: the indexer stops between documents and embedding batches and cancels the GitHub or Ollama call in flight, so the pod drains inside its deadline. The same happens when the connection holding the index lock is lost. The knowledge base it was on records `INTERRUPTED` (not `FAILURE`, and no `job.run.items` either way); every step is idempotent, so the next run carries on — after a deploy during a first build, `POST /reindex` again.
 
+**A document Postgres cannot store does not stop a run.** A file whose text holds a NUL byte (e.g. a UTF-16 markdown file) is skipped and logged as `INDEXER_DOCUMENT_SKIPPED` with its `externalId`; the rest is indexed and the cursor moves on. Editing the file puts it back in the next diff. Any other storage error still fails the run, so the next run retries it.
+
 Git documents get `metadata` from their frontmatter plus `area` (first path segment) and, under `mirror/<repo>/`, `repos: [<repo>]`; `date` from `date` or `created`; `version` the file's blob SHA; `url` at the indexed commit.
 
 ## Configuration
