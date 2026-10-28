@@ -99,8 +99,22 @@ Create issues with `gh issue create`, or REST:
 Severity:
 - critical: auth bypass, secret leak, data loss, or a crash loop in a deployed app
 - high: wrong result or crash in a common path
-- medium: wrong result in an edge case that can plausibly happen
-- low: wrong result only with contrived input
+- medium: wrong result in an edge case that can plausibly happen in the deployed
+  app: real traffic, the deployed config (Helm values in radoslavirha/homelab)
+  or a documented default triggers it
+- low: anything less likely: crafted or invalid client input, a config value no
+  deployment sets, a state only a test can build
+
+File critical, high and medium only. A low candidate is dropped, not filed; name
+it in your Finish summary as `dropped (low)` with one line. These are low however
+the test reads:
+- invalid client input answered with the wrong status code, error message or log
+  level, when no data is wrong and nothing crashes
+- a trigger that exists only in configuration: it counts only if a deployed
+  config or a documented default sets it, not because the schema accepts it
+- missing hardening that no current caller or input reaches
+Severity is how likely and how bad, not how sure you are: a test that fails
+cleanly does not lift a contrived case above low.
 
 Title: `<member>: <one-line symptom>`
 
@@ -113,7 +127,7 @@ Body (GitHub markdown, use exactly these sections):
 Concrete input/state → actual result vs expected result.
 
 ## Severity
-critical | high | medium | low — one sentence why.
+critical | high | medium — one sentence why.
 
 ## Confidence
 high | med | low — one sentence why.
