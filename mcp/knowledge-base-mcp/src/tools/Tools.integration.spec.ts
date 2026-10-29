@@ -1,6 +1,7 @@
 import { createServer, type IncomingHttpHeaders, type Server as HttpServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { Serializer } from '@radoslavirha/tsed-common';
+import { Logger } from '@radoslavirha/tsed-logger';
 import { ObjectUtils } from '@radoslavirha/utils';
 import { getInterceptorOptions } from '@tsed/di';
 import { BadGateway, GatewayTimeout } from '@tsed/exceptions';
@@ -166,6 +167,19 @@ describe('Tools (integration, through MCP)', () => {
             expect(result.isError).toBeUndefined();
             expect(remove).toHaveBeenCalledWith(expect.objectContaining({ kb: 'development', id: 'raw/2026-01-01-a-note.md', version: 'b1', reason: 'a mistake' }), 'radoslav');
             expect(result.structuredContent).toEqual({ id: 'raw/2026-01-01-a-note.md', commit: 'c3' });
+        });
+
+        it('write_document: the request log carries no tool arguments — a document is knowledge-base content and may hold a secret the API refuses', async () => {
+            expect.assertions(2);
+
+            vi.spyOn(api, 'writeDocument').mockResolvedValue(Serializer.deserialize({ id: 'work/2026-10-20-x/spec.md', version: 'b2', commit: 'c2' }, DocumentWriteResponseDTO));
+            const httpLog = (PlatformTest.get<Logger>(Logger) as unknown as { httpLog: { info: (...args: unknown[]) => void } }).httpLog;
+            const info = vi.spyOn(httpLog, 'info');
+
+            await callTool('write_document', { ...WRITES[1][1], content: '# X\n\ntoken: ghp_SECRETSECRETSECRETSECRETSECRETSECRET' });
+
+            expect(info).toHaveBeenCalledWith('Request completed', expect.objectContaining({ url: '/development' }));
+            expect(JSON.stringify(info.mock.calls)).not.toContain('ghp_SECRET');
         });
 
         it('write_document: a refusal reaches the caller with the document as it is now, to apply the change to and retry with', async () => {
