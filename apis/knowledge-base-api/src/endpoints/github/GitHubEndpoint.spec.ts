@@ -17,7 +17,7 @@ import { GitHubFileStatusDTO } from './dto/GitHubFileStatusDTO.enum.js';
 import { GitHubRepositoryDTO } from './dto/GitHubRepositoryDTO.js';
 import { GitHubTreeDTO } from './dto/GitHubTreeDTO.js';
 import { GitHubTreeEntryTypeDTO } from './dto/GitHubTreeEntryTypeDTO.enum.js';
-import { GitHubEndpoint, isGitHubWriteRefusal } from './GitHubEndpoint.js';
+import { GitHubEndpoint, isGitHubWriteRefusal, SEND_ONCE } from './GitHubEndpoint.js';
 
 const octokit = {
     rest: {
@@ -89,6 +89,8 @@ describe('GitHubEndpoint', () => {
     describe('retries, with the client options it builds', () => {
         const PUT_CONTENT = 'PUT /repos/{owner}/{repo}/contents/{path}';
         const PUT_PARAMS = { owner: 'someone', repo: 'kb', path: 'raw/a.md', message: 'm', content: 'YQ==', sha: 'stale' };
+        const GET_BLOB = 'GET /repos/{owner}/{repo}/git/blobs/{file_sha}';
+        const GET_BLOB_PARAMS = { owner: 'someone', repo: 'kb', file_sha: 'abc' };
         const reply = (status: number): Response => new Response(JSON.stringify({ message: 'x' }), { status, headers: { 'content-type': 'application/json' } });
 
         /** An Octokit with the endpoint's options and `retries` as configured, answering through `fetch`. */
@@ -115,14 +117,25 @@ describe('GitHubEndpoint', () => {
             expect(fetch).toHaveBeenCalledOnce();
         });
 
-        it('still retries a server error', async () => {
+        it('still retries a server error on a read', async () => {
             expect.assertions(2);
 
             const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValueOnce(reply(502)).mockResolvedValueOnce(reply(200));
             const client = await clientWith(1, fetch);
 
-            await expect(client.request(PUT_CONTENT, PUT_PARAMS)).resolves.toMatchObject({ status: 200 });
+            await expect(client.request(GET_BLOB, GET_BLOB_PARAMS)).resolves.toMatchObject({ status: 200 });
             expect(fetch).toHaveBeenCalledTimes(2);
+        });
+
+        it('sends a contents write once: a 5xx or timeout may come after GitHub committed it', async () => {
+            expect.assertions(2);
+
+            // The first PUT commits and its answer is a 502; a replay with the same sha finds a new blob → 409.
+            const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValueOnce(reply(502)).mockResolvedValueOnce(reply(409));
+            const client = await clientWith(3, fetch);
+
+            await expect(client.request(PUT_CONTENT, { ...PUT_PARAMS, request: SEND_ONCE })).rejects.toMatchObject({ status: 502 });
+            expect(fetch).toHaveBeenCalledOnce();
         });
     });
 
@@ -257,7 +270,7 @@ describe('GitHubEndpoint', () => {
 
             expect(result).toBeInstanceOf(GitHubContentCommitDTO);
             expect(result).toMatchObject({ content: { path: 'raw/a.md', sha: 'new-blob' }, commit: { sha: 'commit' } });
-            expect(octokit.rest.repos.createOrUpdateFileContents).toHaveBeenNthCalledWith(1, { owner: 'someone', repo: 'kb', path: 'raw/a.md', message: 'm', content: 'YQ==', branch: 'main' });
+            expect(octokit.rest.repos.createOrUpdateFileContents).toHaveBeenNthCalledWith(1, { owner: 'someone', repo: 'kb', path: 'raw/a.md', message: 'm', content: 'YQ==', branch: 'main', request: { retries: 0 } });
             expect(octokit.rest.repos.createOrUpdateFileContents).toHaveBeenNthCalledWith(2, expect.objectContaining({ sha: 'old-blob' }));
         });
 
@@ -273,7 +286,7 @@ describe('GitHubEndpoint', () => {
             );
 
             expect(result).toMatchObject({ content: null, commit: { sha: 'commit' } });
-            expect(octokit.rest.repos.deleteFile).toHaveBeenCalledWith({ owner: 'someone', repo: 'kb', path: 'raw/a.md', message: 'm', sha: 'blob', branch: 'main' });
+            expect(octokit.rest.repos.deleteFile).toHaveBeenCalledWith({ owner: 'someone', repo: 'kb', path: 'raw/a.md', message: 'm', sha: 'blob', branch: 'main', request: { retries: 0 } });
         });
     });
 });

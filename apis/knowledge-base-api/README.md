@@ -64,6 +64,8 @@ A `work/` document is checked as the knowledge base's note checker does: folder 
 
 Apply the change to the `CURRENT` entry's `content` and write it with its `version`. (A create refused twice while the file does not exist is a plain `409`, no `CURRENT`.) The `version` a write answers is valid at once for the next write of that document.
 
+A write goes to GitHub once. A `5xx` or a timeout from it may come after GitHub committed the write, so the API does not replay it: read the document before trying again. (Reads keep `github.retries`.)
+
 Writes run one at a time in a pod (GitHub's contents API conflicts on parallel writes to one branch). After each one an **incremental indexing run is started** for that knowledge base, not awaited — the same run `POST /reindex` starts, under the same lock — so `GET /documents` and search see the write within seconds. A source that cannot be written answers `501`.
 
 ## Search
