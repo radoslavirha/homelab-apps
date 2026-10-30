@@ -367,6 +367,7 @@ describe('Writing tools (integration, through MCP to a fake knowledge-base-api)'
     const received: { method: string | undefined; url: string | undefined; headers: IncomingHttpHeaders }[] = [];
     let upstreamServer: HttpServer;
     let callerToken: string;
+    let refuseClient = false;
 
     // Authentik's token endpoint and knowledge-base-api in one, as KnowledgeBaseApiEndpoint.integration.spec does.
     beforeAll(async () => {
@@ -374,6 +375,13 @@ describe('Writing tools (integration, through MCP to a fake knowledge-base-api)'
             res.setHeader('content-type', 'application/json');
 
             if (req.url === '/token') {
+                if (refuseClient) {
+                    res.statusCode = 400;
+                    res.end(JSON.stringify({ error: 'invalid_client', error_description: 'Client authentication failed.' }));
+
+                    return;
+                }
+
                 res.end(JSON.stringify({ access_token: 'server-own-token', token_type: 'Bearer', expires_in: 600 }));
 
                 return;
@@ -423,5 +431,23 @@ describe('Writing tools (integration, through MCP to a fake knowledge-base-api)'
         expect(received[0].headers.authorization).toBe('Bearer server-own-token');
         expect(received[0].headers['on-behalf-of']).toBe('radoslav');
         expect(JSON.stringify(received)).not.toContain(callerToken);
+    });
+
+    it('a token endpoint refusing the server\'s own client is not reported as the caller\'s bad input', async () => {
+        expect.assertions(3);
+
+        refuseClient = true;
+
+        const send = (name: string, args: object) => SuperTest(PlatformTest.callback()).post('/development').set(MCP_HEADERS).set('Authorization', `Bearer ${callerToken}`)
+            .send({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } });
+
+        const search = (await send('search', { query: 'pods' })).body.result;
+        const note = (await send('create_note', { title: 'A gotcha', type: 'GOTCHA', context: 'c', decisionOrFact: 'd' })).body.result;
+
+        refuseClient = false;
+
+        expect(search.isError).toBe(true);
+        expect(JSON.stringify(search.content)).not.toContain('check `filter`');
+        expect(note.structuredContent.status_code).not.toBe(400);
     });
 });

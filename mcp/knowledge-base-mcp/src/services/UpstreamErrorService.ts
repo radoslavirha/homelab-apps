@@ -14,7 +14,11 @@ const CURRENT_ERROR_NAME = 'CURRENT';
 /** What http-provider keeps of the upstream's answer, as the translated error's `origin`. */
 interface UpstreamOrigin {
     readonly response?: { readonly status?: number; readonly data?: unknown };
+    readonly config?: { readonly url?: string };
 }
+
+/** The API is called by path under `baseURL`; an absolute URL is another host, such as the token endpoint. */
+const ABSOLUTE_URL = /^[a-z][a-z\d+.-]*:\/\//i;
 
 /** The refusals the API explains in its message, by status. Any other failure is thrown as it is. */
 const EXPLAINED: Record<number, new (message: string) => Exception> = {
@@ -34,9 +38,18 @@ const EXPLAINED: Record<number, new (message: string) => Exception> = {
 export class UpstreamErrorService {
     public constructor(private readonly mapper: KnowledgeBaseMapper) {}
 
-    /** The status the API answered with; `undefined` when it did not answer at all. */
+    /**
+     * The status the API answered with; `undefined` when it did not answer at all, or when the
+     * failed request was not a call to it (the token request for this server's own credential).
+     */
     public status(error: unknown): number | undefined {
-        return UpstreamErrorService.originOf(error)?.response?.status;
+        const origin = UpstreamErrorService.originOf(error);
+
+        if (StringUtils.isString(origin?.config?.url) && ABSOLUTE_URL.test(origin.config.url)) {
+            return undefined;
+        }
+
+        return origin?.response?.status;
     }
 
     /**
