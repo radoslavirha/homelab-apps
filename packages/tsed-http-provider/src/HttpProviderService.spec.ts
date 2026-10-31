@@ -169,5 +169,61 @@ describe('HttpProviderService', () => {
             expect(error.origin?.response?.status).toBe(401);
             mock.restore();
         });
+
+        it('logs which request timed out when the resilience timeout fires', async () => {
+            expect.assertions(2);
+            const error = vi.fn();
+            const service = new HttpProviderService<ApiKey>({
+                [ApiKey.Example]: {
+                    baseURL: 'http://example.test',
+                    resilience: { timeout: { ms: 20 } }
+                }
+            });
+            Object.defineProperty(service, 'logger', {
+                get: () => ({ child: () => ({ info: vi.fn(), error }) })
+            });
+            const client = service.get(ApiKey.Example);
+            const mock = new MockAdapter(client.raw as AxiosInstance);
+            mock.onGet('/slow').reply(() => new Promise(() => undefined));
+
+            const failure = await captureError(client.get('/slow'));
+
+            expect(failure.status).toBe(504);
+            expect(error).toHaveBeenCalledWith('Upstream HTTP request failed', expect.objectContaining({
+                method: 'GET',
+                url: 'http://example.test/slow',
+                duration: expect.any(Number)
+            }));
+            mock.restore();
+        });
+
+        it('logs which request was refused when the circuit is open', async () => {
+            expect.assertions(2);
+            const error = vi.fn();
+            const service = new HttpProviderService<ApiKey>({
+                [ApiKey.Example]: {
+                    baseURL: 'http://example.test',
+                    resilience: { circuitBreaker: { minimumThroughput: 1 } }
+                }
+            });
+            Object.defineProperty(service, 'logger', {
+                get: () => ({ child: () => ({ info: vi.fn(), error }) })
+            });
+            const client = service.get(ApiKey.Example);
+            const mock = new MockAdapter(client.raw as AxiosInstance);
+            mock.onGet('/boom').reply(503);
+
+            let failure = await captureError(client.get('/boom'));
+            for (let attempt = 0; failure.status !== 503 && attempt < 10; attempt += 1) {
+                failure = await captureError(client.get('/boom'));
+            }
+
+            expect(failure.status).toBe(503);
+            expect(error).toHaveBeenLastCalledWith('Upstream HTTP request failed', expect.objectContaining({
+                method: 'GET',
+                url: 'http://example.test/boom'
+            }));
+            mock.restore();
+        });
     });
 });
