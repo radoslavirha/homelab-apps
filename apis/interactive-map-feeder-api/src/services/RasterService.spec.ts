@@ -184,4 +184,23 @@ describe('RasterService.getRGBAOnCoordinates', () => {
 
         expect({ r: color.r, g: color.g, b: color.b, a: color.a }).toEqual({ r: 0, g: 0, b: 252, a: 255 });
     });
+
+    it('lights the LED for the top of the ČHMÚ scale (60 dBZ, drawn white 252,252,252)', async () => {
+        expect.assertions(1);
+        const liberec = { latitude: 50.76638, longitude: 15.054439 };
+        const { x, y } = pixelOf(liberec.latitude, liberec.longitude);
+
+        const data = Buffer.alloc(WIDTH * HEIGHT * 4, 0);
+        for (let row = y - 3; row <= y + 3; row++) {
+            for (let col = x - 3; col <= x + 3; col++) {
+                const i = (row * WIDTH + col) * 4;
+                data[i] = 252; data[i + 1] = 252; data[i + 2] = 252; data[i + 3] = 255;
+            }
+        }
+        const image = sharp(data, { raw: { width: WIDTH, height: HEIGHT, channels: 4 } });
+
+        const color = await raster.getRGBAOnCoordinates(liberec.latitude, liberec.longitude, radar.bbox, image);
+
+        expect({ r: color.r, g: color.g, b: color.b, a: color.a }).toEqual({ r: 252, g: 252, b: 252, a: 255 });
+    });
 });
