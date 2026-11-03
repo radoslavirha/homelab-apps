@@ -76,7 +76,7 @@ All work on the endpoint's own knowledge base; none takes a `kb` (an extra `kb` 
 | `mcpServers.<McpServer>.auth` | Required. `issuer` (the shared client registration's Authentik issuer, advertised as the authorization server and the only `iss` accepted), `audience` (the endpoint's Authentik application for this environment), `key` (`{ source: jwks, uri: <issuer>jwks/ }`; an inline HS256 key in tests), `roles` (the endpoint's Authentik role per level: `READER` → `knowledge-base-mcp-development.reader`, `EDITOR` → `knowledge-base-mcp-development.editor`), `scopes` (default `openid profile email roles`; must include `profile` and `roles`) |
 | `externalApis.KNOWLEDGE_BASE_API` | knowledge-base-api: `baseURL` (from a laptop, the LAN route `https://api.server1.homelab.irha.cz/kb/knowledge-base`), resilience, and `auth` — `token-exchange` with a `client_credentials` request for `knowledge-base-mcp` (which holds `knowledge-base-api.editor`) to Authentik's token endpoint, form-encoded, scope `openid profile email roles` (without `profile`, `aud` is the bare client id and the API refuses the token) |
 | `health` | Health endpoint configuration (optional) |
-| `logger` | Log level and options (optional) |
+| `logger` | Log level and options (optional). `requests.request` and `requests.response` are forced off in code — a value here is ignored: a tool call's arguments are whole documents and may hold a secret |
 | `otel` | OpenTelemetry exporters (optional, all off locally) |
 
 ## Upstream token
