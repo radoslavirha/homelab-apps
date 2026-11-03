@@ -235,8 +235,18 @@ export class HttpProviderFactory<K extends string> {
         const parentSignal = requestConfig.signal as AbortSignal | undefined;
 
         requestConfig._resilienceBaseAdapter = baseAdapter;
-        requestConfig.adapter = (config: PolicyRequestConfig) =>
-            policy.execute((signal) => baseAdapter({ ...config, signal }), parentSignal, { retry: mayRetry(config) });
+        requestConfig.adapter = async (config: PolicyRequestConfig) => {
+            try {
+                return await policy.execute((signal) => baseAdapter({ ...config, signal }), parentSignal, { retry: mayRetry(config) });
+            } catch (error) {
+                // The policy's own rejections (timeout, open circuit) are not AxiosErrors and carry
+                // no `config`; attach it so the interceptors downstream can still tell which request failed.
+                if (error instanceof Error && CommonUtils.isUndefined((error as { config?: unknown }).config)) {
+                    Object.defineProperty(error, 'config', { value: config, enumerable: false, configurable: true, writable: true });
+                }
+                throw error;
+            }
+        };
     }
 
     private createStrategy(entry: ResolvedHttpProviderEntry, key: K): IAuthStrategy {
