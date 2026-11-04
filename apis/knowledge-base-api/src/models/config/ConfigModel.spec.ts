@@ -44,7 +44,18 @@ describe('ConfigSchema', () => {
 
         delete config.github;
 
-        expect(issues(config)).toContain('github: Knowledge base "development" has source GIT, which needs github.');
+        expect(issues(config)).toContain('github: Knowledge base "development" has source GIT, which needs github, its own or the root one.');
+    });
+
+    it('accepts a git knowledge base with a GitHub App of its own and no root one', () => {
+        const config = base();
+        const { github } = config;
+        const [kb] = config.knowledgeBases as Record<string, unknown>[];
+
+        delete config.github;
+        config.knowledgeBases = [{ ...kb, git: { github } }];
+
+        expect(issues(config)).toEqual([]);
     });
 
     it('fails at boot on duplicate knowledge base ids', () => {

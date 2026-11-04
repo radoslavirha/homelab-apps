@@ -24,7 +24,7 @@ export const ConfigSchema = BaseConfig.extend({
     externalApis: createExternalApisSchema(Object.values(ExternalApi))
         .describe('External APIs this service calls — base URL, auth, resilience and logging per API.'),
     database: DatabaseConfigSchema.describe('The Postgres database this service owns: schema, index and search.'),
-    github: GitHubAppConfigSchema.optional().describe('GitHub App credentials. Required when any knowledge base has source GIT.'),
+    github: GitHubAppConfigSchema.optional().describe('GitHub App credentials, for every knowledge base with source GIT that has no `git.github` of its own.'),
     embeddings: EmbeddingsConfigSchema.describe('Embedding models served by Ollama.'),
     knowledgeBases: z.array(KnowledgeBaseConfigSchema).min(1).describe('Every knowledge base this service indexes and serves.'),
     indexer: IndexerConfigSchema.describe('The background indexing loop.'),
@@ -65,8 +65,8 @@ export const ConfigSchema = BaseConfig.extend({
             }
         });
 
-        if (kb.source === KnowledgeBaseSource.Git && CommonUtils.isUndefined(config.github)) {
-            ctx.addIssue({ code: 'custom', path: ['github'], message: `Knowledge base "${kb.id}" has source GIT, which needs github.` });
+        if (kb.source === KnowledgeBaseSource.Git && CommonUtils.isUndefined(kb.git.github) && CommonUtils.isUndefined(config.github)) {
+            ctx.addIssue({ code: 'custom', path: ['github'], message: `Knowledge base "${kb.id}" has source GIT, which needs github, its own or the root one.` });
         }
     });
 });

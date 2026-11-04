@@ -3,6 +3,7 @@ import { CommonUtils } from '@radoslavirha/utils';
 import { PlatformTest } from '@tsed/platform-http/testing';
 import { Octokit, RequestError } from 'octokit';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { GitHubAppConfig } from '../../models/config/GitHubAppConfig.js';
 import { ConfigService } from '../../services/ConfigService.js';
 import { GitHubBlobDTO } from './dto/GitHubBlobDTO.js';
 import { GitHubBranchDTO } from './dto/GitHubBranchDTO.js';
@@ -25,21 +26,26 @@ const octokit = {
         git: { getTree: vi.fn(), getBlob: vi.fn() }
     }
 };
+const otherOctokit = { rest: { repos: { getBranch: vi.fn() } } };
 const appOptions: unknown[] = [];
 const INSTALLED = { owner: { login: 'someone', id: 1 }, name: 'kb', default_branch: 'main', html_url: 'https://github.test/someone/kb', private: true };
+const OTHER_CLIENT_ID = 'Iv-other-client-id';
+const OTHER_INSTALLED = { ...INSTALLED, name: 'other-kb', html_url: 'https://github.test/someone/other-kb' };
 
 vi.mock('octokit', async (importOriginal) => {
     const original = await importOriginal<typeof import('octokit')>();
 
     return {
         ...original,
-        App: vi.fn().mockImplementation(function (options: unknown) {
+        App: vi.fn().mockImplementation(function (options: { appId: string }) {
             appOptions.push(options);
 
             return {
                 eachRepository: {
                     iterator: async function* () {
-                        yield { octokit, repository: INSTALLED };
+                        yield options.appId === OTHER_CLIENT_ID
+                            ? { octokit: otherOctokit, repository: OTHER_INSTALLED }
+                            : { octokit, repository: INSTALLED };
                     }
                 }
             };
@@ -59,19 +65,21 @@ describe('isGitHubWriteRefusal', () => {
 
 describe('GitHubEndpoint', () => {
     let github: GitHubEndpoint;
+    let app: GitHubAppConfig;
 
     beforeEach(PlatformTest.create);
     beforeEach(() => {
         vi.clearAllMocks();
         appOptions.length = 0;
         github = PlatformTest.get<GitHubEndpoint>(GitHubEndpoint);
+        app = PlatformTest.get<ConfigService>(ConfigService).config.github!;
     });
     afterEach(PlatformTest.reset);
 
     it('signs as the App with the configured client ID and key', async () => {
         expect.assertions(1);
 
-        await github.listRepositories();
+        await github.listRepositories(app);
 
         expect(appOptions[0]).toMatchObject({ appId: 'Iv-test-client-id', privateKey: 'not-a-real-key' });
     });
@@ -81,7 +89,7 @@ describe('GitHubEndpoint', () => {
 
         const defaults = vi.spyOn(Octokit, 'defaults');
 
-        await github.listRepositories();
+        await github.listRepositories(app);
 
         expect(defaults).toHaveBeenCalledWith(expect.objectContaining({ request: { fetch: expect.any(Function) } }));
     });
@@ -93,12 +101,9 @@ describe('GitHubEndpoint', () => {
 
         /** An Octokit with the endpoint's options and `retries` as configured, answering through `fetch`. */
         const clientWith = async (retries: number, fetch: typeof globalThis.fetch): Promise<Octokit> => {
-            const configService = PlatformTest.get<ConfigService>(ConfigService);
-            const github = configService.config.github!;
             const defaults = vi.spyOn(Octokit, 'defaults');
 
-            vi.spyOn(configService, 'config', 'get').mockReturnValue({ ...configService.config, github: { ...github, retries } });
-            await PlatformTest.get<GitHubEndpoint>(GitHubEndpoint).listRepositories();
+            await github.listRepositories({ ...app, retries });
 
             const [options] = defaults.mock.calls[0];
 
@@ -129,10 +134,58 @@ describe('GitHubEndpoint', () => {
     it('deserializes the repositories the installations can read', async () => {
         expect.assertions(2);
 
-        const [repository] = await github.listRepositories();
+        const [repository] = await github.listRepositories(app);
 
         expect(repository).toBeInstanceOf(GitHubRepositoryDTO);
         expect(repository).toMatchObject({ name: 'kb', owner: { login: 'someone' }, defaultBranch: 'main', htmlUrl: 'https://github.test/someone/kb' });
+    });
+
+    describe('with two Apps', () => {
+        const BRANCH = { data: { name: 'main', commit: { sha: 'abc', url: 'x' }, protected: false } };
+        let other: GitHubAppConfig;
+
+        beforeEach(() => {
+            other = { ...app, clientId: OTHER_CLIENT_ID, privateKey: { source: 'value', value: 'other-key' } };
+            octokit.rest.repos.getBranch.mockResolvedValue(BRANCH);
+            otherOctokit.rest.repos.getBranch.mockResolvedValue(BRANCH);
+        });
+
+        it('signs as each App with its own key, building each once', async () => {
+            expect.assertions(1);
+
+            await github.listRepositories(app);
+            await github.listRepositories(other);
+            await github.listRepositories(app);
+
+            expect(appOptions).toEqual([
+                expect.objectContaining({ appId: app.clientId, privateKey: 'not-a-real-key' }),
+                expect.objectContaining({ appId: OTHER_CLIENT_ID, privateKey: 'other-key' })
+            ]);
+        });
+
+        it('calls a repository as the App that listed it', async () => {
+            expect.assertions(2);
+
+            const [repository] = await github.listRepositories(app);
+            const [otherRepository] = await github.listRepositories(other);
+
+            await github.getBranch(otherRepository, 'main');
+            expect(octokit.rest.repos.getBranch).not.toHaveBeenCalled();
+
+            await github.getBranch(repository, 'main');
+            expect(octokit.rest.repos.getBranch).toHaveBeenCalledOnce();
+        });
+
+        it('keeps the other App\'s clients when one App lists again', async () => {
+            expect.assertions(1);
+
+            const [otherRepository] = await github.listRepositories(other);
+
+            await github.listRepositories(app);
+            await github.getBranch(otherRepository, 'main');
+
+            expect(otherOctokit.rest.repos.getBranch).toHaveBeenCalledOnce();
+        });
     });
 
     it('refuses to call a repository it has not listed', async () => {
@@ -147,7 +200,7 @@ describe('GitHubEndpoint', () => {
         let repository: GitHubRepositoryDTO;
 
         beforeEach(async () => {
-            [repository] = await github.listRepositories();
+            [repository] = await github.listRepositories(app);
         });
 
         it('reads a branch', async () => {

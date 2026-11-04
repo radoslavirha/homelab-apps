@@ -38,7 +38,7 @@ export const isGitHubWriteRefusal = (error: unknown): boolean =>
 const DO_NOT_RETRY = [400, 401, 403, 404, 409, 410, 422, 451];
 
 /**
- * GitHub, as the `knowledge-base-updater` GitHub App, through Octokit.
+ * GitHub, as the GitHub App a knowledge base is configured with, through Octokit.
  *
  * Octokit owns the App's token dance: it signs the App JWT from the private key (PKCS#1 as
  * GitHub issues it), finds the installations, mints installation tokens and renews them before
@@ -49,8 +49,9 @@ const DO_NOT_RETRY = [400, 401, 403, 404, 409, 410, 422, 451];
  * Every read takes an optional `signal` — the indexing run's — that aborts it, retries included.
  * The contents calls are the write path's: one file, and for `PUT`/`DELETE` one commit, per call.
  *
- * {@link listRepositories} must run first: it is what discovers which repositories the App
- * covers and keeps an installation client for each.
+ * {@link listRepositories} must run first: it is what discovers which repositories an App
+ * covers and keeps an installation client for each. A call on a repository then goes as the App
+ * that listed it.
  *
  * Accepts and returns DTOs only: every Octokit response is deserialized into its DTO class,
  * the same as an `http-provider` response would be.
@@ -58,8 +59,10 @@ const DO_NOT_RETRY = [400, 401, 403, 404, 409, 410, 422, 451];
 @Service()
 @Scope(ProviderScope.SINGLETON)
 export class GitHubEndpoint {
-    private app: App | undefined;
-    private readonly clients = new Map<string, Octokit>();
+    /** By client ID. */
+    private readonly apps = new Map<string, App>();
+    /** By repository, with the client ID of the App that listed it. */
+    private readonly clients = new Map<string, { readonly clientId: string; readonly octokit: Octokit }>();
     private readonly log: BaseLogger;
 
     public constructor(
@@ -69,16 +72,20 @@ export class GitHubEndpoint {
         this.log = logger.child('GITHUB');
     }
 
-    /** Every repository any installation of the App can read. */
-    public async listRepositories(): Promise<GitHubRepositoryDTO[]> {
+    /** Every repository any installation of the App can read. Another App's clients stay. */
+    public async listRepositories(config: GitHubAppConfig): Promise<GitHubRepositoryDTO[]> {
         const repositories: GitHubRepositoryDTO[] = [];
 
-        this.clients.clear();
+        for (const [repository, client] of this.clients) {
+            if (client.clientId === config.clientId) {
+                this.clients.delete(repository);
+            }
+        }
 
-        for await (const { octokit, repository } of this.getApp().eachRepository.iterator()) {
+        for await (const { octokit, repository } of this.getApp(config).eachRepository.iterator()) {
             const dto = Serializer.deserialize(repository, GitHubRepositoryDTO);
 
-            this.clients.set(key(dto), octokit as unknown as Octokit);
+            this.clients.set(key(dto), { clientId: config.clientId, octokit: octokit as unknown as Octokit });
             repositories.push(dto);
         }
 
@@ -178,14 +185,14 @@ export class GitHubEndpoint {
             throw new InternalServerError(`No GitHub installation client for ${key(repo)}; list repositories first.`);
         }
 
-        return client;
+        return client.octokit;
     }
 
-    private getApp(): App {
-        if (CommonUtils.isUndefined(this.app)) {
-            const config = this.config();
+    private getApp(config: GitHubAppConfig): App {
+        let app = this.apps.get(config.clientId);
 
-            this.app = new App({
+        if (CommonUtils.isUndefined(app)) {
+            app = new App({
                 appId: config.clientId,
                 privateKey: config.privateKey.source === 'file'
                     ? readFileSync(config.privateKey.path, 'utf-8')
@@ -204,19 +211,10 @@ export class GitHubEndpoint {
                     error: (message: string) => this.log.error(message, { event: 'GITHUB' })
                 }
             });
+            this.apps.set(config.clientId, app);
         }
 
-        return this.app;
-    }
-
-    private config(): GitHubAppConfig {
-        const config = this.configService.config.github;
-
-        if (CommonUtils.isUndefined(config)) {
-            throw new InternalServerError('github is not configured.');
-        }
-
-        return config;
+        return app;
     }
 }
 

@@ -15,7 +15,7 @@ export class WriteDocumentTool {
     @Tool('write_document', { title: 'Write a spec or plan', annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false } })
     @Description(
         'Create or rewrite a whole spec or plan under `work/` in the knowledge base: one commit, made for the signed-in user. ' +
-        'For a spec or plan the user is shaping for work across repositories — not for what the code or a repository\'s own docs ' +
+        'For a spec or plan the user is shaping for work across systems — not for what the code or its own docs ' +
         'already say, not for progress updates, and never for anything personal or secret (a secret is refused). ' +
         '`search` first: rewrite the spec that exists rather than starting a second one. ' +
         'Send the whole markdown, frontmatter included; there are no partial edits. Before calling, show the user the full ' +

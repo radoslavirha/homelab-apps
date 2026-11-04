@@ -104,10 +104,10 @@ Git documents get `metadata` from their frontmatter plus `area` (first path segm
 | Key | Description |
 |-----|-------------|
 | `database` | `host`, `port`, `database`, `user`, `password`, `sslMode` (`DISABLE`\|`REQUIRE`\|`VERIFY_FULL` + `caFile`), `pool`, `statementTimeoutMs` |
-| `github` | `clientId`, `privateKey` (`{ source: value, value }` or `{ source: file, path }`, PEM as GitHub issues it), `baseUrl`, `timeoutMs` (per attempt: each retry gets its own; a rate-limit wait is not counted), `retries`. **No repository name** — it is discovered from the App's installation, which must cover exactly one repository |
+| `github` | `clientId`, `privateKey` (`{ source: value, value }` or `{ source: file, path }`, PEM as GitHub issues it), `baseUrl`, `timeoutMs` (per attempt: each retry gets its own; a rate-limit wait is not counted), `retries`. **No repository name** — it is discovered from the App's installation, which must cover exactly one repository. The default App of every git knowledge base without its own `git.github` |
 | `embeddings.models[]` | `name` (Ollama tag), `dimensions`, `documentTemplate` (`{title}`, `{text}`), `queryTemplate` (`{query}`). Each model gets its own partial HNSW index at startup. Correcting a wrong `dimensions` before anything was embedded drops the old index; with vectors of the old size stored, the boot fails — a model's dimensions cannot change under one name, add a new entry |
 | `embeddings` | `batchSize`, `keepAlive` (default `1m`) |
-| `knowledgeBases[]` | `id`, `source` (`GIT`), `contentType` (`MARKDOWN`), `tsConfig` (Postgres text search configuration), `models` (first answers questions), `readers` (roles), `chunking` (`maxChars` default 3000, `overlapChars`), `git` (`branch`, `include` path prefixes, `extensions`) |
+| `knowledgeBases[]` | `id`, `source` (`GIT`), `contentType` (`MARKDOWN`), `tsConfig` (Postgres text search configuration), `models` (first answers questions), `readers` (roles), `chunking` (`maxChars` default 3000, `overlapChars`), `git` (`branch`, `include` path prefixes, `extensions`, `github`: this knowledge base's own App, same shape as the root `github`) |
 | `indexer` | `enabled`, `intervalMs`, `initialDelayMs`, `fetchConcurrency`, `maxScheduledEmbeddings` (default 300) |
 | `search` | `defaultLimit`, `candidates` per leg, `rrfK`, `weights` (`fullText` default 0, `vector` default 1), `fullTextMatch` (`ANY` ORs the question's lexemes; `ALL` is `websearch_to_tsquery`) |
 | `externalApis.OLLAMA` | Indexing: base URL, timeout, retry, circuit breaker. A batch of chunks on a CPU needs a long budget (60 s) |
@@ -115,7 +115,16 @@ Git documents get `metadata` from their frontmatter plus `area` (first path segm
 | `auth.IDP` | Trusted issuers |
 | `logger` | `@radoslavirha/tsed-logger` options: `level`, `requests.headers`, `requests.query`, `requests.ignorePaths`, … `requests.request` and `requests.response` are forced off in code — a value here is ignored |
 
-A cross-field mistake (a KB naming an undeclared model, a git KB without `github`) fails the boot.
+A cross-field mistake (a KB naming an undeclared model, a git KB with neither `git.github` nor `github`) fails the boot.
+
+### Adding a git knowledge base
+
+A knowledge base in its own repository, with the same writes and the same layout (`raw/`, `work/`, `mirror/`) as the first:
+
+1. Create a GitHub App with *Contents: write*, and install it on that repository and nothing else.
+2. Add a `knowledgeBases[]` entry with the App in `git.github`, its key from a secret. The schema, the row and the index are created at boot.
+3. Build it once, as an admin: `POST /reindex?kb=<id>&full=true`. A scheduled run skips a knowledge base that was never built.
+4. For MCP clients, add an endpoint: see `mcp/knowledge-base-mcp/README.md`.
 
 ## Telemetry
 
