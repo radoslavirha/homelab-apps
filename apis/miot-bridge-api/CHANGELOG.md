@@ -1,5 +1,11 @@
 # miot-bridge
 
+## 0.30.5
+
+### Patch Changes
+
+- [#421](https://github.com/radoslavirha/homelab-apps/pull/421) [`07454df`](https://github.com/radoslavirha/homelab-apps/commit/07454df2bb1d994cd01f205abe5f28706daf600f) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Notifications wait in the queue while the MQTT client is offline and stay paced after a reconnect, instead of being flushed together as a burst that Loxone partly loses.
+
 ## 0.30.4
 
 ### Patch Changes
