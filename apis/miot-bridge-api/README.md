@@ -147,6 +147,8 @@ A device that publishes several services of the same type (e.g. a multi-gang swi
 
 Published to the device's `notifications` topic; the device id is in the topic, not the body.
 
+Notifications leave one at a time, at least `mqtt.notifications.publishIntervalMs` apart (default `1500`, `0` turns pacing off), because Loxone loses messages sent closer together than about a second. A burst is queued, so 11 properties changing at once take about 15 s. A property already waiting has its value replaced rather than being sent twice.
+
 ```json
 { "service:property-name": any }
 ```

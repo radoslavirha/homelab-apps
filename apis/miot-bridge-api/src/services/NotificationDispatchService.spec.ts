@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { PlatformTest } from '@tsed/platform-http/testing';
-import { SpanKind, SpanStatusCode, trace } from '@opentelemetry/api';
+import { context, SpanKind, SpanStatusCode, trace } from '@opentelemetry/api';
 import {
     InMemorySpanExporter,
     NodeTracerProvider,
@@ -11,7 +11,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import type { PropertyChangeEvent } from '../models/PropertyChangeEvent.js';
 import { MqttClientProvider } from '../providers/MqttClientProvider.js';
 import { ConfigService } from './ConfigService.js';
-import { NotificationDispatchService } from './NotificationDispatchService.js';
+import { DEFAULT_PUBLISH_INTERVAL_MS, NotificationDispatchService } from './NotificationDispatchService.js';
 
 const DEVICE_ID = 442;
 const NOTIFICATIONS_TOPIC = `miot-bridge/device/${DEVICE_ID}/notifications`;
@@ -65,6 +65,142 @@ describe('NotificationDispatchService', () => {
 
     afterEach(PlatformTest.reset);
     afterEach(() => vi.restoreAllMocks());
+    afterEach(() => vi.useRealTimers());
+
+    const usePublishInterval = (publishIntervalMs: number): void => {
+        const configService = PlatformTest.get<ConfigService>(ConfigService);
+        vi.spyOn(configService, 'config', 'get').mockReturnValue({
+            ...configService.config,
+            mqtt: { enabled: true, url: 'mqtt://server.home:1883', notifications: { enabled: true, publishIntervalMs } }
+        } as typeof configService.config);
+    };
+
+    const change = (property: string, newValue: number): PropertyChangeEvent => ({ ...event(), property, newValue });
+
+    const publishedBodies = (): string[] => (client.publishAsync.mock.calls as unknown as [string, string][]).map(([, body]) => body);
+
+    // Loxone reads every property through one subscribe block and loses messages sent closer
+    // together than about a second, so a burst must leave the bridge one message at a time.
+    it('Should send a burst one message per interval, in order', async () => {
+        expect.assertions(4);
+        vi.useFakeTimers();
+        usePublishInterval(1_000);
+
+        service.receive(change('brush-cleaner-9:brush-life-level', 90));
+        service.receive(change('brush-cleaner-10:brush-life-level', 91));
+        service.receive(change('filter:filter-life-level', 92));
+
+        expect(publishedBodies()).toEqual([JSON.stringify({ 'brush-cleaner-9:brush-life-level': 90 })]);
+
+        await vi.advanceTimersByTimeAsync(999);
+
+        expect(client.publishAsync).toHaveBeenCalledTimes(1);
+
+        await vi.advanceTimersByTimeAsync(1);
+
+        expect(client.publishAsync).toHaveBeenCalledTimes(2);
+
+        await vi.advanceTimersByTimeAsync(1_000);
+
+        expect(publishedBodies()).toEqual([
+            JSON.stringify({ 'brush-cleaner-9:brush-life-level': 90 }),
+            JSON.stringify({ 'brush-cleaner-10:brush-life-level': 91 }),
+            JSON.stringify({ 'filter:filter-life-level': 92 })
+        ]);
+    });
+
+    it('Should apply the default interval when none is configured', async () => {
+        expect.assertions(2);
+        vi.useFakeTimers();
+
+        service.receive(change('brush-cleaner-9:brush-life-level', 90));
+        service.receive(change('filter:filter-life-level', 92));
+        await vi.advanceTimersByTimeAsync(DEFAULT_PUBLISH_INTERVAL_MS - 1);
+
+        expect(client.publishAsync).toHaveBeenCalledTimes(1);
+
+        await vi.advanceTimersByTimeAsync(1);
+
+        expect(client.publishAsync).toHaveBeenCalledTimes(2);
+    });
+
+    it('Should wait out the interval for a message arriving after the queue ran empty', async () => {
+        expect.assertions(2);
+        vi.useFakeTimers();
+        usePublishInterval(1_000);
+
+        service.receive(change('brush-cleaner-9:brush-life-level', 90));
+        await vi.advanceTimersByTimeAsync(400);
+        service.receive(change('filter:filter-life-level', 92));
+
+        expect(client.publishAsync).toHaveBeenCalledTimes(1);
+
+        await vi.advanceTimersByTimeAsync(600);
+
+        expect(client.publishAsync).toHaveBeenCalledTimes(2);
+    });
+
+    it('Should send only the newest value of a property still waiting, in its original position', async () => {
+        expect.assertions(1);
+        vi.useFakeTimers();
+        usePublishInterval(1_000);
+
+        service.receive(change('vacuum:status', 1));
+        service.receive(change('brush-cleaner-9:brush-life-level', 90));
+        service.receive(change('filter:filter-life-level', 92));
+        service.receive(change('brush-cleaner-9:brush-life-level', 89));
+        await vi.advanceTimersByTimeAsync(5_000);
+
+        expect(publishedBodies()).toEqual([
+            JSON.stringify({ 'vacuum:status': 1 }),
+            JSON.stringify({ 'brush-cleaner-9:brush-life-level': 89 }),
+            JSON.stringify({ 'filter:filter-life-level': 92 })
+        ]);
+    });
+
+    it('Should send everything at once when the interval is 0', () => {
+        usePublishInterval(0);
+
+        service.receive(change('brush-cleaner-9:brush-life-level', 90));
+        service.receive(change('filter:filter-life-level', 92));
+
+        expect(client.publishAsync).toHaveBeenCalledTimes(2);
+    });
+
+    it('Should drop what is queued on shutdown', async () => {
+        expect.assertions(1);
+        vi.useFakeTimers();
+        usePublishInterval(1_000);
+
+        service.receive(change('brush-cleaner-9:brush-life-level', 90));
+        service.receive(change('filter:filter-life-level', 92));
+        service.$onDestroy();
+        await vi.advanceTimersByTimeAsync(5_000);
+
+        expect(client.publishAsync).toHaveBeenCalledTimes(1);
+    });
+
+    // A delayed publish runs from a timer, so without restoring the context it would lose the read
+    // that observed the value, and a tick the poller sampled out would start a trace of its own.
+    it('Should keep a delayed publish in the trace that observed the value', async () => {
+        expect.assertions(1);
+        vi.useFakeTimers();
+        usePublishInterval(1_000);
+
+        const tracer = trace.getTracer('test');
+        const parent = tracer.startSpan('poll device');
+
+        context.with(trace.setSpan(context.active(), parent), () => {
+            service.receive(change('brush-cleaner-9:brush-life-level', 90));
+            service.receive(change('filter:filter-life-level', 92));
+        });
+        parent.end();
+        await vi.advanceTimersByTimeAsync(5_000);
+
+        const delayed = spans().find((span) => span.attributes['miot.property'] === 'filter:filter-life-level');
+
+        expect(delayed?.parentSpanContext?.spanId).toBe(parent.spanContext().spanId);
+    });
 
     it('Should publish the property change to the notifications topic', async () => {
         service.receive(event());
