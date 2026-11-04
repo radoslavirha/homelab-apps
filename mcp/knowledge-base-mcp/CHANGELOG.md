@@ -1,5 +1,17 @@
 # knowledge-base
 
+## 0.4.2
+
+### Patch Changes
+
+- [#405](https://github.com/radoslavirha/homelab-apps/pull/405) [`a9ed347`](https://github.com/radoslavirha/homelab-apps/commit/a9ed347bebcfad93ac160c7a881c4f72022187d4) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - The request log no longer writes tool-call arguments (documents, and any secret the API refuses) at info.
+
+- [#409](https://github.com/radoslavirha/homelab-apps/pull/409) [`3f1536c`](https://github.com/radoslavirha/homelab-apps/commit/3f1536c9e215d704e9db82ed1f9e5b485ca28d8f) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - A refusal of the server's own client by the token endpoint is no longer reported to the agent as its own bad input.
+
+- [#418](https://github.com/radoslavirha/homelab-apps/pull/418) [`9b284cd`](https://github.com/radoslavirha/homelab-apps/commit/9b284cda876b89ff4485fa4cd5901be851e61dfe) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Tool descriptions no longer assume the homelab repositories, since every endpoint shares them. A test now runs two endpoints in one app.
+- Updated dependencies [[`7b3d6bb`](https://github.com/radoslavirha/homelab-apps/commit/7b3d6bb2d9895c4dd7136b6391fb51f588b39247)]:
+  - @radoslavirha/tsed-http-provider@0.2.14
+
 ## 0.4.1
 
 ### Patch Changes

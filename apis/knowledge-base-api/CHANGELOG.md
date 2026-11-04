@@ -1,5 +1,16 @@
 # knowledge-base-api
 
+## 0.4.0
+
+### Minor Changes
+
+- [#418](https://github.com/radoslavirha/homelab-apps/pull/418) [`9b284cd`](https://github.com/radoslavirha/homelab-apps/commit/9b284cda876b89ff4485fa4cd5901be851e61dfe) Thanks [@radoslavirha](https://github.com/radoslavirha)! - A git knowledge base can have a GitHub App of its own (`git.github`), so a second repository can be indexed and written. The root `github` stays the default.
+
+### Patch Changes
+
+- Updated dependencies [[`7b3d6bb`](https://github.com/radoslavirha/homelab-apps/commit/7b3d6bb2d9895c4dd7136b6391fb51f588b39247)]:
+  - @radoslavirha/tsed-http-provider@0.2.14
+
 ## 0.3.2
 
 ### Patch Changes

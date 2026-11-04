@@ -1,5 +1,13 @@
 # miot-bridge
 
+## 0.30.4
+
+### Patch Changes
+
+- [#419](https://github.com/radoslavirha/homelab-apps/pull/419) [`bca98b0`](https://github.com/radoslavirha/homelab-apps/commit/bca98b0ae02e905d557ed35896cfeb7bae54d2aa) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Notifications are published one at a time, at least `mqtt.notifications.publishIntervalMs` apart (default 1500), so a burst no longer loses values in Loxone.
+- Updated dependencies [[`7b3d6bb`](https://github.com/radoslavirha/homelab-apps/commit/7b3d6bb2d9895c4dd7136b6391fb51f588b39247)]:
+  - @radoslavirha/tsed-http-provider@0.2.14
+
 ## 0.30.3
 
 ### Patch Changes
