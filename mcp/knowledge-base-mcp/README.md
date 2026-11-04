@@ -79,6 +79,16 @@ All work on the endpoint's own knowledge base; none takes a `kb` (an extra `kb` 
 | `logger` | Log level and options (optional). `requests.request` and `requests.response` are forced off in code — a value here is ignored: a tool call's arguments are whole documents and may hold a secret |
 | `otel` | OpenTelemetry exporters (optional, all off locally) |
 
+### Adding an endpoint
+
+One endpoint per knowledge base, sharing the tools:
+
+1. Add a value to `McpServer` (`src/models/config/McpServer.enum.ts`), and an entry under that key in `config/test.json`, since every key is required.
+2. Add the `mcpServers` entry to the deployment's values: its own `path`, `kb`, `name`, `title`, `description` and `auth`. Say what the knowledge base covers in `description`, because the tools' own text is generic.
+3. Give it an Authentik application with `reader` and `editor` roles, and add that application to the `accesses` of the shared client registration.
+
+The route and the metadata rewrite cover every path under `/kb`. Check the first endpoint's fixtures in the specs too: a spec that lists `mcpServers` by key has to name the new one.
+
 ## Upstream token
 
 The server calls knowledge-base-api as itself, never with a caller's token. http-provider's `token-exchange` caches the token until the API answers `401` — the token expired after its 10 minutes — then fetches a new one and retries that call once. No refresh code of its own: one refused call per token lifetime, and only while the server is in use.

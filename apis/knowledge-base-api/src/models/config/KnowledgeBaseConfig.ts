@@ -1,6 +1,7 @@
 import z from 'zod';
 import { KNOWLEDGE_BASE_ID_PATTERN } from '../KnowledgeBaseId.js';
 import { ContentType } from './ContentType.enum.js';
+import { GitHubAppConfigSchema } from './GitHubAppConfig.js';
 import { KnowledgeBaseSource } from './KnowledgeBaseSource.enum.js';
 
 export const ChunkingConfigSchema = z.object({
@@ -34,7 +35,9 @@ export const GitSourceConfigSchema = z.object({
     branch: z.string().min(1).optional().describe('Branch to index. Defaults to the repository\'s default branch.'),
     include: z.array(z.string()).default(['raw/', 'work/', 'mirror/'])
         .describe('Path prefixes to index. The first path segment becomes `metadata.area`.'),
-    extensions: z.array(z.string().startsWith('.')).default(['.md'])
+    extensions: z.array(z.string().startsWith('.')).default(['.md']),
+    github: GitHubAppConfigSchema.optional()
+        .describe('The GitHub App of this knowledge base, installed on its repository and nothing else. Defaults to the root `github`.')
 }).prefault({});
 
 export const GitKnowledgeBaseConfigSchema = KnowledgeBaseBaseSchema.extend({

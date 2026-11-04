@@ -57,13 +57,13 @@ export class GitSourceAdapter implements SourceAdapter {
             return await this.read(cursor, signal);
         } catch (error) {
             // The installation may have changed (key rotated, App moved): find it again next run.
-            this.repositories.forget();
+            this.repositories.forget(this.kb);
             throw error;
         }
     }
 
     private async read(cursor: string | null, signal?: AbortSignal): Promise<SourceChanges> {
-        const repository = await this.repositories.repository();
+        const repository = await this.repositories.repository(this.kb);
         const branch = await this.github.getBranch(repository, this.kb.git.branch ?? repository.defaultBranch, signal);
         const head = branch.commit.sha;
 

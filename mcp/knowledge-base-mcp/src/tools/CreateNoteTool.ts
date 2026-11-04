@@ -15,10 +15,10 @@ export class CreateNoteTool {
     @Tool('create_note', { title: 'Create a note', annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false } })
     @Description(
         'Add a note to the knowledge base: one commit, under `raw/`, made for the signed-in user. ' +
-        'Write one for what someone will need later and cannot get from the repositories: a decision together with the alternatives ' +
-        'rejected and why (a DECISION requires `alternativesRejected`), a contract between repositories (MQTT topics, REST endpoints, ' +
+        'Write one for what someone will need later and cannot get from the source itself: a decision together with the alternatives ' +
+        'rejected and why (a DECISION requires `alternativesRejected`), a contract between systems (MQTT topics, REST endpoints, ' +
         'URLs, auth), or a gotcha that cost time. ' +
-        'Not for what the code or a repository\'s own docs already say, not for progress updates or chat summaries, and never for ' +
+        'Not for what the code or its own docs already say, not for progress updates or chat summaries, and never for ' +
         'anything personal or secret — the knowledge base is written as if public, and a secret is refused. ' +
         '`search` first: if a note already covers it, write a new one that `supersedes` it instead of a duplicate. Notes are never ' +
         'rewritten. ' +

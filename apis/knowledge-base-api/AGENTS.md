@@ -18,7 +18,7 @@ Keeps a searchable index of one or more knowledge bases in Postgres (full-text +
 
 ## Rules
 
-- **Never configure a repository name.** The git source discovers it from the App's installation (exactly one repository, or it refuses). This repo and the deployment values are public.
+- **Never configure a repository name.** The git source discovers it from the App's installation (exactly one repository per App, or it refuses). This repo and the deployment values are public. A second repository is a second App, in that knowledge base's `git.github`: installing `knowledge-base-updater` on a second repository would also fail the `notify-knowledge-base` workflows, which need it on exactly one.
 - **Indexing and search embed through `EmbeddingService` only**, so a chunk and a question are always shaped by the same model template. A template change changes every vector: add a new model entry instead of editing one.
 - **Search degrades, it does not fail**, when the question cannot be embedded: `mode: FULLTEXT`. Readiness depends on Postgres only (`postgres` is the one critical health check).
 - **Default weights are vector only, because that is what was measured.** Change `search.weights` only after measuring the blend with `scripts/evaluate-search.mjs` against the real question set.

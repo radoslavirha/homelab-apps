@@ -28,7 +28,7 @@ export class GitSourceWriter implements SourceWriter {
     ) {}
 
     public async read(id: string): Promise<SourceFile | null> {
-        const repository = await this.repositories.repository();
+        const repository = await this.repositories.repository(this.kb);
         let file: GitHubContentDTO;
 
         try {
@@ -49,7 +49,7 @@ export class GitSourceWriter implements SourceWriter {
     }
 
     public async write(id: string, content: string, version: string | null, message: string): Promise<SourceWriteResult> {
-        const repository = await this.repositories.repository();
+        const repository = await this.repositories.repository(this.kb);
         const request = CommonUtils.buildModelPartial(GitHubContentPutRequestDTO, {
             message,
             content: Buffer.from(content, 'utf-8').toString('base64'),
@@ -64,7 +64,7 @@ export class GitSourceWriter implements SourceWriter {
     }
 
     public async delete(id: string, version: string, message: string): Promise<SourceDeleteResult> {
-        const repository = await this.repositories.repository();
+        const repository = await this.repositories.repository(this.kb);
         const request = CommonUtils.buildModelStrict(GitHubContentDeleteRequestDTO, {
             message,
             sha: version,
