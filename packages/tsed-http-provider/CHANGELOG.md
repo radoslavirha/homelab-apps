@@ -1,5 +1,13 @@
 # @radoslavirha/tsed-http-provider
 
+## 0.2.14
+
+### Patch Changes
+
+- [#412](https://github.com/radoslavirha/homelab-apps/pull/412) [`7b3d6bb`](https://github.com/radoslavirha/homelab-apps/commit/7b3d6bb2d9895c4dd7136b6391fb51f588b39247) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Outbound timeout and open-circuit log lines now carry the request's method, url and duration.
+- Updated dependencies [[`7b3d6bb`](https://github.com/radoslavirha/homelab-apps/commit/7b3d6bb2d9895c4dd7136b6391fb51f588b39247)]:
+  - @radoslavirha/http-provider@0.4.3
+
 ## 0.2.13
 
 ### Patch Changes
