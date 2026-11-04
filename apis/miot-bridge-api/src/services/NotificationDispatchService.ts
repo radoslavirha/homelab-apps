@@ -48,6 +48,12 @@ interface QueuedNotification {
  *
  * A property already waiting has its value replaced in place: the newest value is the only one
  * worth sending, and it keeps the queue bounded by the number of subscribed properties.
+ *
+ * ### Why the queue stops while the client is offline
+ * mqtt.js accepts a publish while offline and sends everything it holds the moment it reconnects,
+ * which turns paced messages back into a burst. So messages stay here until the client is back. The
+ * first one then waits a full interval too, because mqtt.js resends a publish the broker never
+ * acknowledged as soon as it reconnects.
  */
 @Service()
 @Scope(ProviderScope.SINGLETON)
@@ -61,6 +67,12 @@ export class NotificationDispatchService implements OnDestroy {
     /** Start of the last publish. Far in the past at boot, so the first message goes out at once. */
     private lastPublishAt = Number.NEGATIVE_INFINITY;
 
+    private readonly onReconnect = (): void => {
+        this.clearTimer();
+        this.lastPublishAt = Date.now();
+        this.scheduleNext();
+    };
+
     constructor(
         private readonly configService: ConfigService,
         @Inject(MqttClientProvider) private readonly mqttClient: MqttClient | null,
@@ -69,6 +81,10 @@ export class NotificationDispatchService implements OnDestroy {
         logger: Logger
     ) {
         this.logger = logger.child('NOTIFICATION_DISPATCH');
+
+        // The provider resolves only after the first connect, so every `connect` seen here is a
+        // reconnect.
+        this.mqttClient?.on('connect', this.onReconnect);
     }
 
     /**
@@ -94,10 +110,8 @@ export class NotificationDispatchService implements OnDestroy {
      * pod publishes every subscribed property anyway.
      */
     public $onDestroy(): void {
-        if (CommonUtils.notNil(this.timer)) {
-            clearTimeout(this.timer);
-            this.timer = undefined;
-        }
+        this.mqttClient?.off('connect', this.onReconnect);
+        this.clearTimer();
 
         if (!CommonUtils.isEmpty(this.queue)) {
             this.logger.info(`Dropping ${this.queue.length} queued notification(s) on shutdown.`);
@@ -135,8 +149,19 @@ export class NotificationDispatchService implements OnDestroy {
         }
     }
 
+    private clearTimer(): void {
+        if (CommonUtils.notNil(this.timer)) {
+            clearTimeout(this.timer);
+            this.timer = undefined;
+        }
+    }
+
     private publishNext(): void {
         this.timer = undefined;
+
+        if (this.mqttClient?.connected !== true) {
+            return;
+        }
 
         const next = this.queue.shift();
 

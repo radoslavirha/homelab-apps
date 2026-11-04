@@ -18,6 +18,7 @@ const NOTIFICATIONS_TOPIC = `miot-bridge/device/${DEVICE_ID}/notifications`;
 const NOTIFICATION_SPAN = 'publish miot-bridge/device/{deviceId}/notifications';
 
 class FakeMqttClient extends EventEmitter {
+    public connected = true;
     public readonly publishAsync = vi.fn(async () => undefined);
     public readonly endAsync = vi.fn(async () => undefined);
 }
@@ -178,6 +179,65 @@ describe('NotificationDispatchService', () => {
         await vi.advanceTimersByTimeAsync(5_000);
 
         expect(client.publishAsync).toHaveBeenCalledTimes(1);
+    });
+
+    // mqtt.js holds a publish made while offline and flushes all of them on reconnect, which is a
+    // burst again. A rolling restart causes this: both pods share a client id and kick each other.
+    it('Should keep messages queued while offline and pace them after a reconnect', async () => {
+        expect.assertions(4);
+        vi.useFakeTimers();
+        usePublishInterval(1_000);
+
+        service.receive(change('vacuum:mode', 1));
+        client.connected = false;
+        service.receive(change('brush-cleaner-9:brush-life-level', 90));
+        service.receive(change('brush-cleaner-10:brush-life-level', 91));
+        await vi.advanceTimersByTimeAsync(5_000);
+
+        expect(client.publishAsync).toHaveBeenCalledTimes(1);
+
+        client.connected = true;
+        client.emit('connect');
+
+        expect(client.publishAsync).toHaveBeenCalledTimes(1);
+
+        await vi.advanceTimersByTimeAsync(1_000);
+
+        expect(client.publishAsync).toHaveBeenCalledTimes(2);
+
+        await vi.advanceTimersByTimeAsync(1_000);
+
+        expect(publishedBodies()).toEqual([
+            JSON.stringify({ 'vacuum:mode': 1 }),
+            JSON.stringify({ 'brush-cleaner-9:brush-life-level': 90 }),
+            JSON.stringify({ 'brush-cleaner-10:brush-life-level': 91 })
+        ]);
+    });
+
+    // mqtt.js resends an unacknowledged publish as soon as it reconnects, so the next message must
+    // keep its distance from that resend even if the link was down for longer than the interval.
+    it('Should wait a full interval after a reconnect while a timer was already running', async () => {
+        expect.assertions(2);
+        vi.useFakeTimers();
+        usePublishInterval(1_000);
+
+        service.receive(change('vacuum:mode', 1));
+        service.receive(change('vacuum:status', 2));
+        await vi.advanceTimersByTimeAsync(900);
+        client.emit('connect');
+        await vi.advanceTimersByTimeAsync(999);
+
+        expect(client.publishAsync).toHaveBeenCalledTimes(1);
+
+        await vi.advanceTimersByTimeAsync(1);
+
+        expect(client.publishAsync).toHaveBeenCalledTimes(2);
+    });
+
+    it('Should stop reacting to reconnects after shutdown', () => {
+        service.$onDestroy();
+
+        expect(client.listenerCount('connect')).toBe(0);
     });
 
     // A delayed publish runs from a timer, so without restoring the context it would lose the read
