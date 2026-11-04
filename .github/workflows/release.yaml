@@ -11,6 +11,12 @@ jobs:
   release:
     name: Release APPs
     runs-on: ubuntu-latest
+    # changesets/action commits through one fixed temp branch, so two runs at once
+    # break each other. Job level, so a deploy waiting for approval blocks nothing.
+    # Dropping a pending run is safe: the newest run sees every changeset on main.
+    concurrency:
+      group: release-apps
+      cancel-in-progress: false
     outputs:
       matrix: ${{ steps.set-apps-matrix.outputs.json }}
     permissions:
