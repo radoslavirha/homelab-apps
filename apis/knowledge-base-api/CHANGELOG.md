@@ -1,5 +1,11 @@
 # knowledge-base-api
 
+## 0.5.0
+
+### Minor Changes
+
+- [#424](https://github.com/radoslavirha/homelab-apps/pull/424) [`671bf0c`](https://github.com/radoslavirha/homelab-apps/commit/671bf0c1ae683bc54e2b0e4167856fd8712ed670) Thanks [@radoslavirha](https://github.com/radoslavirha)! - A git knowledge base can name its repository in the optional `git.repository`, so one GitHub App can serve several knowledge bases. Unset, the App must still cover exactly one repository.
+
 ## 0.4.0
 
 ### Minor Changes
