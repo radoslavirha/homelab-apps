@@ -1,5 +1,11 @@
 # knowledge-base
 
+## 0.6.0
+
+### Minor Changes
+
+- [#430](https://github.com/radoslavirha/homelab-apps/pull/430) [`70bdcd6`](https://github.com/radoslavirha/homelab-apps/commit/70bdcd612002ed6763de427bc748d3a95e0d1fef) Thanks [@radoslavirha](https://github.com/radoslavirha)! - MCP endpoints come from config alone: `mcpServers` takes any number of `UPPER_SNAKE_CASE` keys (at least one), and the fixed `McpServer` enum is gone.
+
 ## 0.5.0
 
 ### Minor Changes
