@@ -6,7 +6,7 @@ import SuperTest from 'supertest';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Server } from '../Server.js';
 import { ConfigService } from '../services/ConfigService.js';
-import { TEST_PUBLIC_URL, TEST_SERVER, userToken } from '../test/fixtures.js';
+import { TEST_PUBLIC_URL, TEST_SERVERS, userToken } from '../test/fixtures.js';
 import * as tools from '../tools/index.js';
 import { toMcpSettings } from './toMcpSettings.js';
 
@@ -65,7 +65,7 @@ describe('MCP endpoint auth (integration)', () => {
     });
 
     beforeEach(PlatformTest.bootstrap(Server, {
-        mcp: toMcpSettings({ publicURL: TEST_PUBLIC_URL, mcpServers: { DEVELOPMENT_KB: TEST_SERVER } }, { version: '9.9.9' }, ObjectUtils.values(tools))
+        mcp: toMcpSettings({ publicURL: TEST_PUBLIC_URL, mcpServers: TEST_SERVERS }, { version: '9.9.9' }, ObjectUtils.values(tools))
     }));
     beforeEach(() => {
         request = SuperTest.agent(PlatformTest.callback());

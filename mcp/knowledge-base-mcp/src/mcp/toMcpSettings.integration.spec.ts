@@ -2,13 +2,11 @@ import { Serializer } from '@radoslavirha/tsed-common';
 import { ObjectUtils } from '@radoslavirha/utils';
 import { PlatformTest } from '@tsed/platform-http/testing';
 import SuperTest from 'supertest';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 import { SearchResponseDTO } from '../endpoints/knowledge-base-api/dto/SearchResponseDTO.js';
 import { KnowledgeBaseApiEndpoint } from '../endpoints/knowledge-base-api/KnowledgeBaseApiEndpoint.js';
-import type { McpServerConfig } from '../models/config/McpServerConfig.js';
 import { Server } from '../Server.js';
-import { ConfigService } from '../services/ConfigService.js';
-import { TEST_PUBLIC_URL, TEST_SERVER, userToken } from '../test/fixtures.js';
+import { TEST_LOXONE_ROLES, TEST_LOXONE_SERVER, TEST_PUBLIC_URL, TEST_SERVERS, userToken } from '../test/fixtures.js';
 import * as tools from '../tools/index.js';
 import { toMcpSettings } from './toMcpSettings.js';
 
@@ -16,45 +14,17 @@ const MCP_HEADERS = { Accept: 'application/json, text/event-stream', 'Content-Ty
 const API = { description: 'Test description', version: '9.9.9' };
 const SEARCH = { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'search', arguments: { query: 'q' } } };
 
-/** A second endpoint: its own path, knowledge base, audience and roles. */
-const OTHER_ROLES = { READER: 'knowledge-base-mcp-other.reader', EDITOR: 'knowledge-base-mcp-other.editor' };
-const OTHER_SERVER: McpServerConfig = {
-    ...TEST_SERVER,
-    path: '/other',
-    kb: 'other',
-    name: 'other-server',
-    title: 'Other title',
-    auth: { ...TEST_SERVER.auth, audience: 'other-audience', roles: OTHER_ROLES }
-};
-
-/**
- * Two endpoints in one app, which production has never run: `McpServer` has one value, so
- * `toMcpSettings` is called once per endpoint here, as it maps each value when there are two.
- */
-const MCP = [
-    ...toMcpSettings({ publicURL: TEST_PUBLIC_URL, mcpServers: { DEVELOPMENT_KB: TEST_SERVER } }, API, ObjectUtils.values(tools)),
-    ...toMcpSettings({ publicURL: TEST_PUBLIC_URL, mcpServers: { DEVELOPMENT_KB: OTHER_SERVER } }, API, ObjectUtils.values(tools))
-];
+/** The two endpoints as index.ts builds them, from config/test.json's values. */
+const MCP = toMcpSettings({ publicURL: TEST_PUBLIC_URL, mcpServers: TEST_SERVERS }, API, ObjectUtils.values(tools));
 
 describe('two MCP endpoints in one app (integration)', () => {
     let request: SuperTest.Agent;
     let search: MockInstance<KnowledgeBaseApiEndpoint['search']>;
 
-    const otherToken = (): Promise<string> => userToken({ audience: 'other-audience', claims: { roles: [OTHER_ROLES.READER] } });
+    const loxoneToken = (): Promise<string> => userToken({ audience: TEST_LOXONE_SERVER.auth.audience, claims: { roles: [TEST_LOXONE_ROLES.READER] } });
 
     const post = (path: string, token: string, body: object = SEARCH): SuperTest.Test =>
         request.post(path).set(MCP_HEADERS).set('Authorization', `Bearer ${token}`).send(body);
-
-    beforeAll(() => {
-        const original = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(ConfigService.prototype), 'config')!.get!;
-
-        vi.spyOn(ConfigService.prototype, 'config', 'get').mockImplementation(function (this: ConfigService) {
-            const value = original.call(this) as ConfigService['config'];
-
-            return { ...value, mcpServers: { ...value.mcpServers, OTHER: OTHER_SERVER } };
-        });
-    });
-    afterAll(() => vi.restoreAllMocks());
 
     beforeEach(PlatformTest.bootstrap(Server, { mcp: MCP }));
     beforeEach(() => {
@@ -66,7 +36,7 @@ describe('two MCP endpoints in one app (integration)', () => {
 
     it.each([
         ['/development', 'development', () => userToken()],
-        ['/other', 'other', otherToken]
+        ['/loxone', 'loxone', loxoneToken]
     ])('%s searches only its own knowledge base', async (path, kb, token) => {
         expect.assertions(2);
 
@@ -83,21 +53,21 @@ describe('two MCP endpoints in one app (integration)', () => {
         const names = async (path: string, token: string): Promise<string[]> =>
             ((await post(path, token, list)).body.result.tools as { name: string }[]).map(({ name }) => name).sort();
 
-        expect(await names('/other', await otherToken())).toEqual(await names('/development', await userToken()));
+        expect(await names('/loxone', await loxoneToken())).toEqual(await names('/development', await userToken()));
     });
 
     it('refuses a token issued for the other endpoint', async () => {
         expect.assertions(3);
 
-        expect((await post('/other', await userToken())).status).toBe(401);
-        expect((await post('/development', await otherToken())).status).toBe(401);
+        expect((await post('/loxone', await userToken())).status).toBe(401);
+        expect((await post('/development', await loxoneToken())).status).toBe(401);
         expect(search).not.toHaveBeenCalled();
     });
 
     it('refuses the other endpoint\'s role with the right audience', async () => {
         expect.assertions(1);
 
-        const response = await post('/other', await userToken({ audience: 'other-audience' }));
+        const response = await post('/loxone', await userToken({ audience: TEST_LOXONE_SERVER.auth.audience }));
 
         expect(response.status).toBe(403);
     });
@@ -106,7 +76,7 @@ describe('two MCP endpoints in one app (integration)', () => {
         expect.assertions(2);
 
         const note = { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'create_note', arguments: { title: 'A gotcha', type: 'GOTCHA', context: 'c', decisionOrFact: 'd' } } };
-        const response = await post('/other', await otherToken(), note);
+        const response = await post('/loxone', await loxoneToken(), note);
 
         expect(response.body.result.isError).toBe(true);
         expect(response.body.result.content[0].text).toContain('Insufficient permissions.');
@@ -118,6 +88,6 @@ describe('two MCP endpoints in one app (integration)', () => {
         const metadata = async (path: string): Promise<unknown> => (await request.get(`/.well-known/oauth-protected-resource${path}`)).body;
 
         expect(await metadata('/development')).toMatchObject({ resource: `${TEST_PUBLIC_URL}/development`, resource_name: 'Test title' });
-        expect(await metadata('/other')).toMatchObject({ resource: `${TEST_PUBLIC_URL}/other`, resource_name: 'Other title' });
+        expect(await metadata('/loxone')).toMatchObject({ resource: `${TEST_PUBLIC_URL}/loxone`, resource_name: 'Loxone title' });
     });
 });

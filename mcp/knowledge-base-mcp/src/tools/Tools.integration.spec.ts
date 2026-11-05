@@ -18,7 +18,7 @@ import { toMcpSettings } from '../mcp/toMcpSettings.js';
 import { Server } from '../Server.js';
 import { ConfigService } from '../services/ConfigService.js';
 import { KnowledgeBaseRole } from '../models/config/KnowledgeBaseRole.enum.js';
-import { TEST_PUBLIC_URL, TEST_ROLES, TEST_SERVER, userToken } from '../test/fixtures.js';
+import { TEST_PUBLIC_URL, TEST_ROLES, TEST_SERVERS, userToken } from '../test/fixtures.js';
 import * as tools from './index.js';
 
 const MCP_HEADERS = { Accept: 'application/json, text/event-stream', 'Content-Type': 'application/json' };
@@ -54,7 +54,7 @@ describe('Tools (integration, through MCP)', () => {
     // index.ts builds the endpoints and registers the tools the same way.
     beforeEach(PlatformTest.bootstrap(Server, {
         mcp: toMcpSettings(
-            { publicURL: TEST_PUBLIC_URL, mcpServers: { DEVELOPMENT_KB: TEST_SERVER } },
+            { publicURL: TEST_PUBLIC_URL, mcpServers: TEST_SERVERS },
             { version: '9.9.9' },
             ObjectUtils.values(tools)
         )
@@ -427,7 +427,7 @@ describe('Writing tools (integration, through MCP to a fake knowledge-base-api)'
     });
 
     beforeEach(PlatformTest.bootstrap(Server, {
-        mcp: toMcpSettings({ publicURL: TEST_PUBLIC_URL, mcpServers: { DEVELOPMENT_KB: TEST_SERVER } }, { version: '9.9.9' }, ObjectUtils.values(tools))
+        mcp: toMcpSettings({ publicURL: TEST_PUBLIC_URL, mcpServers: TEST_SERVERS }, { version: '9.9.9' }, ObjectUtils.values(tools))
     }));
     beforeEach(async () => {
         callerToken = await userToken({ subject: 'radoslav', claims: { roles: [TEST_ROLES.READER, TEST_ROLES.EDITOR] } });
