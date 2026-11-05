@@ -58,6 +58,29 @@ describe('ConfigSchema', () => {
         expect(issues(config)).toEqual([]);
     });
 
+    describe('git.repository', () => {
+        const withRepository = (repository: string): Record<string, unknown> => {
+            const config = base();
+            const [kb] = config.knowledgeBases as Record<string, unknown>[];
+
+            config.knowledgeBases = [{ ...kb, git: { repository } }];
+
+            return config;
+        };
+
+        it('is optional', () => {
+            expect(ConfigSchema.parse(base()).knowledgeBases[0].git.repository).toBeUndefined();
+        });
+
+        it.each(['owner/repo', 'Owner-1/repo.name_2', 'owner_x/REPO-3'])('accepts %s', (repository) => {
+            expect(ConfigSchema.parse(withRepository(repository)).knowledgeBases[0].git.repository).toBe(repository);
+        });
+
+        it.each(['', 'repo', 'owner/', '/repo', 'owner/repo/extra', 'owner/re po', 'https://github.test/owner/repo', 'own.er/repo'])('refuses "%s"', (repository) => {
+            expect(issues(withRepository(repository)).some((issue) => issue.startsWith('knowledgeBases.0.git.repository'))).toBe(true);
+        });
+    });
+
     it('fails at boot on duplicate knowledge base ids', () => {
         const config = base();
         const [kb] = config.knowledgeBases as unknown[];

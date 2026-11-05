@@ -4,9 +4,10 @@ import z from 'zod';
  * A GitHub App the git source reads repositories as: the root `github`, or a knowledge base's own
  * `git.github`.
  *
- * **No repository name, deliberately.** The service asks the App's installations which
- * repository they cover, so neither this repo nor the deployment values (both public) name a
- * private repository. A second repository is therefore a second App.
+ * **No repository name here.** An App may cover several repositories; a knowledge base says which
+ * one it reads in its own `git.repository`, or the App must cover exactly one. Neither this repo
+ * nor the deployment values (both public) name a private repository: the deployment reads
+ * `git.repository` from a secret.
  */
 export const GitHubAppConfigSchema = z.object({
     clientId: z.string().min(1).describe('The App\'s client ID — the JWT issuer GitHub expects.'),
