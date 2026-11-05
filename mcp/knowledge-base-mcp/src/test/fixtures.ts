@@ -26,6 +26,22 @@ export const TEST_SERVER: McpServerConfig = {
     }
 };
 
+/** config/test.json's second endpoint's roles, by level. */
+export const TEST_LOXONE_ROLES = { READER: 'knowledge-base-mcp-loxone.reader', EDITOR: 'knowledge-base-mcp-loxone.editor' };
+
+/** config/test.json's second endpoint: its own path, knowledge base, audience and roles. */
+export const TEST_LOXONE_SERVER: McpServerConfig = {
+    ...TEST_SERVER,
+    path: '/loxone',
+    kb: 'loxone',
+    name: 'loxone-server',
+    title: 'Loxone title',
+    auth: { ...TEST_SERVER.auth, audience: 'test-loxone-audience', roles: TEST_LOXONE_ROLES }
+};
+
+/** Every `McpServer` key, as the config schema and `toMcpSettings` require. */
+export const TEST_SERVERS = { DEVELOPMENT_KB: TEST_SERVER, LOXONE_KB: TEST_LOXONE_SERVER };
+
 /** A token the test endpoint accepts — a reader — unless `options` say otherwise. */
 export const userToken = (options: MintTestTokenOptions = {}): Promise<string> =>
     mintTestToken({ ...options, claims: { roles: [TEST_ROLES.READER], ...options.claims } });

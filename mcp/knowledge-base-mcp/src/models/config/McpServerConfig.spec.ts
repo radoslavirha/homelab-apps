@@ -18,6 +18,13 @@ describe('createMcpServersSchema', () => {
         expect(result.error?.issues[0].path).toEqual(['HOME_KB']);
     });
 
+    it('ignores an entry for a key this version does not mount, so values can add an endpoint before its image', () => {
+        const result = schema.safeParse({ DEVELOPMENT_KB: server('/development'), HOME_KB: server('/home'), NEWER_KB: server('/newer') });
+
+        expect(result.success).toBe(true);
+        expect(result.data).not.toHaveProperty('NEWER_KB');
+    });
+
     it('refuses two servers on one path, since one would shadow the other', () => {
         const result = schema.safeParse({ DEVELOPMENT_KB: server('/shared'), HOME_KB: server('/shared') });
 

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { McpTokenVerifier } from '../auth/McpTokenVerifier.js';
-import { TEST_SERVER } from '../test/fixtures.js';
+import { TEST_SERVER, TEST_SERVERS } from '../test/fixtures.js';
 import { resourceOf, toMcpSettings } from './toMcpSettings.js';
 
 class SomeTool {}
 
-const CONFIG = { publicURL: 'https://mcp.test/kb', mcpServers: { DEVELOPMENT_KB: TEST_SERVER } };
+const CONFIG = { publicURL: 'https://mcp.test/kb', mcpServers: TEST_SERVERS };
 
 describe('toMcpSettings', () => {
     it('mounts one endpoint per MCP server, at its configured path, with the tools and the app version', () => {
@@ -16,12 +16,19 @@ describe('toMcpSettings', () => {
             description: 'From package.json',
             version: '1.2.3',
             tools: [SomeTool]
+        }), expect.objectContaining({
+            path: '/loxone',
+            name: 'loxone-server',
+            title: 'Loxone title',
+            description: 'From package.json',
+            version: '1.2.3',
+            tools: [SomeTool]
         })]);
     });
 
     it('prefers the server\'s own description over the package one', () => {
         const [settings] = toMcpSettings(
-            { ...CONFIG, mcpServers: { DEVELOPMENT_KB: { ...TEST_SERVER, description: 'Its own' } } },
+            { ...CONFIG, mcpServers: { ...TEST_SERVERS, DEVELOPMENT_KB: { ...TEST_SERVER, description: 'Its own' } } },
             { description: 'From package.json', version: '1.2.3' },
             []
         );

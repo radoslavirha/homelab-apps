@@ -1,6 +1,6 @@
 # Homelab Apps — Knowledge Base
 
-> Maintained by `/updating-docs` skill. Last updated: 2026-10-27.
+> Maintained by `/updating-docs` skill. Last updated: 2026-11-05.
 
 pnpm monorepo of small independent Node.js APIs and UIs (Ts.ED, TypeScript ESM).
 
@@ -10,7 +10,7 @@ pnpm monorepo of small independent Node.js APIs and UIs (Ts.ED, TypeScript ESM).
 |------|------|---------|
 | `interactive-map-feeder-api` | API | Fetches ČHMÚ precipitation radar, composites image layers, serves city LED RGB values for LaskaKit IoT map |
 | `knowledge-base-api` | API | Indexes knowledge bases from pluggable sources (git via a GitHub App first) into Postgres + pgvector, serves hybrid (full-text + vector) search over an internal REST API, and commits notes and specs back to a writable source |
-| `knowledge-base-mcp` | MCP | MCP server in front of `knowledge-base-api`: one endpoint per audience (`/development` today), sign-in through Authentik; `search` and `read` for readers, `create_note`, `write_document` and `delete_document` for editors, each write one commit made for the signed-in user |
+| `knowledge-base-mcp` | MCP | MCP server in front of `knowledge-base-api`: one endpoint per audience (`/development`, `/loxone`), sign-in through Authentik; `search` and `read` for readers, `create_note`, `write_document` and `delete_document` for editors, each write one commit made for the signed-in user |
 | `miot-bridge-api` | API | Gateway between home automation controllers and Xiaomi MIoT devices. Manages device registry, translates commands, polls properties, dispatches change notifications |
 | `qr-manager-api` | API | QR code redirect manager: allocates slugs, stores slug→URL, resolves via 302 redirect, renders QR images |
 | `qr-manager-ui` | UI | Admin UI for `qr-manager-api`: create/edit/deactivate QR records, download images |
@@ -176,7 +176,7 @@ graph LR
     MBA <-->|TCP| MongoDB1[("MongoDB")]
     MBA -->|MQTT · HTTP notifications| HA
 
-    Clients["MCP clients\nClaude Code, phone"] -->|MCP /development| KBM["knowledge-base-mcp"]
+    Clients["MCP clients\nClaude Code, phone"] -->|MCP /development, /loxone| KBM["knowledge-base-mcp"]
     KBM -->|REST /search /documents /notes| KBA["knowledge-base-api"]
     KBA <-->|TCP| Postgres[("Postgres\npgvector")]
     KBA -->|HTTP /api/embed| Ollama["Ollama\nserver2"]
