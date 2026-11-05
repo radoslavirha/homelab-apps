@@ -80,8 +80,8 @@ describe('NotificationDispatchService', () => {
 
     const publishedBodies = (): string[] => (client.publishAsync.mock.calls as unknown as [string, string][]).map(([, body]) => body);
 
-    // Loxone reads every property through one subscribe block and loses messages sent closer
-    // together than about a second, so a burst must leave the bridge one message at a time.
+    // Loxone reads every property through one subscription and processes only the newest message
+    // per 2 s, so a burst must leave the bridge one message at a time.
     it('Should send a burst one message per interval, in order', async () => {
         expect.assertions(4);
         vi.useFakeTimers();
@@ -108,6 +108,10 @@ describe('NotificationDispatchService', () => {
             JSON.stringify({ 'brush-cleaner-10:brush-life-level': 91 }),
             JSON.stringify({ 'filter:filter-life-level': 92 })
         ]);
+    });
+
+    it('Should default to an interval above the 2 s Loxone evaluates a subscription at', () => {
+        expect(DEFAULT_PUBLISH_INTERVAL_MS).toBeGreaterThan(2_000);
     });
 
     it('Should apply the default interval when none is configured', async () => {
