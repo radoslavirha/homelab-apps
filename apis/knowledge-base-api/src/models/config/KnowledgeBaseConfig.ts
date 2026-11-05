@@ -4,6 +4,9 @@ import { ContentType } from './ContentType.enum.js';
 import { GitHubAppConfigSchema } from './GitHubAppConfig.js';
 import { KnowledgeBaseSource } from './KnowledgeBaseSource.enum.js';
 
+/** `owner/name`, in the characters GitHub allows in each. */
+const GITHUB_REPOSITORY_PATTERN = /^[A-Za-z0-9_-]+\/[A-Za-z0-9._-]+$/;
+
 export const ChunkingConfigSchema = z.object({
     /**
      * A section longer than this is split at paragraph boundaries, the heading kept on every
@@ -36,8 +39,10 @@ export const GitSourceConfigSchema = z.object({
     include: z.array(z.string()).default(['raw/', 'work/', 'mirror/'])
         .describe('Path prefixes to index. The first path segment becomes `metadata.area`.'),
     extensions: z.array(z.string().startsWith('.')).default(['.md']),
+    repository: z.string().regex(GITHUB_REPOSITORY_PATTERN).optional()
+        .describe('`owner/name` of the repository to read, from those the App covers, compared case-insensitively. Required when the App covers several. Comes from a secret, never from values.'),
     github: GitHubAppConfigSchema.optional()
-        .describe('The GitHub App of this knowledge base, installed on its repository and nothing else. Defaults to the root `github`.')
+        .describe('The GitHub App of this knowledge base. Defaults to the root `github`.')
 }).prefault({});
 
 export const GitKnowledgeBaseConfigSchema = KnowledgeBaseBaseSchema.extend({

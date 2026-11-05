@@ -31,6 +31,8 @@ const appOptions: unknown[] = [];
 const INSTALLED = { owner: { login: 'someone', id: 1 }, name: 'kb', default_branch: 'main', html_url: 'https://github.test/someone/kb', private: true };
 const OTHER_CLIENT_ID = 'Iv-other-client-id';
 const OTHER_INSTALLED = { ...INSTALLED, name: 'other-kb', html_url: 'https://github.test/someone/other-kb' };
+/** What the App's installations list, when a test sets it; otherwise one repository per App. */
+let listing: (() => AsyncGenerator<{ octokit: unknown; repository: unknown }>) | undefined;
 
 vi.mock('octokit', async (importOriginal) => {
     const original = await importOriginal<typeof import('octokit')>();
@@ -43,6 +45,12 @@ vi.mock('octokit', async (importOriginal) => {
             return {
                 eachRepository: {
                     iterator: async function* () {
+                        if (listing !== undefined) {
+                            yield* listing();
+
+                            return;
+                        }
+
                         yield options.appId === OTHER_CLIENT_ID
                             ? { octokit: otherOctokit, repository: OTHER_INSTALLED }
                             : { octokit, repository: INSTALLED };
@@ -71,6 +79,7 @@ describe('GitHubEndpoint', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         appOptions.length = 0;
+        listing = undefined;
         github = PlatformTest.get<GitHubEndpoint>(GitHubEndpoint);
         app = PlatformTest.get<ConfigService>(ConfigService).config.github!;
     });
@@ -184,6 +193,111 @@ describe('GitHubEndpoint', () => {
             await github.listRepositories(app);
             await github.getBranch(otherRepository, 'main');
 
+            expect(otherOctokit.rest.repos.getBranch).toHaveBeenCalledOnce();
+        });
+    });
+
+    describe('with two repositories on one App', () => {
+        const BRANCH = { data: { name: 'main', commit: { sha: 'abc', url: 'x' }, protected: false } };
+        const FIRST = { octokit, repository: INSTALLED };
+        const SECOND = { octokit: otherOctokit, repository: OTHER_INSTALLED };
+        let first: GitHubRepositoryDTO;
+        let second: GitHubRepositoryDTO;
+
+        beforeEach(async () => {
+            octokit.rest.repos.getBranch.mockResolvedValue(BRANCH);
+            otherOctokit.rest.repos.getBranch.mockResolvedValue(BRANCH);
+            listing = async function* () {
+                yield FIRST;
+                yield SECOND;
+            };
+            [first, second] = await github.listRepositories(app);
+        });
+
+        it('keeps a client for each', async () => {
+            expect.assertions(2);
+
+            await github.getBranch(first, 'main');
+            await github.getBranch(second, 'main');
+
+            expect(octokit.rest.repos.getBranch).toHaveBeenCalledOnce();
+            expect(otherOctokit.rest.repos.getBranch).toHaveBeenCalledOnce();
+        });
+
+        it('keeps the other repository\'s client while a listing is running', async () => {
+            expect.assertions(1);
+
+            let finish = (): void => undefined;
+            const held = new Promise<void>((resolve) => {
+                finish = resolve;
+            });
+
+            listing = async function* () {
+                yield FIRST;
+                await held;
+                yield SECOND;
+            };
+
+            const rediscovery = github.listRepositories(app);
+
+            await new Promise((resolve) => setTimeout(resolve, 0));
+            await github.getBranch(second, 'main');
+            expect(otherOctokit.rest.repos.getBranch).toHaveBeenCalledOnce();
+
+            finish();
+            await rediscovery;
+        });
+
+        it('keeps both clients when a listing fails partway', async () => {
+            expect.assertions(3);
+
+            listing = async function* () {
+                yield FIRST;
+                throw new Error('GitHub down');
+            };
+
+            await expect(github.listRepositories(app)).rejects.toThrow('GitHub down');
+            await github.getBranch(first, 'main');
+            await github.getBranch(second, 'main');
+
+            expect(octokit.rest.repos.getBranch).toHaveBeenCalledOnce();
+            expect(otherOctokit.rest.repos.getBranch).toHaveBeenCalledOnce();
+        });
+
+        it('moves to the clients of the listing that succeeded', async () => {
+            expect.assertions(1);
+
+            const newer = { rest: { repos: { getBranch: vi.fn().mockResolvedValue(BRANCH) } } };
+
+            listing = async function* () {
+                yield FIRST;
+                yield { ...SECOND, octokit: newer };
+            };
+            await github.listRepositories(app);
+            await github.getBranch(second, 'main');
+
+            expect(newer.rest.repos.getBranch).toHaveBeenCalledOnce();
+        });
+
+        it('drops the client of a repository the App no longer covers, and only its own', async () => {
+            expect.assertions(2);
+
+            const other = { ...app, clientId: OTHER_CLIENT_ID };
+            const elsewhere = { octokit: otherOctokit, repository: { ...INSTALLED, name: 'elsewhere' } };
+
+            listing = async function* () {
+                yield elsewhere;
+            };
+
+            const [kept] = await github.listRepositories(other);
+
+            listing = async function* () {
+                yield FIRST;
+            };
+            await github.listRepositories(app);
+            await github.getBranch(kept, 'main');
+
+            await expect(github.getBranch(second, 'main')).rejects.toThrow(/list repositories first/);
             expect(otherOctokit.rest.repos.getBranch).toHaveBeenCalledOnce();
         });
     });

@@ -37,6 +37,12 @@ export const isGitHubWriteRefusal = (error: unknown): boolean =>
  */
 const DO_NOT_RETRY = [400, 401, 403, 404, 409, 410, 422, 451];
 
+/** An installation client, with the client ID of the App that listed its repository. */
+interface GitHubClient {
+    readonly clientId: string;
+    readonly octokit: Octokit;
+}
+
 /**
  * GitHub, as the GitHub App a knowledge base is configured with, through Octokit.
  *
@@ -62,7 +68,7 @@ export class GitHubEndpoint {
     /** By client ID. */
     private readonly apps = new Map<string, App>();
     /** By repository, with the client ID of the App that listed it. */
-    private readonly clients = new Map<string, { readonly clientId: string; readonly octokit: Octokit }>();
+    private readonly clients = new Map<string, GitHubClient>();
     private readonly log: BaseLogger;
 
     public constructor(
@@ -72,21 +78,33 @@ export class GitHubEndpoint {
         this.log = logger.child('GITHUB');
     }
 
-    /** Every repository any installation of the App can read. Another App's clients stay. */
+    /**
+     * Every repository any installation of the App can read. Another App's clients stay.
+     *
+     * The App's clients change only once the whole listing has succeeded, in one step: one
+     * knowledge base's rediscovery runs while another's run or write is using a client of the same
+     * App, and a listing that fails or is still running must not take that client away. A
+     * repository the App no longer covers loses its client here.
+     */
     public async listRepositories(config: GitHubAppConfig): Promise<GitHubRepositoryDTO[]> {
         const repositories: GitHubRepositoryDTO[] = [];
-
-        for (const [repository, client] of this.clients) {
-            if (client.clientId === config.clientId) {
-                this.clients.delete(repository);
-            }
-        }
+        const listed = new Map<string, GitHubClient>();
 
         for await (const { octokit, repository } of this.getApp(config).eachRepository.iterator()) {
             const dto = Serializer.deserialize(repository, GitHubRepositoryDTO);
 
-            this.clients.set(key(dto), { clientId: config.clientId, octokit: octokit as unknown as Octokit });
+            listed.set(key(dto), { clientId: config.clientId, octokit: octokit as unknown as Octokit });
             repositories.push(dto);
+        }
+
+        for (const [repository, client] of this.clients) {
+            if (client.clientId === config.clientId && !listed.has(repository)) {
+                this.clients.delete(repository);
+            }
+        }
+
+        for (const [repository, client] of listed) {
+            this.clients.set(repository, client);
         }
 
         return repositories;
