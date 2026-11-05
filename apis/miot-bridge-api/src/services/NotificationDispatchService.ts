@@ -17,10 +17,11 @@ const QOS = 1;
 /**
  * Default minimum gap between two publishes when `mqtt.notifications.publishIntervalMs` is unset.
  *
- * Measured against the Loxone Miniserver: 1 s between messages arrived, 500 ms lost one. The margin
- * above 1 s is there so that timer jitter cannot close the gap.
+ * Must stay above the 2 s at which the Loxone Miniserver evaluates a subscription. At 1.5 s every
+ * fourth message was overwritten in its cache. The margin above 2 s is there so that timer jitter and
+ * network delay cannot close the gap.
  */
-export const DEFAULT_PUBLISH_INTERVAL_MS = 1_500;
+export const DEFAULT_PUBLISH_INTERVAL_MS = 3_000;
 
 /** A notification waiting for its turn, with the trace it belongs to. */
 interface QueuedNotification {
@@ -39,9 +40,11 @@ interface QueuedNotification {
  * UDP stays solely for the MIoT protocol to the devices themselves.
  *
  * ### Why publishes are paced
- * Loxone reads every property through one subscribe block, and messages closer together than about
- * a second never reach its command recognition blocks. Consumables tend to change in the same tick,
- * and a restart publishes every subscription within milliseconds. The poller only publishes on
+ * Loxone reads every property through one subscription, and the Miniserver evaluates a subscription
+ * at most every 2 s: it caches what arrives in between and processes only the newest message, so the
+ * older ones never reach its command recognition blocks (https://www.loxone.com/enen/kb/mqtt).
+ * Consumables tend to change in the same tick, and a restart publishes every subscription within
+ * milliseconds. The poller only publishes on
  * change, so a value lost that way stayed wrong in Loxone until it changed again, which for a
  * consumable can be days. Every publish goes through one queue, so REST and the poller cannot
  * overlap either.

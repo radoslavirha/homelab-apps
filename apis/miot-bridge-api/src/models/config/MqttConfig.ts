@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const MqttNotificationConfigSchema = z.object({
     enabled: z.boolean().optional().describe('Whether MQTT outbound notifications are enabled.'),
-    publishIntervalMs: z.number().int().nonnegative().optional().describe('Minimum gap in milliseconds between two notification publishes. A burst is queued and sent one message at a time. 0 sends every message immediately while connected. Messages wait while the client is offline. Default: 1500.')
+    publishIntervalMs: z.number().int().nonnegative().optional().describe('Minimum gap in milliseconds between two notification publishes. A burst is queued and sent one message at a time. 0 sends every message immediately while connected. Messages wait while the client is offline. Keep it above 2000 for Loxone, which processes only the newest message per 2 s. Default: 3000.')
 });
 
 export type MqttNotificationConfig = z.infer<typeof MqttNotificationConfigSchema>;
