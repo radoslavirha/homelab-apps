@@ -27,7 +27,7 @@ try {
         rootModule: Server,
         ...config.server,
         api: config.api,
-        // One endpoint per McpServer, from `mcpServers`: Streamable HTTP, stateless — a new MCP
+        // One endpoint per `mcpServers` entry: Streamable HTTP, stateless — a new MCP
         // server per POST and no sessions, so any replica answers any request.
         mcp: toMcpSettings(config.config, config.api, ObjectUtils.values(tools))
     };

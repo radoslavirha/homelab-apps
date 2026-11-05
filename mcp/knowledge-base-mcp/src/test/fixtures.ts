@@ -39,7 +39,7 @@ export const TEST_LOXONE_SERVER: McpServerConfig = {
     auth: { ...TEST_SERVER.auth, audience: 'test-loxone-audience', roles: TEST_LOXONE_ROLES }
 };
 
-/** Every `McpServer` key, as the config schema and `toMcpSettings` require. */
+/** config/test.json's `mcpServers`: the two endpoints, under the keys production uses. */
 export const TEST_SERVERS = { DEVELOPMENT_KB: TEST_SERVER, LOXONE_KB: TEST_LOXONE_SERVER };
 
 /** A token the test endpoint accepts — a reader — unless `options` say otherwise. */

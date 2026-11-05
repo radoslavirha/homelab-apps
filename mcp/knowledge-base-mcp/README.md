@@ -67,14 +67,14 @@ All work on the endpoint's own knowledge base; none takes a `kb` (an extra `kb` 
 
 ## Configuration
 
-`config/localhost.json` (gitignored, local runs) and `config/test.json` (tests). Before a local run, put `knowledge-base-mcp`'s client secret into `externalApis.KNOWLEDGE_BASE_API.auth.request.body.client_secret` in `config/localhost.json` — it is read from the client's Authentik provider page and never committed. `config/localhost.json` needs an entry for every `McpServer` key, `LOXONE_KB` included, or the boot fails.
+`config/localhost.json` (gitignored, local runs) and `config/test.json` (tests). Before a local run, put `knowledge-base-mcp`'s client secret into `externalApis.KNOWLEDGE_BASE_API.auth.request.body.client_secret` in `config/localhost.json` — it is read from the client's Authentik provider page and never committed. `config/localhost.json` mounts whichever `mcpServers` entries it has; at least one is required.
 
 | Key | Description |
 |-----|-------------|
 | `server.httpPort` | Port to listen on |
 | `publicURL` | Required. Public base URL: scheme, host and route prefix, no endpoint path — `http://localhost:4004` locally, `https://mcp.irha.cz/kb` deployed. An endpoint's resource identifier (and the audience clients ask Authentik for) is this plus its `path` |
-| `mcpServers.<McpServer>` | One entry per MCP endpoint the app mounts (`DEVELOPMENT_KB`, `LOXONE_KB`): `path` (in the app; the public route adds its prefix, `/kb`, and Traefik strips it), `kb` (the knowledge base it serves, its id in knowledge-base-api, e.g. `development`, `loxone`), `name`, `title`, optional `description` (what clients are told the endpoint holds; defaults to the package's), and `auth`. Every key is required, or the boot fails naming it; a key this version does not know is ignored. Paths must differ |
-| `mcpServers.<McpServer>.auth` | Required. `issuer` (the shared client registration's Authentik issuer, advertised as the authorization server and the only `iss` accepted), `audience` (the endpoint's Authentik application for this environment), `key` (`{ source: jwks, uri: <issuer>jwks/ }`; an inline HS256 key in tests), `roles` (the endpoint's Authentik role per level: `READER` → `knowledge-base-mcp-<endpoint>.reader`, `EDITOR` → `knowledge-base-mcp-<endpoint>.editor`), `scopes` (default `openid profile email roles`; must include `profile` and `roles`) |
+| `mcpServers.<KEY>` | One entry per MCP endpoint the app mounts, as many as configured (production: `DEVELOPMENT_KB`, `LOXONE_KB`). The key is `UPPER_SNAKE_CASE` and names the endpoint in logs; no code refers to it. Each entry: `path` (in the app; the public route adds its prefix, `/kb`, and Traefik strips it), `kb` (the knowledge base it serves, its id in knowledge-base-api, e.g. `development`, `loxone`), `name`, `title`, optional `description` (what clients are told the endpoint holds; defaults to the package's), and `auth`. At least one entry is required. Paths must differ, ignoring case |
+| `mcpServers.<KEY>.auth` | Required. `issuer` (the shared client registration's Authentik issuer, advertised as the authorization server and the only `iss` accepted), `audience` (the endpoint's Authentik application for this environment), `key` (`{ source: jwks, uri: <issuer>jwks/ }`; an inline HS256 key in tests), `roles` (the endpoint's Authentik role per level: `READER` → `knowledge-base-mcp-<endpoint>.reader`, `EDITOR` → `knowledge-base-mcp-<endpoint>.editor`), `scopes` (default `openid profile email roles`; must include `profile` and `roles`) |
 | `externalApis.KNOWLEDGE_BASE_API` | knowledge-base-api: `baseURL` (from a laptop, the LAN route `https://api.server1.homelab.irha.cz/kb/knowledge-base`), resilience, and `auth` — `token-exchange` with a `client_credentials` request for `knowledge-base-mcp` (which holds `knowledge-base-api.editor`) to Authentik's token endpoint, form-encoded, scope `openid profile email roles` (without `profile`, `aud` is the bare client id and the API refuses the token) |
 | `health` | Health endpoint configuration (optional) |
 | `logger` | Log level and options (optional). `requests.request` and `requests.response` are forced off in code — a value here is ignored: a tool call's arguments are whole documents and may hold a secret |
@@ -82,15 +82,12 @@ All work on the endpoint's own knowledge base; none takes a `kb` (an extra `kb` 
 
 ### Adding an endpoint
 
-One endpoint per knowledge base, sharing the tools:
+One endpoint per knowledge base, sharing the tools. Config only — no code change, no release:
 
-1. Add a value to `McpServer` (`src/models/config/McpServer.enum.ts`), and an entry under that key in `config/test.json`, since every key is required.
-2. Add the `mcpServers` entry to the deployment's values: its own `path`, `kb`, `name`, `title`, `description` and `auth`. Say what the knowledge base covers in `description`, because the tools' own text is generic.
-3. Give it an Authentik application with `reader` and `editor` roles, and add that application to the `accesses` of the shared client registration.
+1. Add a `mcpServers` entry to the deployment's values under a new `UPPER_SNAKE_CASE` key: its own `path`, `kb`, `name`, `title`, `description` and `auth`. Say what the knowledge base covers in `description`, because the tools' own text is generic.
+2. Give it an Authentik application with `reader` and `editor` roles, and add that application to the `accesses` of the shared client registration.
 
-The route and the metadata rewrite cover every path under `/kb`. Specs list the endpoints through `TEST_SERVERS` (`src/test/fixtures.ts`): the new one goes there too.
-
-**Order.** Merge the deployment's values first, then release the image. An image older than the entry ignores it, but an image with the new key refuses a config without it, and a release bumps the image tag on its own.
+The route and the metadata rewrite cover every path under `/kb`. Removing an endpoint is removing its entry.
 
 ## Upstream token
 

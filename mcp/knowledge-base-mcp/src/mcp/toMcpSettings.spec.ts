@@ -26,6 +26,12 @@ describe('toMcpSettings', () => {
         })]);
     });
 
+    it('mounts every configured entry, whatever its key, in config order', () => {
+        const mcpServers = { A_KB: { ...TEST_SERVER, path: '/a' }, B_KB: { ...TEST_SERVER, path: '/b' }, C_KB: { ...TEST_SERVER, path: '/c' } };
+
+        expect(toMcpSettings({ ...CONFIG, mcpServers }, { version: '1.2.3' }, []).map(({ path }) => path)).toEqual(['/a', '/b', '/c']);
+    });
+
     it('prefers the server\'s own description over the package one', () => {
         const [settings] = toMcpSettings(
             { ...CONFIG, mcpServers: { ...TEST_SERVERS, DEVELOPMENT_KB: { ...TEST_SERVER, description: 'Its own' } } },

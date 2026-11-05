@@ -5,8 +5,7 @@ import { createExternalApisSchema } from '@radoslavirha/tsed-http-provider';
 import { LoggerOptionsSchema } from '@radoslavirha/tsed-logger';
 import z from 'zod';
 import { ExternalApi } from './ExternalApi.enum.js';
-import { McpServer } from './McpServer.enum.js';
-import { createMcpServersSchema } from './McpServerConfig.js';
+import { McpServersSchema } from './McpServerConfig.js';
 
 /**
  * Every endpoint carries its own required `auth`; there is no way to switch it off.
@@ -17,8 +16,8 @@ export const ConfigSchema = BaseConfig.extend({
     publicURL: z.url().describe('Public base URL of the app: scheme, host and the route prefix, no endpoint path — `https://mcp.irha.cz/kb` deployed, `http://localhost:4004` locally. An endpoint\'s resource identifier is this plus its `path`.'),
     externalApis: createExternalApisSchema(Object.values(ExternalApi))
         .describe('APIs this server calls — base URL, auth, resilience and logging per API.'),
-    mcpServers: createMcpServersSchema(Object.values(McpServer))
-        .describe('The MCP endpoints this app mounts, by `McpServer` key, each serving one knowledge base.'),
+    mcpServers: McpServersSchema
+        .describe('The MCP endpoints this app mounts, one per entry, each serving one knowledge base. Keys are UPPER_SNAKE_CASE; at least one entry.'),
     // Every field is defaulted, so omitting `health` entirely is valid — additive, and
     // safe for a rolling deploy where an old pod reads a new ConfigMap or vice versa.
     health: HealthConfigSchema.optional().describe('Health endpoint configuration.'),

@@ -48,6 +48,17 @@ describe('ConfigSchema', () => {
         expect(result.error?.issues[0].path).toEqual(['mcpServers']);
     });
 
+    it('accepts a deployment with one endpoint, under its own key', () => {
+        expect(ConfigSchema.safeParse({ ...MINIMAL, mcpServers: { WORK_KB: TEST_SERVER } }).success).toBe(true);
+    });
+
+    it('refuses an empty `mcpServers`', () => {
+        const result = ConfigSchema.safeParse({ ...MINIMAL, mcpServers: {} });
+
+        expect(result.success).toBe(false);
+        expect(result.error?.issues[0].path).toEqual(['mcpServers']);
+    });
+
     it('requires the upstream, naming it', () => {
         const result = ConfigSchema.safeParse({ server: { httpPort: 4004 }, publicURL: 'http://localhost:4004', mcpServers: TEST_SERVERS });
 
