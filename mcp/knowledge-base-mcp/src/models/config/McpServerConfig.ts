@@ -14,22 +14,31 @@ export const McpServerConfigSchema = z.object({
 
 export type McpServerConfig = z.infer<typeof McpServerConfigSchema>;
 
+/** An endpoint's key in `mcpServers`: `UPPER_SNAKE_CASE`, e.g. `DEVELOPMENT_KB`. It names the endpoint in logs and refusals. */
+export const MCP_SERVER_KEY = /^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$/;
+
 /**
- * One required entry per key, like `createExternalApisSchema`: a server the code mounts but the
- * config forgot fails the boot, naming it. Two servers on one path would shadow each other, so
- * paths must differ, ignoring case (Express routes `/Dev` and `/dev` alike).
+ * The MCP endpoints this app mounts, by key: as many as the config has, at least one. Nothing in
+ * the code names a key — a tool finds its endpoint by the request path — so an endpoint is
+ * config only. Two servers on one path would shadow each other, so paths must differ, ignoring
+ * case (Express routes `/Dev` and `/dev` alike).
  */
-export const createMcpServersSchema = <K extends string>(keys: readonly K[]) =>
-    z.object(Object.fromEntries(keys.map((key) => [key, McpServerConfigSchema])) as Record<K, typeof McpServerConfigSchema>)
-        .superRefine((servers, ctx) => {
-            const seen = new Map<string, string>();
+export const McpServersSchema = z.record(
+    z.string().regex(MCP_SERVER_KEY, 'A key is UPPER_SNAKE_CASE, e.g. DEVELOPMENT_KB.'),
+    McpServerConfigSchema
+)
+    .refine((servers) => !CommonUtils.isEmpty(servers), 'At least one MCP server is required.')
+    .superRefine((servers, ctx) => {
+        const seen = new Map<string, string>();
 
-            for (const [key, server] of Object.entries(servers as Record<string, McpServerConfig>)) {
-                const other = seen.get(server.path.toLowerCase());
+        for (const [key, server] of Object.entries(servers)) {
+            const other = seen.get(server.path.toLowerCase());
 
-                if (CommonUtils.notUndefined(other)) {
-                    ctx.addIssue({ code: 'custom', path: [key, 'path'], message: `Path ${server.path} is already used by ${other}.` });
-                }
-                seen.set(server.path.toLowerCase(), key);
+            if (CommonUtils.notUndefined(other)) {
+                ctx.addIssue({ code: 'custom', path: [key, 'path'], message: `Path ${server.path} is already used by ${other}.` });
             }
-        });
+            seen.set(server.path.toLowerCase(), key);
+        }
+    });
+
+export type McpServersConfig = z.infer<typeof McpServersSchema>;

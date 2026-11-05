@@ -82,12 +82,11 @@ describe('two MCP endpoints in one app (integration)', () => {
         expect(response.body.result.content[0].text).toContain('Insufficient permissions.');
     });
 
-    it('publishes each endpoint\'s own Protected Resource Metadata', async () => {
-        expect.assertions(2);
+    it.each(Object.entries(TEST_SERVERS))('mounts %s from config, with its own Protected Resource Metadata', async (_key, server) => {
+        expect.assertions(1);
 
-        const metadata = async (path: string): Promise<unknown> => (await request.get(`/.well-known/oauth-protected-resource${path}`)).body;
+        const response = await request.get(`/.well-known/oauth-protected-resource${server.path}`);
 
-        expect(await metadata('/development')).toMatchObject({ resource: `${TEST_PUBLIC_URL}/development`, resource_name: 'Test title' });
-        expect(await metadata('/loxone')).toMatchObject({ resource: `${TEST_PUBLIC_URL}/loxone`, resource_name: 'Loxone title' });
+        expect(response.body).toMatchObject({ resource: `${TEST_PUBLIC_URL}${server.path}`, resource_name: server.title });
     });
 });
