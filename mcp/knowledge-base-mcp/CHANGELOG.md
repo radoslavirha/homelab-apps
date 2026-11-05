@@ -1,5 +1,11 @@
 # knowledge-base
 
+## 0.5.0
+
+### Minor Changes
+
+- [#426](https://github.com/radoslavirha/homelab-apps/pull/426) [`ad19d7e`](https://github.com/radoslavirha/homelab-apps/commit/ad19d7e942418238d06e5d1a8182974f98c9409f) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Add the `LOXONE_KB` endpoint, serving a second knowledge base with the same tools. The config now requires a `mcpServers.LOXONE_KB` entry.
+
 ## 0.4.2
 
 ### Patch Changes
