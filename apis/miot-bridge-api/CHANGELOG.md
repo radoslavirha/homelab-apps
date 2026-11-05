@@ -1,5 +1,11 @@
 # miot-bridge
 
+## 0.30.6
+
+### Patch Changes
+
+- [#428](https://github.com/radoslavirha/homelab-apps/pull/428) [`c91bc3a`](https://github.com/radoslavirha/homelab-apps/commit/c91bc3aebde84e28c011adb26d958d4a127a59ce) Thanks [@radoslavirha](https://github.com/radoslavirha)! - `mqtt.notifications.publishIntervalMs` defaults to 3000 instead of 1500, because Loxone processes only the newest message per 2 s and 1500 still lost messages.
+
 ## 0.30.5
 
 ### Patch Changes
