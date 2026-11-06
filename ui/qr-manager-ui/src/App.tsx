@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { BrowserRouter, Link, NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell, ApiStatusBanner } from '@radoslavirha/ui-kit';
@@ -111,11 +111,20 @@ export const App = ({ config }: Props) => {
             }
         }
     });
+    // Tell the pages when the API comes back, so one whose load failed can retry.
+    const [recoveryCount, setRecoveryCount] = useState(0);
+    const prevStatus = useRef(status);
+    useEffect(() => {
+        if (prevStatus.current !== 'ok' && status === 'ok') {
+            setRecoveryCount(c => c + 1);
+        }
+        prevStatus.current = status;
+    }, [status]);
     const authClient = useMemo(() => createAuthClient(config.auth), [config.auth]);
 
     return (
     <RuntimeConfigProvider value={config}>
-        <ApiStatusProvider report={report}>
+        <ApiStatusProvider report={report} recoveryCount={recoveryCount}>
         <BrowserRouter basename={config.basePath}>
             {/* Inside BrowserRouter: CallbackPage navigates once the exchange lands. */}
             <AuthProvider client={authClient}>
