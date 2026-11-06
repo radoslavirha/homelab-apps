@@ -1,6 +1,6 @@
 import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
 import { VerifierType } from './VerifierType.js';
-import type { AuthConfig, TrustedIssuer } from './schemas/auth.schema.js';
+import type { AuthConfig, TrustedIssuer, UnauthenticatedVerifierConfig } from './schemas/auth.schema.js';
 
 /**
  * The boot-time summary of what this service will accept.
@@ -13,19 +13,24 @@ import type { AuthConfig, TrustedIssuer } from './schemas/auth.schema.js';
  *    issuer string and audience have to match *exactly*, and seeing both
  *    printed next to the token's own claims ends the guessing.
  *
+ * 3. A method that admits everyone (`unauthenticated`) is never quiet: the level
+ *    is `warn` while one is configured, and the line names it and its roles.
+ *
  * Returned as data rather than logged here, so the caller uses its own logger
  * and this package keeps no logging dependency.
  */
 export const describeAuthConfig = (config: AuthConfig): AuthConfigSummary => {
     const methods = ObjectUtils.keys(config);
+    const unauthenticated = unauthenticatedOf(config).map(([method, entry]) => describeUnauthenticated(method, entry));
 
     return {
-        // Nothing configured is the one state worth raising a voice about: any
-        // guarded route will fail, and no request will ever say why.
-        level: CommonUtils.isEmpty(methods) ? 'warn' : 'info',
-        message: summaryLine(config, methods),
+        // Nothing configured, or a method that admits everyone: either is worth
+        // raising a voice about at boot.
+        level: CommonUtils.isEmpty(methods) || !CommonUtils.isEmpty(unauthenticated) ? 'warn' : 'info',
+        message: summaryLine(config, methods, unauthenticated),
         methods,
-        issuers: issuersOf(config).map(describeIssuer)
+        issuers: issuersOf(config).map(describeIssuer),
+        unauthenticated
     };
 };
 
@@ -37,6 +42,18 @@ export interface AuthConfigSummary {
     /** One human-readable line, safe to log as-is. */
     readonly message: string;
     readonly issuers: readonly IssuerSummary[];
+    /** Methods that admit every request without a credential. */
+    readonly unauthenticated: readonly UnauthenticatedSummary[];
+}
+
+export interface UnauthenticatedSummary {
+    readonly method: string;
+    /** Every role every request on this method gets. */
+    readonly roles: readonly string[];
+    readonly defaultSubject: string;
+    readonly subjectKind: string;
+    /** The unverified header a subject label is read from, if any. */
+    readonly subjectHeader?: string;
 }
 
 export interface IssuerSummary {
@@ -49,15 +66,39 @@ export interface IssuerSummary {
     readonly algorithms: readonly string[];
 }
 
-const summaryLine = (config: AuthConfig, methods: readonly string[]): string => {
+const summaryLine = (
+    config: AuthConfig,
+    methods: readonly string[],
+    unauthenticated: readonly UnauthenticatedSummary[]
+): string => {
     if (CommonUtils.isEmpty(methods)) {
         return 'auth — no verifier is configured; any guarded route will fail.';
     }
 
     const names = issuersOf(config).map(row => `${row.name} (${row.issuer} → aud ${row.audience})`);
+    const trusting = CommonUtils.isEmpty(names) ? '' : `; trusting ${names.join(', ')}`;
+    const open = unauthenticated.map(entry =>
+        `; ${entry.method} admits EVERY request without a credential as '${entry.defaultSubject}' with roles [${entry.roles.join(', ')}]`
+    );
 
-    return `auth — accepting ${methods.join(', ')}; trusting ${names.join(', ')}.`;
+    return `auth — accepting ${methods.join(', ')}${trusting}${open.join('')}.`;
 };
+
+/** Every `unauthenticated` entry, with the method name it is filed under. */
+const unauthenticatedOf = (config: AuthConfig): [string, UnauthenticatedVerifierConfig][] =>
+    ObjectUtils.keys(config).flatMap((method) => {
+        const entry = config[method];
+
+        return entry?.type === VerifierType.Unauthenticated ? [[method, entry] as [string, UnauthenticatedVerifierConfig]] : [];
+    });
+
+const describeUnauthenticated = (method: string, entry: UnauthenticatedVerifierConfig): UnauthenticatedSummary => ({
+    method,
+    roles: [...entry.roles],
+    defaultSubject: entry.defaultSubject,
+    subjectKind: entry.subjectKind,
+    ...(CommonUtils.isUndefined(entry.subjectHeader) ? {} : { subjectHeader: entry.subjectHeader })
+});
 
 /** Every trusted issuer across every configured verifier that has any. */
 const issuersOf = (config: AuthConfig): TrustedIssuer[] =>

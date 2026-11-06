@@ -30,7 +30,7 @@ export { Authenticator, buildVerifiers, statusForReason } from './Authenticator.
 export { describeAuthConfig } from './describeAuthConfig.js';
 
 export type { AuthDecision, AuthVerifiers } from './Authenticator.js';
-export type { AuthConfigSummary, IssuerSummary } from './describeAuthConfig.js';
+export type { AuthConfigSummary, IssuerSummary, UnauthenticatedSummary } from './describeAuthConfig.js';
 
 // ─── Observability ────────────────────────────────────────────────────────────
 
@@ -52,6 +52,8 @@ export {
     KeySchema,
     StaticKeySchema,
     TrustedIssuerSchema,
+    UNAUTHENTICATED_SUBJECT_PATTERN,
+    UnauthenticatedVerifierSchema,
     VerifierSchema
 } from './schemas/auth.schema.js';
 
@@ -63,6 +65,7 @@ export type {
     KeyConfig,
     StaticKey,
     TrustedIssuer,
+    UnauthenticatedVerifierConfig,
     VerifierConfig
 } from './schemas/auth.schema.js';
 
@@ -76,6 +79,7 @@ export type { MintTestTokenOptions } from './test/mintTestToken.js';
 // ─── Verification ─────────────────────────────────────────────────────────────
 
 export { JwtVerifier } from './verifiers/JwtVerifier.js';
+export { UNAUTHENTICATED_ISSUER, UnauthenticatedVerifier } from './verifiers/UnauthenticatedVerifier.js';
 export { StaticAlgorithmMismatchError } from './keys/StaticAlgorithmMismatchError.js';
 export { StaticKeySource } from './keys/StaticKeySource.js';
 export { UnknownStaticIssuerError } from './keys/UnknownStaticIssuerError.js';

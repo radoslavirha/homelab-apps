@@ -6,7 +6,9 @@ import {
     createAuthConfigSchema,
     JwtVerifierSchema,
     KeySchema,
-    TrustedIssuerSchema
+    TrustedIssuerSchema,
+    UNAUTHENTICATED_SUBJECT_PATTERN,
+    UnauthenticatedVerifierSchema
 } from './auth.schema.js';
 
 const staticKey = { source: 'value' as const, algorithm: 'HS256', value: 'local-dev-secret' };
@@ -45,13 +47,13 @@ describe('AuthConfigSchema', () => {
     it('files each verifier under its method, so one method appears at most once', () => {
         const parsed = AuthConfigSchema.parse({ [TEST_METHOD]: entry(devIssuer) });
 
-        expect(parsed[TEST_METHOD]?.trustedIssuers[0]).toMatchObject({
+        expect(parsed[TEST_METHOD]).toHaveProperty(['trustedIssuers', 0], expect.objectContaining({
             name: 'dev-local',
             issuer: 'dev',
             audience: 'qr-manager-api',
             subjectKind: 'service',
             rolesClaim: 'roles'
-        });
+        }));
     });
 
     it('rejects an entry whose verifier type nothing implements', () => {
@@ -69,7 +71,7 @@ describe('createAuthConfigSchema', () => {
     });
 
     it('accepts a config that supplies them', () => {
-        expect(schema.parse({ [TEST_METHOD]: entry(devIssuer) })[TEST_METHOD].trustedIssuers).toHaveLength(1);
+        expect(schema.parse({ [TEST_METHOD]: entry(devIssuer) })[TEST_METHOD]).toHaveProperty('trustedIssuers.length', 1);
     });
 
     it('rejects a name the service did not declare, so a typo is not a silent no-op', () => {
@@ -199,5 +201,37 @@ describe('KeySchema', () => {
 
     it('discriminates on source', () => {
         expect(() => KeySchema.parse({ source: 'file', path: '/tmp/key' })).toThrow();
+    });
+});
+
+describe('UnauthenticatedVerifierSchema', () => {
+    const open = { type: VerifierType.Unauthenticated, roles: ['kb.reader'], defaultSubject: 'developer' };
+
+    it('defaults subjectKind to human and leaves subjectHeader unset', () => {
+        expect(UnauthenticatedVerifierSchema.parse(open)).toEqual({ ...open, subjectKind: 'human' });
+    });
+
+    it('is a member of the verifier union, so an auth entry may name it', () => {
+        expect(AuthConfigSchema.parse({ [TEST_METHOD]: open })).toHaveProperty([TEST_METHOD, 'type'], 'unauthenticated');
+    });
+
+    it('needs at least one role, since every request is given all of them', () => {
+        expect(() => UnauthenticatedVerifierSchema.parse({ ...open, roles: [] })).toThrow(/at least one role/);
+    });
+
+    it('needs a defaultSubject, so the principal is never an empty name', () => {
+        expect(() => UnauthenticatedVerifierSchema.parse({ ...open, defaultSubject: undefined })).toThrow();
+    });
+
+    it.each(['', 'two words', 'line\nbreak', 'a'.repeat(151)])('refuses defaultSubject %j', (defaultSubject) => {
+        expect(() => UnauthenticatedVerifierSchema.parse({ ...open, defaultSubject })).toThrow();
+    });
+
+    it('accepts the subject characters an e-mail-like name needs', () => {
+        expect(UNAUTHENTICATED_SUBJECT_PATTERN.test('jane.doe+kb@example-1')).toBe(true);
+    });
+
+    it('is never implied: an entry with no type is still refused', () => {
+        expect(() => AuthConfigSchema.parse({ [TEST_METHOD]: { ...open, type: undefined } })).toThrow();
     });
 });
