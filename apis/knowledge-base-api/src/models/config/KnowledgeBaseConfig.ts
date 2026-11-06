@@ -1,7 +1,7 @@
 import z from 'zod';
 import { KNOWLEDGE_BASE_ID_PATTERN } from '../KnowledgeBaseId.js';
 import { ContentType } from './ContentType.enum.js';
-import { GitHubAppConfigSchema } from './GitHubAppConfig.js';
+import { GitHubConfigSchema } from './GitHubConfig.js';
 import { KnowledgeBaseSource } from './KnowledgeBaseSource.enum.js';
 
 /** `owner/name`, in the characters GitHub allows in each. */
@@ -46,9 +46,9 @@ export const GitSourceConfigSchema = z.object({
         .describe('Path prefixes to index. The first path segment becomes `metadata.area`.'),
     extensions: z.array(z.string().startsWith('.')).default(['.md']),
     repository: z.string().regex(GITHUB_REPOSITORY_PATTERN).optional()
-        .describe('`owner/name` of the repository to read, from those the App covers, compared case-insensitively. Required when the App covers several. Comes from a secret, never from values.'),
-    github: GitHubAppConfigSchema.optional()
-        .describe('The GitHub App of this knowledge base. Defaults to the root `github`.')
+        .describe('`owner/name` of the repository to read, from those the App covers, compared case-insensitively. Required when the App covers several, and always with a token. Comes from a secret, never from values.'),
+    github: GitHubConfigSchema.optional()
+        .describe('The GitHub App or token of this knowledge base. Defaults to the root `github`.')
 }).prefault({});
 
 export const GitKnowledgeBaseConfigSchema = KnowledgeBaseBaseSchema.extend({

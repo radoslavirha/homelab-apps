@@ -1,6 +1,6 @@
 # knowledge-base-api
 
-Indexes knowledge bases into Postgres — full-text (`tsvector`) and vectors (pgvector, one HNSW index per embedding model) — and serves hybrid search over an internal REST API. Sources are pluggable: each knowledge base names one, and the first is a git repository read through the GitHub API as a GitHub App. Chunking, embedding (Ollama) and search are shared by every source. A writable source (git) also takes writes — a note, a whole spec or plan, a delete — each one commit, checked against the version the caller last saw.
+Indexes knowledge bases into Postgres — full-text (`tsvector`) and vectors (pgvector, one HNSW index per embedding model) — and serves hybrid search over an internal REST API. Sources are pluggable: each knowledge base names one, and the first is a git repository read through the GitHub API, as a GitHub App or with a token. Chunking, embedding (Ollama) and search are shared by every source. A writable source (git) also takes writes — a note, a whole spec or plan, a delete — each one commit, checked against the version the caller last saw.
 
 ## Consumed By
 
@@ -14,7 +14,7 @@ Indexes knowledge bases into Postgres — full-text (`tsvector`) and vectors (pg
 |--------|----------|-----------|---------|
 | Postgres (`knowledge_base` database, pgvector) | TCP 5432 | always — readiness depends on it | Index, search, migrations, the indexing lock |
 | Ollama | HTTP `POST /api/embed` | knowledge bases with `models` | Embeds chunks while indexing and questions while searching. Unreachable → search answers full-text only |
-| GitHub REST API (`api.github.com`) | HTTPS, as a GitHub App | `source: GIT` | Installation discovery, branch tip, compare, tree, blobs; the contents API (read, `PUT`, `DELETE` a file) for writes — needs *Contents: write* |
+| GitHub REST API (`api.github.com`) | HTTPS, as a GitHub App or with a token | `source: GIT` | Repository discovery (an App's installations, or the one repository a token names), branch tip, compare, tree, blobs; the contents API (read, `PUT`, `DELETE` a file) for writes — needs *Contents: write* |
 | Identity provider JWKS | HTTPS | always | Verifies bearer tokens |
 
 ## REST API
@@ -34,7 +34,7 @@ Every route but `/health*` and the API documentation (the Swagger landing page a
 
 ## Writing
 
-`POST /notes`, `PUT /documents` and `DELETE /documents` write to the knowledge base's source, one commit per call — for git, one call to GitHub's contents API as the App; no clone, no branch. The caller is a service writing for a person: `On-Behalf-Of` names them (a username — letters, digits, `_ . @ + -`), and the commit says so:
+`POST /notes`, `PUT /documents` and `DELETE /documents` write to the knowledge base's source, one commit per call — for git, one call to GitHub's contents API as the App or the token's owner; no clone, no branch. The caller is a service writing for a person: `On-Behalf-Of` names them (a username — letters, digits, `_ . @ + -`), and the commit says so:
 
 ```
 kb: <note title | spec title | delete <id>>
@@ -113,10 +113,10 @@ Git documents get `metadata` from their frontmatter plus `area` (first path segm
 | Key | Description |
 |-----|-------------|
 | `database` | `host`, `port`, `database`, `user`, `password`, `sslMode` (`DISABLE`\|`REQUIRE`\|`VERIFY_FULL` + `caFile`), `pool`, `statementTimeoutMs` |
-| `github` | `clientId`, `privateKey` (`{ source: value, value }` or `{ source: file, path }`, PEM as GitHub issues it), `baseUrl`, `timeoutMs` (per attempt: each retry gets its own; a rate-limit wait is not counted), `retries`. The default App of every git knowledge base without its own `git.github`. The repository is a knowledge base's `git.repository` |
+| `github` | One of two shapes, by `type`. **`app`** (the default when `type` is absent): `clientId`, `privateKey` (`{ source: value, value }` or `{ source: file, path }`, PEM as GitHub issues it). **`token`**: `token` (`{ source: value, value }` or `{ source: file, path }`), a fine-grained personal access token with *Contents: read and write* and *Metadata: read* on the repository; commits are authored by its owner, `On-behalf-of` still names the caller. A token file is read again at every rediscovery after a failed run, so a rotated token needs no restart. Both: `baseUrl`, `timeoutMs` (per attempt: each retry gets its own; a rate-limit wait is not counted), `retries`. The default credentials of every git knowledge base without its own `git.github`. The repository is a knowledge base's `git.repository` |
 | `embeddings.models[]` | `name` (Ollama tag), `dimensions`, `documentTemplate` (`{title}`, `{text}`), `queryTemplate` (`{query}`). Each model gets its own partial HNSW index at startup. Correcting a wrong `dimensions` before anything was embedded drops the old index; with vectors of the old size stored, the boot fails — a model's dimensions cannot change under one name, add a new entry |
 | `embeddings` | `batchSize`, `keepAlive` (default `1m`) |
-| `knowledgeBases[]` | `id`, `source` (`GIT`), `contentType` (`MARKDOWN`), `tsConfig` (Postgres text search configuration), `models` (first answers questions), `readers` (roles), `conventionsPath` (optional: the file in the source `GET /conventions` serves, e.g. `README.md`; no leading `/`), `chunking` (`maxChars` default 3000, `overlapChars`), `git` (`branch`, `include` path prefixes, `extensions`, `repository`, `github`: this knowledge base's own App, same shape as the root `github`). `git.repository` is `owner/name`, one of the repositories the App's installations cover, compared case-insensitively; a repository the App does not cover refuses. Unset, the App must cover exactly one repository. The name never appears in this repo or in deployment values: the deployment reads it from a secret |
+| `knowledgeBases[]` | `id`, `source` (`GIT`), `contentType` (`MARKDOWN`), `tsConfig` (Postgres text search configuration), `models` (first answers questions), `readers` (roles), `conventionsPath` (optional: the file in the source `GET /conventions` serves, e.g. `README.md`; no leading `/`), `chunking` (`maxChars` default 3000, `overlapChars`), `git` (`branch`, `include` path prefixes, `extensions`, `repository`, `github`: this knowledge base's own App or token, same shapes as the root `github`). `git.repository` is `owner/name`, one of the repositories the App's installations cover, compared case-insensitively; a repository the App does not cover refuses. Unset, the App must cover exactly one repository. With a token it is required: a token has no installations to pick from. The name never appears in this repo or in deployment values: the deployment reads it from a secret |
 | `indexer` | `enabled`, `intervalMs`, `initialDelayMs`, `fetchConcurrency`, `maxScheduledEmbeddings` (default 300) |
 | `search` | `defaultLimit`, `candidates` per leg, `rrfK`, `weights` (`fullText` default 0, `vector` default 1), `fullTextMatch` (`ANY` ORs the question's lexemes; `ALL` is `websearch_to_tsquery`) |
 | `externalApis.OLLAMA` | Indexing: base URL, timeout, retry, circuit breaker. A batch of chunks on a CPU needs a long budget (60 s) |
@@ -124,15 +124,16 @@ Git documents get `metadata` from their frontmatter plus `area` (first path segm
 | `auth.IDP` | Trusted issuers |
 | `logger` | `@radoslavirha/tsed-logger` options: `level`, `requests.headers`, `requests.query`, `requests.ignorePaths`, … `requests.request` and `requests.response` are forced off in code — a value here is ignored |
 
-A cross-field mistake (a KB naming an undeclared model, a git KB with neither `git.github` nor `github`) fails the boot.
+A cross-field mistake (a KB naming an undeclared model, a git KB with neither `git.github` nor `github`, a git KB on a token without `git.repository`) fails the boot.
 
 ### Adding a git knowledge base
 
 A knowledge base in its own repository, with the same writes and the same layout (`raw/`, `work/`, `mirror/`) as the first:
 
-1. Give it a GitHub App with *Contents: write*, one of two ways:
+1. Give it GitHub credentials with *Contents: write*, one of three ways:
    - **The same App:** install the existing App on that repository as well, and set `git.repository` on every knowledge base that App serves. Before that install, also set it on the ones already running: unset, they refuse an App covering two repositories.
    - **Its own App:** create one, install it on that repository and nothing else, and put it in the entry's `git.github`, its key from a secret. `git.repository` is then optional.
+   - **A token, where no App can be installed:** a fine-grained personal access token on that repository only (*Contents: read and write*, *Metadata: read*), in `git.github` (or the root `github`) as `{ type: token, token: { source: file, path } }`, with `git.repository` set. Commits are authored by the token's owner. The token expires: rotate it in the secret before it does.
 2. Add a `knowledgeBases[]` entry, with `git.repository` read from a secret, never written in values. The schema, the row and the index are created at boot.
 3. Optionally set `conventionsPath` to the file that states its rules (e.g. `README.md`), so agents can read them before writing.
 4. Build it once, as an admin: `POST /reindex?kb=<id>&full=true`. A scheduled run skips a knowledge base that was never built.

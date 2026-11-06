@@ -61,7 +61,7 @@ All work on the endpoint's own knowledge base; none takes a `kb` (an extra `kb` 
 
 **Conventions.** Every endpoint sends MCP server `instructions` in its `initialize` result, which clients that support them hand to their agent: by default, to search first, to call `conventions` before writing or preparing files for a manual commit, and to get the user's yes on every write. `conventions` is how an agent facing an empty knowledge base learns what to produce; it describes, the API's write checks still decide. A knowledge base publishes conventions by naming the file in knowledge-base-api's `knowledgeBases[].conventionsPath`.
 
-**Writes.** knowledge-base-api renders and validates every write, refuses anything that looks like a secret, and makes one commit through its GitHub App; this server holds no key to the repository. The user a write is for is the caller's verified token's `sub` (their Authentik username), sent as `On-Behalf-Of` — never a tool argument. `version` is opaque: pass the newest one held — from `read`, or the one the last write of that document returned.
+**Writes.** knowledge-base-api renders and validates every write, refuses anything that looks like a secret, and makes one commit through its GitHub App or token; this server holds no key to the repository. The user a write is for is the caller's verified token's `sub` (their Authentik username), sent as `On-Behalf-Of` — never a tool argument. `version` is opaque: pass the newest one held — from `read`, or the one the last write of that document returned.
 
 | Answer | When |
 |--------|------|
