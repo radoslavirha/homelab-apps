@@ -1,3 +1,4 @@
+export * from './ConventionsMapper.js';
 export * from './DocumentMapper.js';
 export * from './DocumentWriteMapper.js';
 export * from './ReindexMapper.js';

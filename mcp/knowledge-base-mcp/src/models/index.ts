@@ -1,3 +1,4 @@
+export * from './ConventionsOutput.js';
 export * from './CreateNoteInput.js';
 export * from './CreateNoteOutput.js';
 export * from './CurrentDocument.js';

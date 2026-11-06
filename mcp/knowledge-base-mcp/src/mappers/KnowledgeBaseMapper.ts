@@ -1,6 +1,7 @@
-import { CommonUtils, MappingUtils } from '@radoslavirha/utils';
+import { CommonUtils, DefaultsUtil, MappingUtils } from '@radoslavirha/utils';
 import { Injectable, ProviderScope, Scope } from '@tsed/di';
 import { Conflict } from '@tsed/exceptions';
+import type { ConventionsResponseDTO } from '../endpoints/knowledge-base-api/dto/ConventionsResponseDTO.js';
 import type { DocumentDeleteResponseDTO } from '../endpoints/knowledge-base-api/dto/DocumentDeleteResponseDTO.js';
 import { DocumentDeleteRequestDTO } from '../endpoints/knowledge-base-api/dto/DocumentDeleteRequestDTO.js';
 import type { DocumentResponseDTO } from '../endpoints/knowledge-base-api/dto/DocumentResponseDTO.js';
@@ -11,6 +12,7 @@ import type { NoteCreateResponseDTO } from '../endpoints/knowledge-base-api/dto/
 import { NoteTypeDTO } from '../endpoints/knowledge-base-api/dto/NoteTypeDTO.enum.js';
 import type { SearchResponseDTO } from '../endpoints/knowledge-base-api/dto/SearchResponseDTO.js';
 import type { SearchResultDTO } from '../endpoints/knowledge-base-api/dto/SearchResultDTO.js';
+import { ConventionsOutput } from '../models/ConventionsOutput.js';
 import type { CreateNoteInput } from '../models/CreateNoteInput.js';
 import { CreateNoteOutput } from '../models/CreateNoteOutput.js';
 import { CurrentDocument } from '../models/CurrentDocument.js';
@@ -37,6 +39,14 @@ export class KnowledgeBaseMapper extends MappingUtils {
     public toSearch(response: SearchResponseDTO): SearchOutput {
         return CommonUtils.buildModelStrict(SearchOutput, {
             hits: response.results.map((result) => this.toHit(result))
+        });
+    }
+
+    /** A knowledge base that publishes no conventions reads as empty markdown, not as an error. */
+    public toConventions(response: ConventionsResponseDTO): ConventionsOutput {
+        return CommonUtils.buildModelStrict(ConventionsOutput, {
+            path: response.path,
+            markdown: DefaultsUtil.string(response.markdown, '')
         });
     }
 

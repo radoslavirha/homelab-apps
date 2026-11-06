@@ -31,6 +31,12 @@ const KnowledgeBaseBaseSchema = z.object({
     models: z.array(z.string().min(1)).default([]),
     /** Authentik roles allowed to read this KB. A caller holding none of them never sees it. */
     readers: z.array(z.string().min(1)).min(1),
+    /**
+     * The file in the source that holds this KB's house rules — formats, frontmatter, areas,
+     * naming — e.g. `README.md`. `GET /conventions` serves it, read from the source as it is now,
+     * so it need not be under `git.include`. Unset: the KB publishes none.
+     */
+    conventionsPath: z.string().min(1).regex(/^[^/]/, 'A path inside the source, without a leading /.').optional(),
     chunking: ChunkingConfigSchema
 });
 

@@ -8,6 +8,7 @@ import { BadGateway, GatewayTimeout } from '@tsed/exceptions';
 import { PlatformTest } from '@tsed/platform-http/testing';
 import SuperTest from 'supertest';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ConventionsResponseDTO } from '../endpoints/knowledge-base-api/dto/ConventionsResponseDTO.js';
 import { DocumentDeleteResponseDTO } from '../endpoints/knowledge-base-api/dto/DocumentDeleteResponseDTO.js';
 import { DocumentResponseDTO } from '../endpoints/knowledge-base-api/dto/DocumentResponseDTO.js';
 import { DocumentWriteResponseDTO } from '../endpoints/knowledge-base-api/dto/DocumentWriteResponseDTO.js';
@@ -66,12 +67,12 @@ describe('Tools (integration, through MCP)', () => {
     afterEach(PlatformTest.reset);
     afterEach(() => vi.restoreAllMocks());
 
-    it('lists the five tools, each with an input and an output schema, none taking a knowledge base', async () => {
+    it('lists the six tools, each with an input and an output schema, none taking a knowledge base', async () => {
         expect.assertions(3);
 
         const { tools: listed } = await call('tools/list') as { tools: { name: string; inputSchema: { properties?: object }; outputSchema?: object }[] };
 
-        expect(listed.map((tool) => tool.name).sort()).toEqual(['create_note', 'delete_document', 'read', 'search', 'write_document']);
+        expect(listed.map((tool) => tool.name).sort()).toEqual(['conventions', 'create_note', 'delete_document', 'read', 'search', 'write_document']);
         expect(listed.every((tool) => !Object.keys(tool.inputSchema.properties ?? {}).includes('kb'))).toBe(true);
         expect(listed.every((tool) => tool.inputSchema && tool.outputSchema)).toBe(true);
     });
@@ -83,6 +84,7 @@ describe('Tools (integration, through MCP)', () => {
 
         // MCP clients that ask before running a tool which changes something read these.
         expect(Object.fromEntries(listed.map(({ name, annotations }) => [name, [annotations.readOnlyHint, annotations.destructiveHint, annotations.openWorldHint]]))).toEqual({
+            conventions: [true, undefined, false],
             read: [true, undefined, false],
             search: [true, undefined, false],
             create_note: [false, false, false],
@@ -287,6 +289,32 @@ describe('Tools (integration, through MCP)', () => {
 
         expect(result.isError).toBe(true);
         expect(search).not.toHaveBeenCalled();
+    });
+
+    it('conventions: the endpoint\'s knowledge base\'s conventions, with structured content its output schema accepts', async () => {
+        expect.assertions(3);
+
+        const conventions = vi.spyOn(api, 'conventions').mockResolvedValue(Serializer.deserialize({
+            kb: 'development', path: 'README.md', markdown: '# House rules\n', version: 'b1'
+        }, ConventionsResponseDTO));
+
+        const result = await callTool('conventions', { kb: 'home' });
+
+        expect(result.isError).toBeUndefined();
+        // A `kb` argument is ignored, as on every tool: the endpoint is its knowledge base.
+        expect(conventions).toHaveBeenCalledWith(expect.objectContaining({ kb: 'development' }));
+        expect(result.structuredContent).toEqual({ path: 'README.md', markdown: '# House rules\n' });
+    });
+
+    it('conventions: a knowledge base that publishes none answers empty markdown, not an error', async () => {
+        expect.assertions(2);
+
+        vi.spyOn(api, 'conventions').mockResolvedValue(Serializer.deserialize({ kb: 'development', path: null, markdown: null, version: null }, ConventionsResponseDTO));
+
+        const result = await callTool('conventions');
+
+        expect(result.isError).toBeUndefined();
+        expect(result.structuredContent).toEqual({ path: null, markdown: '' });
     });
 
     it('read: the whole document from the endpoint\'s knowledge base, with structured content its output schema accepts', async () => {

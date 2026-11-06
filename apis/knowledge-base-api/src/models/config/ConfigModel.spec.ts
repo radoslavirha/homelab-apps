@@ -58,6 +58,25 @@ describe('ConfigSchema', () => {
         expect(issues(config)).toEqual([]);
     });
 
+    describe('conventionsPath', () => {
+        const withConventions = (conventionsPath?: string): Record<string, unknown> => {
+            const config = base();
+            const [kb] = config.knowledgeBases as Record<string, unknown>[];
+
+            config.knowledgeBases = [{ ...kb, conventionsPath }];
+
+            return config;
+        };
+
+        it('is optional, so a configuration without it still parses', () => {
+            expect(ConfigSchema.parse(withConventions()).knowledgeBases[0].conventionsPath).toBeUndefined();
+        });
+
+        it('refuses a path with a leading /', () => {
+            expect(issues(withConventions('/README.md'))).toContain('knowledgeBases.0.conventionsPath: A path inside the source, without a leading /.');
+        });
+    });
+
     describe('git.repository', () => {
         const withRepository = (repository: string): Record<string, unknown> => {
             const config = base();

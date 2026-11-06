@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { McpTokenVerifier } from '../auth/McpTokenVerifier.js';
 import { TEST_SERVER, TEST_SERVERS } from '../test/fixtures.js';
-import { resourceOf, toMcpSettings } from './toMcpSettings.js';
+import { DEFAULT_INSTRUCTIONS, resourceOf, toMcpSettings } from './toMcpSettings.js';
 
 class SomeTool {}
 
@@ -40,6 +40,17 @@ describe('toMcpSettings', () => {
         );
 
         expect(settings.description).toBe('Its own');
+    });
+
+    it('gives every endpoint the default instructions, unless it sets its own', () => {
+        const [own, fallback] = toMcpSettings(
+            { ...CONFIG, mcpServers: { ...TEST_SERVERS, DEVELOPMENT_KB: { ...TEST_SERVER, instructions: 'Its own' } } },
+            { version: '1.2.3' },
+            []
+        );
+
+        expect(own.serverOptions).toEqual({ instructions: 'Its own' });
+        expect(fallback.serverOptions).toEqual({ instructions: DEFAULT_INSTRUCTIONS });
     });
 
     it('protects every endpoint: Authentik as the authorization server, the public URL plus the path as the resource', () => {

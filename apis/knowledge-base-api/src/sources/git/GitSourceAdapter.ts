@@ -11,8 +11,9 @@ import type { GitKnowledgeBaseConfig } from '../../models/config/KnowledgeBaseCo
 import type { SourceAdapter } from '../SourceAdapter.js';
 import type { SourceChanges } from '../SourceChanges.js';
 import type { SourceDocument } from '../SourceDocument.js';
-import type { SourceWriter } from '../SourceWriter.js';
+import type { SourceFile, SourceWriter } from '../SourceWriter.js';
 import type { GitDocumentParser } from './GitDocumentParser.js';
+import { GitFileReader } from './GitFileReader.js';
 import type { GitHubRepositoryService } from './GitHubRepositoryService.js';
 import { GitSourceWriter } from './GitSourceWriter.js';
 
@@ -34,12 +35,14 @@ interface BlobRef {
  * commit is gone (a force-push), when history diverged, or when the comparison may have been
  * cut off at GitHub's 300-file limit.
  *
- * It is writable: {@link writer} commits through GitHub's contents API.
+ * It is writable: {@link writer} commits through GitHub's contents API. {@link file} reads any one
+ * file on the branch, indexed or not.
  *
  * Not a DI provider: one instance per knowledge base, built by `SourceAdapterFactory`.
  */
 export class GitSourceAdapter implements SourceAdapter {
     public readonly writer: SourceWriter;
+    private readonly reader: GitFileReader;
 
     public constructor(
         private readonly kb: GitKnowledgeBaseConfig,
@@ -50,6 +53,11 @@ export class GitSourceAdapter implements SourceAdapter {
         private readonly log: BaseLogger
     ) {
         this.writer = new GitSourceWriter(kb, repositories, github);
+        this.reader = new GitFileReader(kb, repositories, github);
+    }
+
+    public file(path: string): Promise<SourceFile | null> {
+        return this.reader.read(path);
     }
 
     public async changes(cursor: string | null, signal?: AbortSignal): Promise<SourceChanges> {

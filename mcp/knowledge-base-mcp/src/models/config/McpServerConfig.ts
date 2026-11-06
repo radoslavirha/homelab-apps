@@ -9,6 +9,7 @@ export const McpServerConfigSchema = z.object({
     name: z.string().min(1).describe('Machine name clients see in `serverInfo.name`.'),
     title: z.string().min(1).describe('Human-readable name clients show.'),
     description: z.string().min(1).optional().describe('What the server is for. Defaults to the package description.'),
+    instructions: z.string().min(1).optional().describe('The MCP server `instructions` clients hand their agent: how to use this knowledge base. Defaults to `DEFAULT_INSTRUCTIONS` — search first, call `conventions` before writing or preparing files, approve writes.'),
     auth: McpServerAuthConfigSchema.describe('Who may call the endpoint. Required: there is no anonymous endpoint.')
 });
 
