@@ -19,12 +19,13 @@ export interface WritableServer {
 /**
  * Boots the server on the real git source, with GitHub replaced at the endpoint boundary by
  * {@link FakeGitHubEndpoint} — so the adapter, its writer and the refusal handling all run.
+ * `imports` adds or replaces further providers (e.g. `unauthenticatedAuth` for the auth config).
  */
-export const bootstrapWritable = async (): Promise<WritableServer> => {
+export const bootstrapWritable = async (imports: { token: unknown; use: unknown }[] = []): Promise<WritableServer> => {
     const github = new FakeGitHubEndpoint();
 
     await PlatformTest.bootstrap(Server, {
-        imports: [{ token: OllamaEndpoint, use: new FakeOllamaEndpoint() }, { token: GitHubEndpoint, use: github }]
+        imports: [{ token: OllamaEndpoint, use: new FakeOllamaEndpoint() }, { token: GitHubEndpoint, use: github }, ...imports]
     })();
 
     const trigger = vi.spyOn(PlatformTest.get<IndexingLoopService>(IndexingLoopService), 'trigger').mockResolvedValue(RunStart.Started);

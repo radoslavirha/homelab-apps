@@ -9,6 +9,7 @@ export * from './IndexingLoopService.js';
 export * from './KnowledgeBaseAccessService.js';
 export * from './MarkdownChunkerService.js';
 export * from './MetadataFilterService.js';
+export * from './OnBehalfOfService.js';
 export * from './NoteRenderService.js';
 export * from './RankFusionService.js';
 export * from './SearchService.js';

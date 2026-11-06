@@ -100,6 +100,55 @@ describe('ConfigSchema', () => {
         });
     });
 
+    describe('auth', () => {
+        const withIdp = (idp: Record<string, unknown>): Record<string, unknown> => ({ ...base(), auth: { IDP: idp } });
+
+        it('accepts an unauthenticated IDP entry, with no change to the schema', () => {
+            const config = ConfigSchema.parse(withIdp({
+                type: 'unauthenticated',
+                roles: ['knowledge-base-api.reader', 'knowledge-base-api.editor', 'knowledge-base-api.admin'],
+                defaultSubject: 'developer',
+                subjectHeader: 'X-User'
+            }));
+
+            expect(config.auth.IDP).toEqual({
+                type: 'unauthenticated',
+                roles: ['knowledge-base-api.reader', 'knowledge-base-api.editor', 'knowledge-base-api.admin'],
+                defaultSubject: 'developer',
+                subjectHeader: 'X-User',
+                subjectKind: 'human'
+            });
+        });
+
+        it('still accepts the bearer-jwt entry of the test configuration', () => {
+            expect(ConfigSchema.parse(base()).auth.IDP?.type).toBe('bearer-jwt');
+        });
+
+        it('fails at boot when the IDP entry is missing, rather than admitting everyone', () => {
+            expect(issues({ ...base(), auth: {} }).some((issue) => issue.startsWith('auth'))).toBe(true);
+        });
+
+        it('gives an unauthenticated entry without roles every role this API checks', () => {
+            const config = ConfigSchema.parse(withIdp({ type: 'unauthenticated', defaultSubject: 'developer' }));
+
+            expect(config.auth.IDP).toMatchObject({
+                type: 'unauthenticated',
+                roles: ['knowledge-base-api.reader', 'knowledge-base-api.editor', 'knowledge-base-api.admin']
+            });
+        });
+
+        it('keeps the roles an unauthenticated entry names', () => {
+            const config = ConfigSchema.parse(withIdp({ type: 'unauthenticated', roles: ['knowledge-base-api.reader'], defaultSubject: 'developer' }));
+
+            expect(config.auth.IDP).toMatchObject({ roles: ['knowledge-base-api.reader'] });
+        });
+
+        it('fails at boot on an unauthenticated entry that grants no role', () => {
+            expect(issues(withIdp({ type: 'unauthenticated', roles: [], defaultSubject: 'developer' }))
+                .some((issue) => issue.startsWith('auth.IDP.roles'))).toBe(true);
+        });
+    });
+
     it('fails at boot on duplicate knowledge base ids', () => {
         const config = base();
         const [kb] = config.knowledgeBases as unknown[];

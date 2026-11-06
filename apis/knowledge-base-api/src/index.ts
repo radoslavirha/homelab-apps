@@ -55,7 +55,7 @@ try {
     // have to match the token's own claims exactly, and that comparison is the
     // one nobody makes by eye without seeing both sides.
     const auth = describeAuthConfig(config.config.auth);
-    logger[auth.level](auth.message, { event: 'AUTH_CONFIG', issuers: auth.issuers });
+    logger[auth.level](auth.message, { event: 'AUTH_CONFIG', issuers: auth.issuers, unauthenticated: auth.unauthenticated });
 
     // Flips /health/ready to 503, waits for in-flight requests, then stops. Ts.ED has no
     // pre-shutdown hook — `platform.stop()` destroys the injector before closing the

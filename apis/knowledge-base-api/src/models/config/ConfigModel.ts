@@ -11,6 +11,7 @@ import z from 'zod';
 // provider that every unit test then has to satisfy.
 import { createAuthConfigSchema } from '@radoslavirha/auth';
 import { AuthMethod } from './AuthMethod.enum.js';
+import { defaultUnauthenticatedRoles } from './defaultUnauthenticatedRoles.js';
 import { DatabaseConfigSchema } from './DatabaseConfig.js';
 import { EmbeddingsConfigSchema } from './EmbeddingsConfig.js';
 import { ExternalApi } from './ExternalApi.enum.js';
@@ -36,9 +37,10 @@ export const ConfigSchema = BaseConfig.extend({
     otel: OtelConfigSchema.optional().describe('OpenTelemetry configuration.'),
     /**
      * Required, and tied to the methods this API's routes actually ask for: a config
-     * without `auth.IDP` fails to parse at boot rather than answering 500 later.
+     * without `auth.IDP` fails to parse at boot rather than answering 500 later. An
+     * `unauthenticated` entry without `roles` gets every role this API checks.
      */
-    auth: createAuthConfigSchema(Object.values(AuthMethod)).describe('Authentication configuration.')
+    auth: z.preprocess(defaultUnauthenticatedRoles, createAuthConfigSchema(Object.values(AuthMethod))).describe('Authentication configuration.')
 }).superRefine((config, ctx) => {
     // Cross-field rules a per-field schema cannot express. Failing here stops the boot
     // with the offending path, rather than a KB that silently never embeds.

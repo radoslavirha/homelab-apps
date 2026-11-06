@@ -7,7 +7,23 @@ import { OllamaEndpoint } from './endpoints/ollama/OllamaEndpoint.js';
 import { ExternalApi } from './models/config/ExternalApi.enum.js';
 import { Server } from './Server.js';
 import { PostgresService } from './storage/postgres/PostgresService.js';
+import { ROLE_ADMIN, ROLE_EDITOR, ROLE_READER } from './models/Roles.js';
+import { bootstrapWritable, type WritableServer } from './test/bootstrapWritable.js';
 import { FakeOllamaEndpoint } from './test/FakeOllamaEndpoint.js';
+import { UNAUTHENTICATED_SUBJECT, UNAUTHENTICATED_SUBJECT_HEADER, unauthenticatedAuth } from './test/unauthenticatedAuth.js';
+
+const NOTE = {
+    kb: 'development',
+    title: 'Developers write without an IdP',
+    type: 'DECISION',
+    context: 'The API runs on a VPN with no identity provider.',
+    decisionOrFact: 'The IDP entry is unauthenticated.',
+    alternativesRejected: ['An IdP of its own: nobody to run it.'],
+    howToApply: 'Keep it on a trusted network.',
+    links: [],
+    repos: ['homelab-apps'],
+    date: '2026-11-06'
+};
 
 describe('Server', () => {
     let request: SuperTest.Agent;
@@ -101,6 +117,106 @@ describe('Server', () => {
                 .query<{ id: string; source: string; ts_config: string }>('SELECT id, source, ts_config::text FROM knowledge_bases');
 
             expect(rows).toEqual([{ id: 'development', source: 'GIT', ts_config: 'english' }]);
+        });
+    });
+});
+
+describe('Server — under an unauthenticated IDP entry', () => {
+    let server: WritableServer;
+
+    afterEach(PlatformTest.reset);
+
+    describe('granting reader, editor and admin', () => {
+        beforeEach(async () => {
+            server = await bootstrapWritable([unauthenticatedAuth([ROLE_READER, ROLE_EDITOR, ROLE_ADMIN])]);
+        });
+
+        it('answers GET /search and GET /status with no Authorization header', async () => {
+            expect.assertions(3);
+
+            const search = await server.request.get('/search').query({ q: 'anything' });
+            const status = await server.request.get('/status');
+
+            expect(search.status).toBe(200);
+            expect(status.status).toBe(200);
+            // The KB's readers check runs on the configured roles.
+            expect(status.body.knowledgeBases.map((kb: { id: string }) => kb.id)).toEqual(['development']);
+        });
+
+        it('ignores an Authorization header rather than refusing it', async () => {
+            expect.assertions(1);
+
+            expect((await server.request.get('/status').set('Authorization', 'Bearer not-a-jwt')).status).toBe(200);
+        });
+
+        it('writes for the On-Behalf-Of the caller sends, as the MCP does', async () => {
+            expect.assertions(2);
+
+            const response = await server.request.post('/notes').set('On-Behalf-Of', 'akadmin').send(NOTE);
+
+            expect(response.status).toBe(201);
+            expect(server.github.commits[0].message).toContain('On-behalf-of: akadmin');
+        });
+
+        it('writes for the caller\'s own subject when On-Behalf-Of is absent', async () => {
+            expect.assertions(3);
+
+            const response = await server.request.post('/notes').send(NOTE);
+
+            expect(response.status).toBe(201);
+            expect(server.github.commits[0].message).toContain(`On-behalf-of: ${UNAUTHENTICATED_SUBJECT}`);
+            expect(server.github.files.get(response.body.id)).toContain(`author: ${UNAUTHENTICATED_SUBJECT}`);
+        });
+
+        it('takes the subject from the unverified label header when one is sent', async () => {
+            expect.assertions(2);
+
+            const response = await server.request.delete('/documents')
+                .set(UNAUTHENTICATED_SUBJECT_HEADER, 'jane.doe')
+                .send({ kb: 'development', id: 'raw/2026-01-01-old.md', version: server.github.seed('raw/2026-01-01-old.md', '# Old\n'), reason: 'Superseded.' });
+
+            expect(response.status).toBe(200);
+            expect(server.github.commits[0].message).toContain('On-behalf-of: jane.doe');
+        });
+
+        it('still refuses a malformed On-Behalf-Of rather than falling back', async () => {
+            expect.assertions(2);
+
+            expect((await server.request.post('/notes').set('On-Behalf-Of', 'a b').send(NOTE)).status).toBe(400);
+            expect(server.github.commits).toEqual([]);
+        });
+
+        it('starts POST /reindex: admin is one of the configured roles', async () => {
+            expect.assertions(1);
+
+            expect((await server.request.post('/reindex')).status).toBe(202);
+        });
+    });
+
+    describe('granting reader and editor, not admin', () => {
+        beforeEach(async () => {
+            server = await bootstrapWritable([unauthenticatedAuth([ROLE_READER, ROLE_EDITOR])]);
+        });
+
+        it('answers 403 on POST /reindex and starts nothing, while reads still work', async () => {
+            expect.assertions(3);
+
+            expect((await server.request.post('/reindex')).status).toBe(403);
+            expect(server.trigger).not.toHaveBeenCalled();
+            expect((await server.request.get('/status')).status).toBe(200);
+        });
+    });
+
+    describe('granting reader only', () => {
+        beforeEach(async () => {
+            server = await bootstrapWritable([unauthenticatedAuth([ROLE_READER])]);
+        });
+
+        it('answers 403 on a write and commits nothing', async () => {
+            expect.assertions(2);
+
+            expect((await server.request.post('/notes').send(NOTE)).status).toBe(403);
+            expect(server.github.commits).toEqual([]);
         });
     });
 });
