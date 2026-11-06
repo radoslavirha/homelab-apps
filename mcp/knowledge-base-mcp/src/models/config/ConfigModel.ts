@@ -8,7 +8,7 @@ import { ExternalApi } from './ExternalApi.enum.js';
 import { McpServersSchema } from './McpServerConfig.js';
 
 /**
- * Every endpoint carries its own required `auth`; there is no way to switch it off.
+ * Every endpoint carries its own required `auth`, of an explicit `type`; nothing is open by omission.
  */
 export const ConfigSchema = BaseConfig.extend({
     // Required here, optional in BaseConfig: each endpoint's resource identifier is this plus its

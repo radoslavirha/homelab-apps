@@ -57,11 +57,9 @@ enum — the inbound mirror of `ExternalApi` and `externalApis`:
 
 Three properties worth knowing before changing any of it:
 
-- **There is no off switch.** No mode, no `enabled` flag, no default that admits everyone. Every such
+- **There is no off switch.** No mode, no `enabled` flag, no permissive verifier type. Every such
   state is one where a forgotten key in a values file leaves a service up, healthy and unauthenticated.
   A route is guarded by `@Authenticate()` or opened by `@Anonymous()`, both visible in the source.
-  The one permissive verifier, `type: "unauthenticated"`, is an explicit per-entry choice, mostly for
-  testing; it names the principal and roles it grants and warns at boot.
 - **A misconfiguration fails at boot, not at the first request.** The schema requires a key per
   declared `AuthMethod`, requires at least one trusted issuer, and is strict — a typo is a rejected
   key, not a silently stripped one.

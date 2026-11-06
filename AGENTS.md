@@ -289,14 +289,9 @@ matter in every change:
 - **Declare `AuthMethod` in the app** and feed it to the config schema:
   `auth: createAuthConfigSchema(Object.values(AuthMethod))`. It names *trust domains* (where a
   caller's credential comes from), not caller classes or mechanisms.
-- **There is no way to switch auth off** — no mode, no `enabled` flag, no default that admits
-  everyone. Local development uses the sandbox IdP's real JWKS (`config/localhost.json`); tests use
-  an inline HS256 key (`config/test.json`).
-- **The one permissive verifier is an explicit, named type: `unauthenticated`.** It admits every
-  request as a configured principal with all its configured roles, mostly for testing without an
-  IdP. It is chosen deliberately per `auth` entry, never a default or a missing key — a forgotten
-  entry still fails at boot — and the boot log warns while one is configured. Routes keep their
-  `@Authenticate` and `@RequireRoles`.
+- **There is no way to switch auth off** — no mode, no `enabled` flag, no permissive verifier.
+  Local development uses the sandbox IdP's real JWKS (`config/localhost.json`); tests use an
+  inline HS256 key (`config/test.json`).
 - **A misconfiguration must fail at boot** (`createAuthConfigSchema` makes it a parse error).
 - **A service that decides by the caller injects `PrincipalService`** and calls `require()` (or
   `current()` where there may be none). Do not read `@CurrentPrincipal()` in a controller only to

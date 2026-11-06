@@ -10,7 +10,7 @@ export const McpServerConfigSchema = z.object({
     title: z.string().min(1).describe('Human-readable name clients show.'),
     description: z.string().min(1).optional().describe('What the server is for. Defaults to the package description.'),
     instructions: z.string().min(1).optional().describe('The MCP server `instructions` clients hand their agent: how to use this knowledge base. Defaults to `DEFAULT_INSTRUCTIONS` — search first, call `conventions` before writing or preparing files, approve writes.'),
-    auth: McpServerAuthConfigSchema.describe('Who may call the endpoint. Required: there is no anonymous endpoint.')
+    auth: McpServerAuthConfigSchema.describe('Who may call the endpoint, by `type`: `oauth` (the default when `type` is absent) or `unauthenticated`. Required: an endpoint is never open by omission.')
 });
 
 export type McpServerConfig = z.infer<typeof McpServerConfigSchema>;

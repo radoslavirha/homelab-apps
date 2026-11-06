@@ -23,8 +23,8 @@ export class AuthProvider extends AuthenticationService {
 ```
 
 That is all. Left to itself it builds one verifier per configured entry, chosen by that entry's
-`type` — a `JwtVerifier` over whichever key sources the configuration implies (inline rows, JWKS
-rows, or a mix) for `bearer-jwt`, or an `UnauthenticatedVerifier` for `unauthenticated`.
+`type` — today a `JwtVerifier` over whichever key sources the configuration implies, inline rows, JWKS
+rows, or a mix.
 
 Declare the config with the methods the routes actually ask for, and a deployment that forgot one
 fails at boot naming `auth.IDP`, rather than answering 500 on the first guarded request:
@@ -229,7 +229,7 @@ arguments, and the two cannot drift apart. Vary the caller with
 captured from a browser, or a deliberately broken one — no helper is needed:
 `agent.set('Authorization', \`Bearer ${token}\`)`.
 
-## Four things worth knowing
+## Three things worth knowing
 
 **A refusal tells the caller nothing.** The verifier's `detail` — a JOSE error, the audience that did
 not match — is for operators, and handing it over tells an attacker which part of their forgery to
@@ -240,12 +240,6 @@ wire. A test pins that. The detail stays on the `AuthDecision` for whoever wants
 **`indeterminate` answers `503`, not `401`.** Every other reason is a statement about the credential;
 that one is a statement about us. A `401` when our own JWKS fetch timed out blames a token that was
 never the problem, and is not retriable.
-
-**An `unauthenticated` entry needs nothing from the guard.** The guard never refuses a request for
-lacking a header; it asks each method's verifier, and that verifier admits everyone as its configured
-principal. So a route keeps `@Authenticate(AuthMethod.X)` and `@RequireRoles(...)` unchanged and the
-deployment alone decides — `200` with no header, `403` for a role the entry does not grant
-(`AuthGuard.integration.spec.ts` pins both). See `@radoslavirha/auth`'s README.
 
 **A non-bearer `Authorization` header reads as no credential.** `Basic …` reaching the JWT verifier
 would be counted as `invalid`, which looks like an attack rather than a client using the wrong scheme.

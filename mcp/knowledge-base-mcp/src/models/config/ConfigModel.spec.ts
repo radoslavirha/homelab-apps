@@ -73,7 +73,7 @@ describe('ConfigSchema', () => {
         expect(result.error?.issues[0].path).toEqual(['publicURL']);
     });
 
-    it('refuses an endpoint without auth: there is no anonymous endpoint', () => {
+    it('refuses an endpoint without auth: none is open by omission', () => {
         const { path, kb, name, title } = TEST_SERVER;
         const result = ConfigSchema.safeParse({ ...MINIMAL, mcpServers: { ...TEST_SERVERS, DEVELOPMENT_KB: { path, kb, name, title } } });
 

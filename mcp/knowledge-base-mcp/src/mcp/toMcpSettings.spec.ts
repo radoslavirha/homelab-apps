@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { McpTokenVerifier } from '../auth/McpTokenVerifier.js';
-import { TEST_SERVER, TEST_SERVERS } from '../test/fixtures.js';
+import { TEST_OPEN_SERVER, TEST_SERVER, TEST_SERVERS } from '../test/fixtures.js';
 import { DEFAULT_INSTRUCTIONS, resourceOf, toMcpSettings } from './toMcpSettings.js';
 
 class SomeTool {}
@@ -63,6 +63,12 @@ describe('toMcpSettings', () => {
             resourceName: 'Test title',
             verifier: expect.any(McpTokenVerifier)
         });
+    });
+
+    it('gives an unauthenticated endpoint only a pre-auth check: no issuer, so no metadata and no 401 challenge', () => {
+        const [settings] = toMcpSettings({ ...CONFIG, mcpServers: { OPEN_KB: TEST_OPEN_SERVER } }, { version: '1.2.3' }, []);
+
+        expect(settings.auth).toEqual({ preAuth: expect.any(Function) });
     });
 });
 
