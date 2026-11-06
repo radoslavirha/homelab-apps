@@ -1,9 +1,10 @@
 import { runInContext } from '@tsed/di';
 import { Forbidden, InternalServerError } from '@tsed/exceptions';
 import { PlatformTest } from '@tsed/platform-http/testing';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { KnowledgeBaseRole } from '../models/config/KnowledgeBaseRole.enum.js';
-import { TEST_ROLES } from '../test/fixtures.js';
+import { TEST_OPEN_SERVER, TEST_ROLES } from '../test/fixtures.js';
+import { ConfigService } from './ConfigService.js';
 import { McpEndpointService } from './McpEndpointService.js';
 
 /**
@@ -26,6 +27,7 @@ describe('McpEndpointService', () => {
         endpoint = PlatformTest.get<McpEndpointService>(McpEndpointService);
     });
     afterEach(PlatformTest.reset);
+    afterEach(() => vi.restoreAllMocks());
 
     it('gives the knowledge base of the endpoint the request came in on', async () => {
         expect.assertions(1);
@@ -66,6 +68,19 @@ describe('McpEndpointService', () => {
 
             await expect(onRequestTo('/development', () => endpoint.requireRole(KnowledgeBaseRole.Editor), [TEST_ROLES.READER])).rejects.toThrow(new Forbidden('Insufficient permissions.'));
             await expect(onRequestTo('/development', () => endpoint.requireRole(KnowledgeBaseRole.Reader), ['kb-home.reader'])).rejects.toThrow(new Forbidden('Insufficient permissions.'));
+        });
+
+        it('refuses a level an unauthenticated endpoint does not map, whatever the caller holds', async () => {
+            expect.assertions(2);
+
+            const configService = PlatformTest.get<ConfigService>(ConfigService);
+            const readOnly = { ...TEST_OPEN_SERVER, auth: { ...TEST_OPEN_SERVER.auth, roles: { READER: TEST_OPEN_SERVER.auth.roles.READER } } };
+
+            vi.spyOn(configService, 'config', 'get').mockReturnValue({ ...configService.config, mcpServers: { OPEN_KB: readOnly } });
+            const roles = [TEST_OPEN_SERVER.auth.roles.READER!, TEST_OPEN_SERVER.auth.roles.EDITOR!];
+
+            await expect(onRequestTo('/open', () => endpoint.requireRole(KnowledgeBaseRole.Reader), roles)).resolves.toBeUndefined();
+            await expect(onRequestTo('/open', () => endpoint.requireRole(KnowledgeBaseRole.Editor), roles)).rejects.toThrow(new Forbidden('Insufficient permissions.'));
         });
 
         it('refuses a request nobody was verified on', async () => {

@@ -13,7 +13,7 @@ without a server.
 | Export | What it fixes |
 | --- | --- |
 | `Principal` | One shape every mechanism resolves to — IdP JWT, Kubernetes SA JWT, API key, MQTT identity. Downstream code never learns which produced it |
-| `VerifierType` | `bearer-jwt`, `unauthenticated`. How an entry's credentials are checked — the `type` field, and the discriminant of `VerifierSchema` |
+| `VerifierType` | `bearer-jwt`. How an entry's credentials are checked — the `type` field, and the discriminant of `VerifierSchema` |
 | `VerificationReason` | `ok`, `missing`, `invalid`, `wrong-audience`, `unknown-issuer`, `indeterminate` |
 | `VerificationOutcome` | Discriminated union, so "verified" and "has a principal" cannot drift apart |
 | `ITokenVerifier` | Credential in, outcome out. Async, never throws for a bad credential |
@@ -22,13 +22,12 @@ without a server.
 | `createAuthConfigSchema` | The same map tied to the methods a service's routes ask for — each becomes a **required** key |
 | `mintTestToken`, `FakeTokenVerifier` | Shared test kit, so later units do not each invent one |
 | `JwtVerifier` | Verifies a JWT against the configured trust sources and yields a `Principal` |
-| `UnauthenticatedVerifier` | Checks no credential: admits every request as the entry's configured principal. See [The `unauthenticated` type](#the-unauthenticated-type) |
 | `StaticKeySource` | Serves keys carried inline in the configuration — no network, no cache |
 | `RemoteJwksSource` | Serves keys from a remote JWKS: selected by `kid`, cached, bounded refresh, hard timeout |
 | `UnresolvableKeyError` | Marks a key failure as the *token's* fault, so it reports `invalid` rather than `indeterminate` |
 | `AmbiguousKeyError` | An `UnresolvableKeyError` carrying several candidate keys; the verifier tries each and the signature decides |
 | `Authenticator` | Routes a credential to the verifier the route asked for, and returns an allow/refuse decision |
-| `describeAuthConfig` | The boot-time summary: every trusted issuer, where its keys come from, and a `warn` for every `unauthenticated` method |
+| `describeAuthConfig` | The boot-time summary: every trusted issuer, and where its keys come from |
 | `recordVerification` | The outcome counter |
 
 ## Three decisions worth knowing
@@ -79,9 +78,7 @@ instead.
 **There is no way to say "not really on".** No disable flag, no observe-only mode. Every such switch
 is a state where a forgotten key in a values file leaves a service up, healthy and unauthenticated —
 which is exactly the failure the switch was added to prevent. A route is guarded by `@Authenticate()`
-or opened by `@Anonymous()`, and both are visible in the source next to the route. The one way to
-admit everyone is to *say so* — an entry of `type: "unauthenticated"`, below — which a forgotten key
-can never produce.
+or opened by `@Anonymous()`, and both are visible in the source next to the route.
 
 **A name is not a mechanism.** An entry's *name* says which callers a route admits;
 `VerifierType.BearerJwt` says how their credentials are checked, as the entry's `type` in
@@ -104,10 +101,8 @@ is **strict**, so `IPD` is a rejected typo rather than a silently stripped key.
 
 **The `auth` block is nothing but that map.** No wrapper key, no switch, and no route allowlist. An
 `anonymousRoutes` list lived here briefly and was deleted: nothing enforced it — `@Anonymous()` does —
-so it was a second copy of the truth, free to drift from the routes it claimed to describe. A
-`dummy` or `allow-all` type that tests or local development reach for would be `mode: disabled`
-wearing a different hat, and there is none; `unauthenticated` is chosen per entry by name (see
-below) and says what it grants.
+so it was a second copy of the truth, free to drift from the routes it claimed to describe. There is
+no `dummy` or `allow-all` verifier type either: that is `mode: disabled` wearing a different hat.
 
 **Metric instruments are built per meter provider, never eagerly.** The metrics API has no proxy
 provider: an instrument created before the SDK starts is bound to the no-op provider forever, and
@@ -151,36 +146,6 @@ vulnerability.
 
 Where the IdP is reachable — which, for a homelab, is everywhere — the honest local config is the IdP
 itself, with `key.source: jwks`. `config/localhost.json` for `qr-manager-api` does exactly that.
-
-## The `unauthenticated` type
-
-```jsonc
-"auth": {
-    "IDP": {
-        "type": "unauthenticated",
-        "roles": ["knowledge-base-api.reader", "knowledge-base-api.editor"],
-        "defaultSubject": "developer",
-        "subjectHeader": "X-User"    // optional, unverified
-    }
-}
-```
-
-Mostly for testing — running a service without an IdP to verify against. Every request is admitted, credential or not, as a principal with
-`subject` = `defaultSubject`, `kind` = `subjectKind` (default `human`), every configured role, and
-`issuer` = `unauthenticated` (`UNAUTHENTICATED_ISSUER`), so a log line or metric never mistakes it for
-a verified caller. An `Authorization` header is ignored, not refused.
-
-- **Explicit, never implied.** It exists only where an entry says `"type": "unauthenticated"`. It is not
-  a default, a flag or a missing key: `createAuthConfigSchema` still refuses a config that forgot the
-  entry, and the schema needs at least one role and a `defaultSubject`.
-- **Loud at boot.** `describeAuthConfig` returns level `warn` while any entry is this type, and its line
-  names the method, the subject and every role it grants.
-- **Routes do not change.** `@Authenticate(AuthMethod.X)` and `@RequireRoles` stay as they are; a role
-  the entry does not list is still a `403`. Moving to an IdP later is a config change.
-- **`subjectHeader` is a label, not identity.** When the request carries that header and its value
-  matches `UNAUTHENTICATED_SUBJECT_PATTERN` (`^[\w.@+-]{1,150}$`), it becomes the subject — for logs
-  and commit attribution only. Anyone on the network can send any name; absent or malformed falls back
-  to `defaultSubject` and never refuses.
 
 ## The barrel is owned by this package
 

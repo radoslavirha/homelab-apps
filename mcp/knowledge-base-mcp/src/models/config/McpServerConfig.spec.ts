@@ -16,10 +16,11 @@ describe('McpServersSchema', () => {
         expect(Object.keys(result.data ?? {})).toEqual(['DEVELOPMENT_KB', 'HOME_KB', 'TEAM2_KB']);
     });
 
-    it('accepts the homelab production config unchanged', () => {
-        const production = { DEVELOPMENT_KB: TEST_SERVER, LOXONE_KB: TEST_LOXONE_SERVER };
+    it('accepts the homelab production config unchanged, its `auth` without a `type` read as `oauth`', () => {
+        const untyped = <T extends { auth: object }>(server: T): T => ({ ...server, auth: Object.fromEntries(Object.entries(server.auth).filter(([key]) => key !== 'type')) });
+        const production = { DEVELOPMENT_KB: untyped(TEST_SERVER), LOXONE_KB: untyped(TEST_LOXONE_SERVER) };
 
-        expect(McpServersSchema.safeParse(production).data).toEqual(production);
+        expect(McpServersSchema.safeParse(production).data).toEqual({ DEVELOPMENT_KB: TEST_SERVER, LOXONE_KB: TEST_LOXONE_SERVER });
     });
 
     it('refuses an empty map: an app without an endpoint serves nothing', () => {
