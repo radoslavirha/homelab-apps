@@ -6,7 +6,7 @@ export class WriteDocumentInput {
     @MinLength(1)
     public id: string;
 
-    @Description('The whole markdown, frontmatter included (`status`, `repos`, `created`). Not a patch.')
+    @Description('The whole markdown, starting with YAML frontmatter: `status` — one of `draft`, `approved`, `in-progress`, `done`, `abandoned`, `reference`; `repos` — a list of repository names, `[]` for none; `created` — `YYYY-MM-DD`. Not a patch.')
     @Required()
     @MinLength(1)
     public content: string;

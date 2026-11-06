@@ -6,14 +6,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExternalApi } from './models/config/ExternalApi.enum.js';
 import { toMcpSettings } from './mcp/toMcpSettings.js';
 import { Server } from './Server.js';
-import { TEST_PUBLIC_URL, TEST_SERVER, userToken } from './test/fixtures.js';
+import { TEST_PUBLIC_URL, TEST_SERVERS, userToken } from './test/fixtures.js';
 
 /** What a Streamable HTTP client sends: it must accept both a JSON answer and an event stream. */
 const MCP_HEADERS = { Accept: 'application/json, text/event-stream', 'Content-Type': 'application/json' };
 
 /** The endpoint as index.ts builds it, from fixed values instead of ConfigService. */
 const MCP = toMcpSettings(
-    { publicURL: TEST_PUBLIC_URL, mcpServers: { DEVELOPMENT_KB: TEST_SERVER } },
+    { publicURL: TEST_PUBLIC_URL, mcpServers: TEST_SERVERS },
     { description: 'Test description', version: '9.9.9' },
     []
 );

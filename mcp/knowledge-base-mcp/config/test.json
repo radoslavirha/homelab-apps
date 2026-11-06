@@ -23,6 +23,26 @@
                     "EDITOR": "knowledge-base-mcp-development.editor"
                 }
             }
+        },
+        "LOXONE_KB": {
+            "path": "/loxone",
+            "kb": "loxone",
+            "name": "loxone-knowledge-base",
+            "title": "Loxone knowledge base",
+            "description": "Knowledge base for Loxone home automation notes.",
+            "auth": {
+                "issuer": "https://issuer.test/",
+                "audience": "test-loxone-audience",
+                "key": {
+                    "source": "value",
+                    "algorithm": "HS256",
+                    "value": "test-secret-not-a-real-key-000000"
+                },
+                "roles": {
+                    "READER": "knowledge-base-mcp-loxone.reader",
+                    "EDITOR": "knowledge-base-mcp-loxone.editor"
+                }
+            }
         }
     },
     "externalApis": {

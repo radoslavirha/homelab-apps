@@ -2,6 +2,7 @@ import { Serializer } from '@radoslavirha/tsed-common';
 import { PlatformTest } from '@tsed/platform-http/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CommonUtils } from '@radoslavirha/utils';
+import { ConventionsResponseDTO } from '../endpoints/knowledge-base-api/dto/ConventionsResponseDTO.js';
 import { DocumentDeleteRequestDTO } from '../endpoints/knowledge-base-api/dto/DocumentDeleteRequestDTO.js';
 import { DocumentDeleteResponseDTO } from '../endpoints/knowledge-base-api/dto/DocumentDeleteResponseDTO.js';
 import { DocumentResponseDTO } from '../endpoints/knowledge-base-api/dto/DocumentResponseDTO.js';
@@ -11,6 +12,7 @@ import { NoteCreateRequestDTO } from '../endpoints/knowledge-base-api/dto/NoteCr
 import { NoteCreateResponseDTO } from '../endpoints/knowledge-base-api/dto/NoteCreateResponseDTO.js';
 import { NoteTypeDTO } from '../endpoints/knowledge-base-api/dto/NoteTypeDTO.enum.js';
 import { SearchResponseDTO } from '../endpoints/knowledge-base-api/dto/SearchResponseDTO.js';
+import { ConventionsOutput } from '../models/ConventionsOutput.js';
 import { CreateNoteInput } from '../models/CreateNoteInput.js';
 import { CreateNoteOutput } from '../models/CreateNoteOutput.js';
 import { CurrentDocument } from '../models/CurrentDocument.js';
@@ -50,6 +52,15 @@ describe('KnowledgeBaseMapper', () => {
             id: 'raw/a.md', anchor: 'raw/a.md#fact', title: 'A', heading: 'Fact', snippet: 's', date: '2026-01-01'
         })]);
         expect(output.hits[0]).not.toHaveProperty('kb');
+    });
+
+    it('turns a knowledge base\'s conventions into the tool\'s output, "publishes none" as empty markdown', () => {
+        const some = mapper.toConventions(Serializer.deserialize({ kb: 'development', path: 'README.md', markdown: '# Rules', version: 'b1' }, ConventionsResponseDTO));
+        const none = mapper.toConventions(Serializer.deserialize({ kb: 'development', path: null, markdown: null, version: null }, ConventionsResponseDTO));
+
+        expect(some).toBeInstanceOf(ConventionsOutput);
+        expect(some).toEqual({ path: 'README.md', markdown: '# Rules' });
+        expect(none).toEqual({ path: null, markdown: '' });
     });
 
     it('gives a read document its markdown under `markdown`, never `content`', () => {

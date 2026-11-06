@@ -1,5 +1,21 @@
 # interactive-map-feeder
 
+## 0.16.12
+
+### Patch Changes
+
+- Updated dependencies [[`0c4b327`](https://github.com/radoslavirha/homelab-apps/commit/0c4b3276fcf804b8f90ec09616c66d326dc10410)]:
+  - @radoslavirha/auth@0.4.0
+  - @radoslavirha/tsed-auth@0.4.0
+
+## 0.16.11
+
+### Patch Changes
+
+- [#414](https://github.com/radoslavirha/homelab-apps/pull/414) [`5b0d05f`](https://github.com/radoslavirha/homelab-apps/commit/5b0d05fdf9a8614d6cba048fefa41d15fa318e4d) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - City LEDs now light for ≥60 dBZ storm cores, which ČHMÚ draws white.
+- Updated dependencies [[`7b3d6bb`](https://github.com/radoslavirha/homelab-apps/commit/7b3d6bb2d9895c4dd7136b6391fb51f588b39247)]:
+  - @radoslavirha/tsed-http-provider@0.2.14
+
 ## 0.16.10
 
 ### Patch Changes

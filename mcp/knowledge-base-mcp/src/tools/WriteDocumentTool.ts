@@ -15,10 +15,14 @@ export class WriteDocumentTool {
     @Tool('write_document', { title: 'Write a spec or plan', annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false } })
     @Description(
         'Create or rewrite a whole spec or plan under `work/` in the knowledge base: one commit, made for the signed-in user. ' +
-        'For a spec or plan the user is shaping for work across repositories — not for what the code or a repository\'s own docs ' +
+        'For a spec or plan the user is shaping for work across systems — not for what the code or its own docs ' +
         'already say, not for progress updates, and never for anything personal or secret (a secret is refused). ' +
         '`search` first: rewrite the spec that exists rather than starting a second one. ' +
-        'Send the whole markdown, frontmatter included; there are no partial edits. Before calling, show the user the full ' +
+        'Send the whole markdown, frontmatter included; there are no partial edits. The id is ' +
+        '`work/<YYYY-MM-DD>-<kebab-slug>/spec.md` or `…/plan.md`, and the content starts with YAML frontmatter holding ' +
+        '`status` (one of `draft`, `approved`, `in-progress`, `done`, `abandoned`, `reference`), `repos` (a list of repository ' +
+        'names, `[]` for none) and `created` (`YYYY-MM-DD`); anything else breaks the write. Call `conventions` first for how this ' +
+        'knowledge base writes its specs. Before calling, show the user the full ' +
         'document (or exactly what changes) and get their yes. ' +
         'To create, leave out `version`. To rewrite, pass the version your change was made to: from `read`, or the `version` your ' +
         'last write of it returned — keep that one for the next edit; there is no need to `read` again. ' +

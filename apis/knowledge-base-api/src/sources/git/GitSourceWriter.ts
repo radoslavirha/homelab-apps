@@ -1,13 +1,12 @@
 import { CommonUtils } from '@radoslavirha/utils';
-import { type GitHubEndpoint, isGitHubNotFound, isGitHubWriteRefusal } from '../../endpoints/github/GitHubEndpoint.js';
+import { type GitHubEndpoint, isGitHubWriteRefusal } from '../../endpoints/github/GitHubEndpoint.js';
 import { GitHubContentDeleteRequestDTO } from '../../endpoints/github/dto/GitHubContentDeleteRequestDTO.js';
-import type { GitHubContentDTO } from '../../endpoints/github/dto/GitHubContentDTO.js';
 import { GitHubContentPutRequestDTO } from '../../endpoints/github/dto/GitHubContentPutRequestDTO.js';
-import { GitHubContentTypeDTO } from '../../endpoints/github/dto/GitHubContentTypeDTO.enum.js';
 import type { GitHubRepositoryDTO } from '../../endpoints/github/dto/GitHubRepositoryDTO.js';
 import type { GitKnowledgeBaseConfig } from '../../models/config/KnowledgeBaseConfig.js';
 import { SourceWriteRefusedError } from '../SourceWriteRefusedError.js';
 import type { SourceDeleteResult, SourceFile, SourceWriter, SourceWriteResult } from '../SourceWriter.js';
+import { GitFileReader } from './GitFileReader.js';
 import type { GitHubRepositoryService } from './GitHubRepositoryService.js';
 
 /**
@@ -21,35 +20,22 @@ import type { GitHubRepositoryService } from './GitHubRepositoryService.js';
  * Not a DI provider: one per git knowledge base, owned by its `GitSourceAdapter`.
  */
 export class GitSourceWriter implements SourceWriter {
+    private readonly reader: GitFileReader;
+
     public constructor(
         private readonly kb: GitKnowledgeBaseConfig,
         private readonly repositories: GitHubRepositoryService,
         private readonly github: GitHubEndpoint
-    ) {}
+    ) {
+        this.reader = new GitFileReader(kb, repositories, github);
+    }
 
-    public async read(id: string): Promise<SourceFile | null> {
-        const repository = await this.repositories.repository();
-        let file: GitHubContentDTO;
-
-        try {
-            file = await this.github.getContent(repository, id, this.branch(repository));
-        } catch (error) {
-            if (isGitHubNotFound(error)) {
-                return null;
-            }
-
-            throw error;
-        }
-
-        if (file.type !== GitHubContentTypeDTO.File || file.encoding !== 'base64') {
-            throw new Error(`${id} is not a file the contents API can return whole.`);
-        }
-
-        return { content: Buffer.from(file.content, 'base64').toString('utf-8'), version: file.sha };
+    public read(id: string): Promise<SourceFile | null> {
+        return this.reader.read(id);
     }
 
     public async write(id: string, content: string, version: string | null, message: string): Promise<SourceWriteResult> {
-        const repository = await this.repositories.repository();
+        const repository = await this.repositories.repository(this.kb);
         const request = CommonUtils.buildModelPartial(GitHubContentPutRequestDTO, {
             message,
             content: Buffer.from(content, 'utf-8').toString('base64'),
@@ -64,7 +50,7 @@ export class GitSourceWriter implements SourceWriter {
     }
 
     public async delete(id: string, version: string, message: string): Promise<SourceDeleteResult> {
-        const repository = await this.repositories.repository();
+        const repository = await this.repositories.repository(this.kb);
         const request = CommonUtils.buildModelStrict(GitHubContentDeleteRequestDTO, {
             message,
             sha: version,

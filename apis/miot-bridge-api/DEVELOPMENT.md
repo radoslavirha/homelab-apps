@@ -81,7 +81,7 @@ Controller integration specs boot against a real MongoDB from `@tsed/testcontain
 - Per-device back-off after `maxErrorCount` consecutive errors (`errorSkipCycles` cycles skipped).
 - Emits `property:changed` events on value changes (or every cycle when `dispatchOnChange = false`).
 
-`NotificationDispatchService` receives `property:changed` events (and direct observations from `DeviceCommandService` for `GetProperty` calls) and publishes them over MQTT when `mqtt.notifications.enabled`. MQTT is the only outbound notification transport; the HTTP POST and UDP datagram transports were removed.
+`NotificationDispatchService` receives `property:changed` events (and direct observations from `DeviceCommandService` for `GetProperty` calls) and publishes them over MQTT when `mqtt.notifications.enabled`. MQTT is the only outbound notification transport; the HTTP POST and UDP datagram transports were removed. Publishes go through one in-memory queue paced by `mqtt.notifications.publishIntervalMs`, so a burst cannot outrun Loxone's single subscription, which processes only the newest message per 2 s. The queue stops while the client is offline, because mqtt.js would otherwise hold those publishes and flush them together on reconnect, and resumes one interval after the reconnect. The queue is not persisted: messages still waiting at shutdown are dropped, and the next pod publishes every subscribed property on its first read.
 
 Subscription state mutations (`addSubscriptions`, `removeSubscription`, `removeAllSubscriptions`) are called synchronously by the notification REST handlers after persisting to storage, keeping the in-memory cache consistent without a storage round-trip per tick.
 

@@ -1,5 +1,6 @@
 export * from './AreaCount.js';
 export * from './ChunkingMode.enum.js';
+export * from './ConventionsGetResponse.js';
 export * from './DocumentsDeleteRequest.js';
 export * from './DocumentsDeleteResponse.js';
 export * from './DocumentsGetResponse.js';

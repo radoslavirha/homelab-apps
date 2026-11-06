@@ -1,6 +1,6 @@
-import { Inject, Service, Scope, ProviderScope } from '@tsed/di';
+import { Inject, Service, Scope, ProviderScope, type OnDestroy } from '@tsed/di';
 import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
-import { SpanStatusCode } from '@opentelemetry/api';
+import { context, SpanStatusCode, type Context } from '@opentelemetry/api';
 import type { MqttClient } from 'mqtt';
 import type { PropertyChangeEvent } from '../models/PropertyChangeEvent.js';
 import { NotificationPayload } from '../models/NotificationPayload.js';
@@ -15,6 +15,21 @@ import { ATTR_MIOT_DEVICE_ID, ATTR_MIOT_PROPERTY, identifierAttribute } from '..
 const QOS = 1;
 
 /**
+ * Default minimum gap between two publishes when `mqtt.notifications.publishIntervalMs` is unset.
+ *
+ * Must stay above the 2 s at which the Loxone Miniserver evaluates a subscription. At 1.5 s every
+ * fourth message was overwritten in its cache. The margin above 2 s is there so that timer jitter and
+ * network delay cannot close the gap.
+ */
+export const DEFAULT_PUBLISH_INTERVAL_MS = 3_000;
+
+/** A notification waiting for its turn, with the trace it belongs to. */
+interface QueuedNotification {
+    payload: NotificationPayload;
+    context: Context;
+}
+
+/**
  * Central hub for all inbound property-value observations, regardless of transport.
  *
  * Sources:
@@ -23,11 +38,43 @@ const QOS = 1;
  *
  * Outbound transport: MQTT publish. MQTT is the only outbound channel to the controllers;
  * UDP stays solely for the MIoT protocol to the devices themselves.
+ *
+ * ### Why publishes are paced
+ * Loxone reads every property through one subscription, and the Miniserver evaluates a subscription
+ * at most every 2 s: it caches what arrives in between and processes only the newest message, so the
+ * older ones never reach its command recognition blocks (https://www.loxone.com/enen/kb/mqtt).
+ * Consumables tend to change in the same tick, and a restart publishes every subscription within
+ * milliseconds. The poller only publishes on
+ * change, so a value lost that way stayed wrong in Loxone until it changed again, which for a
+ * consumable can be days. Every publish goes through one queue, so REST and the poller cannot
+ * overlap either.
+ *
+ * A property already waiting has its value replaced in place: the newest value is the only one
+ * worth sending, and it keeps the queue bounded by the number of subscribed properties.
+ *
+ * ### Why the queue stops while the client is offline
+ * mqtt.js accepts a publish while offline and sends everything it holds the moment it reconnects,
+ * which turns paced messages back into a burst. So messages stay here until the client is back. The
+ * first one then waits a full interval too, because mqtt.js resends a publish the broker never
+ * acknowledged as soon as it reconnects.
  */
 @Service()
 @Scope(ProviderScope.SINGLETON)
-export class NotificationDispatchService {
+export class NotificationDispatchService implements OnDestroy {
     private readonly logger: BaseLogger;
+
+    private readonly queue: QueuedNotification[] = [];
+
+    private timer: NodeJS.Timeout | undefined;
+
+    /** Start of the last publish. Far in the past at boot, so the first message goes out at once. */
+    private lastPublishAt = Number.NEGATIVE_INFINITY;
+
+    private readonly onReconnect = (): void => {
+        this.clearTimer();
+        this.lastPublishAt = Date.now();
+        this.scheduleNext();
+    };
 
     constructor(
         private readonly configService: ConfigService,
@@ -37,10 +84,14 @@ export class NotificationDispatchService {
         logger: Logger
     ) {
         this.logger = logger.child('NOTIFICATION_DISPATCH');
+
+        // The provider resolves only after the first connect, so every `connect` seen here is a
+        // reconnect.
+        this.mqttClient?.on('connect', this.onReconnect);
     }
 
     /**
-     * Receives a property-value observation and publishes it over MQTT when
+     * Receives a property-value observation and queues it for an MQTT publish when
      * MQTT notifications are enabled.
      */
     public receive(event: PropertyChangeEvent): void {
@@ -53,8 +104,78 @@ export class NotificationDispatchService {
         const config = this.configService.config;
 
         if (ObjectUtils.isEnabled(config.mqtt?.notifications) && this.mqttClient) {
-            void this.sendMqtt(payload);
+            this.enqueue(payload);
         }
+    }
+
+    /**
+     * Drops whatever is still waiting. The poller's last values live in memory too, so the next
+     * pod publishes every subscribed property anyway.
+     */
+    public $onDestroy(): void {
+        this.mqttClient?.off('connect', this.onReconnect);
+        this.clearTimer();
+
+        if (!CommonUtils.isEmpty(this.queue)) {
+            this.logger.info(`Dropping ${this.queue.length} queued notification(s) on shutdown.`);
+            this.queue.length = 0;
+        }
+    }
+
+    private enqueue(payload: NotificationPayload): void {
+        const queued: QueuedNotification = { payload, context: context.active() };
+        const waiting = this.queue.findIndex(
+            ({ payload: other }) => other.deviceId === payload.deviceId && other.property === payload.property
+        );
+
+        if (waiting >= 0) {
+            this.queue[waiting] = queued;
+        } else {
+            this.queue.push(queued);
+        }
+
+        this.scheduleNext();
+    }
+
+    private scheduleNext(): void {
+        if (CommonUtils.notNil(this.timer) || CommonUtils.isEmpty(this.queue)) {
+            return;
+        }
+
+        const interval = this.configService.config.mqtt?.notifications?.publishIntervalMs ?? DEFAULT_PUBLISH_INTERVAL_MS;
+        const delay = this.lastPublishAt + interval - Date.now();
+
+        if (delay > 0) {
+            this.timer = setTimeout(() => this.publishNext(), delay);
+        } else {
+            this.publishNext();
+        }
+    }
+
+    private clearTimer(): void {
+        if (CommonUtils.notNil(this.timer)) {
+            clearTimeout(this.timer);
+            this.timer = undefined;
+        }
+    }
+
+    private publishNext(): void {
+        this.timer = undefined;
+
+        if (this.mqttClient?.connected !== true) {
+            return;
+        }
+
+        const next = this.queue.shift();
+
+        if (CommonUtils.notNil(next)) {
+            this.lastPublishAt = Date.now();
+            // Restored explicitly: the span must join the read that observed the value, and a read
+            // the poller sampled out must stay untraced instead of starting a trace of its own.
+            void context.with(next.context, () => this.sendMqtt(next.payload));
+        }
+
+        this.scheduleNext();
     }
 
     private async sendMqtt(payload: NotificationPayload): Promise<void> {

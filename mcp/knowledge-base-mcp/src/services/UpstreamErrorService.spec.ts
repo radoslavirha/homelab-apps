@@ -37,6 +37,14 @@ describe('UpstreamErrorService', () => {
         });
     });
 
+    describe('status (token request)', () => {
+        it('is undefined when the failed request was the token endpoint\'s, not the API\'s', () => {
+            const token = new BadGateway('responded with 400', Object.assign(new Error('x'), { config: { url: 'https://auth.test/token' }, response: { status: 400 } }));
+
+            expect(errors.status(token)).toBeUndefined();
+        });
+    });
+
     describe('refusal', () => {
         it('answers a 409 carrying the current document with a tool error holding it, intact, under `current`', () => {
             const result = errors.refusal(upstream(409, STALE));

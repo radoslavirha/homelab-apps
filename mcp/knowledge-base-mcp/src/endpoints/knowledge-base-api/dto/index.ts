@@ -1,3 +1,5 @@
+export * from './ConventionsQueryDTO.js';
+export * from './ConventionsResponseDTO.js';
 export * from './DocumentDeleteRequestDTO.js';
 export * from './DocumentDeleteResponseDTO.js';
 export * from './DocumentQueryDTO.js';

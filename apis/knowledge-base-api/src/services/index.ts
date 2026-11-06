@@ -1,4 +1,5 @@
 export * from './ConfigService.js';
+export * from './ConventionsService.js';
 export * from './DocumentValidationService.js';
 export * from './DocumentWriteService.js';
 export * from './EmbeddingService.js';
@@ -8,6 +9,7 @@ export * from './IndexingLoopService.js';
 export * from './KnowledgeBaseAccessService.js';
 export * from './MarkdownChunkerService.js';
 export * from './MetadataFilterService.js';
+export * from './OnBehalfOfService.js';
 export * from './NoteRenderService.js';
 export * from './RankFusionService.js';
 export * from './SearchService.js';

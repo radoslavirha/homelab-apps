@@ -1,6 +1,6 @@
 # Homelab Apps — Knowledge Base
 
-> Maintained by `/updating-docs` skill. Last updated: 2026-10-27.
+> Maintained by `/updating-docs` skill. Last updated: 2026-11-06.
 
 pnpm monorepo of small independent Node.js APIs and UIs (Ts.ED, TypeScript ESM).
 
@@ -9,8 +9,8 @@ pnpm monorepo of small independent Node.js APIs and UIs (Ts.ED, TypeScript ESM).
 | Name | Type | Purpose |
 |------|------|---------|
 | `interactive-map-feeder-api` | API | Fetches ČHMÚ precipitation radar, composites image layers, serves city LED RGB values for LaskaKit IoT map |
-| `knowledge-base-api` | API | Indexes knowledge bases from pluggable sources (git via a GitHub App first) into Postgres + pgvector, serves hybrid (full-text + vector) search over an internal REST API, and commits notes and specs back to a writable source |
-| `knowledge-base-mcp` | MCP | MCP server in front of `knowledge-base-api`: one endpoint per audience (`/development` today), sign-in through Authentik; `search` and `read` for readers, `create_note`, `write_document` and `delete_document` for editors, each write one commit made for the signed-in user |
+| `knowledge-base-api` | API | Indexes knowledge bases from pluggable sources (git via a GitHub App or a token first) into Postgres + pgvector, serves hybrid (full-text + vector) search over an internal REST API, and commits notes and specs back to a writable source |
+| `knowledge-base-mcp` | MCP | MCP server in front of `knowledge-base-api`: one endpoint per audience (`/development`, `/loxone`), sign-in through Authentik; `search`, `read` and `conventions` (the knowledge base's own house rules) for readers, `create_note`, `write_document` and `delete_document` for editors, each write one commit made for the signed-in user |
 | `miot-bridge-api` | API | Gateway between home automation controllers and Xiaomi MIoT devices. Manages device registry, translates commands, polls properties, dispatches change notifications |
 | `qr-manager-api` | API | QR code redirect manager: allocates slugs, stores slug→URL, resolves via 302 redirect, renders QR images |
 | `qr-manager-ui` | UI | Admin UI for `qr-manager-api`: create/edit/deactivate QR records, download images |
@@ -176,11 +176,11 @@ graph LR
     MBA <-->|TCP| MongoDB1[("MongoDB")]
     MBA -->|MQTT · HTTP notifications| HA
 
-    Clients["MCP clients\nClaude Code, phone"] -->|MCP /development| KBM["knowledge-base-mcp"]
-    KBM -->|REST /search /documents /notes| KBA["knowledge-base-api"]
+    Clients["MCP clients\nClaude Code, phone"] -->|MCP /development, /loxone| KBM["knowledge-base-mcp"]
+    KBM -->|REST /search /documents /notes /conventions| KBA["knowledge-base-api"]
     KBA <-->|TCP| Postgres[("Postgres\npgvector")]
     KBA -->|HTTP /api/embed| Ollama["Ollama\nserver2"]
-    KBA -->|HTTPS as GitHub App| GitHub["GitHub API\nexternal"]
+    KBA -->|HTTPS as GitHub App or token| GitHub["GitHub API\nexternal"]
 
     QRU["qr-manager-ui"] -->|REST| QRA["qr-manager-api"]
     Phone["Phone / scanner"] -->|HTTP GET /:slug| QRA
@@ -192,10 +192,10 @@ graph LR
 | App | System | Protocol | Direction | Purpose |
 |-----|--------|----------|-----------|---------|
 | `interactive-map-feeder-api` | ČHMÚ | HTTPS GET | outbound | Precipitation radar images |
-| `knowledge-base-mcp` (MCP) | `knowledge-base-api` | HTTPS (client credentials) | outbound | Search, read, and the writes: notes, specs and plans, deletes |
+| `knowledge-base-mcp` (MCP) | `knowledge-base-api` | HTTPS (client credentials) | outbound | Search, read, conventions, and the writes: notes, specs and plans, deletes |
 | `knowledge-base-api` | Postgres (pgvector) | TCP | bidirectional | Index, search, schema migrations, indexing lock |
 | `knowledge-base-api` | Ollama | HTTP | outbound | Embeds chunks and questions |
-| `knowledge-base-api` | GitHub REST API | HTTPS (GitHub App) | outbound | Reads the git source (installation, compare, tree, blobs); writes one file per commit through the contents API |
+| `knowledge-base-api` | GitHub REST API | HTTPS (GitHub App or token) | outbound | Reads the git source (repository discovery, compare, tree, blobs); writes one file per commit through the contents API |
 | `miot-bridge-api` | Xiaomi devices (LAN) | MIoT binary UDP | bidirectional | Device control, property read |
 | `miot-bridge-api` | miot-spec.org | HTTPS GET | outbound | Device capability spec (on registration) |
 | `miot-bridge-api` | MQTT broker | MQTT | bidirectional | Inbound commands, outbound notifications |

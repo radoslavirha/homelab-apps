@@ -1,7 +1,11 @@
 import z from 'zod';
 import { KNOWLEDGE_BASE_ID_PATTERN } from '../KnowledgeBaseId.js';
 import { ContentType } from './ContentType.enum.js';
+import { GitHubConfigSchema } from './GitHubConfig.js';
 import { KnowledgeBaseSource } from './KnowledgeBaseSource.enum.js';
+
+/** `owner/name`, in the characters GitHub allows in each. */
+const GITHUB_REPOSITORY_PATTERN = /^[A-Za-z0-9_-]+\/[A-Za-z0-9._-]+$/;
 
 export const ChunkingConfigSchema = z.object({
     /**
@@ -27,6 +31,12 @@ const KnowledgeBaseBaseSchema = z.object({
     models: z.array(z.string().min(1)).default([]),
     /** Authentik roles allowed to read this KB. A caller holding none of them never sees it. */
     readers: z.array(z.string().min(1)).min(1),
+    /**
+     * The file in the source that holds this KB's house rules — formats, frontmatter, areas,
+     * naming — e.g. `README.md`. `GET /conventions` serves it, read from the source as it is now,
+     * so it need not be under `git.include`. Unset: the KB publishes none.
+     */
+    conventionsPath: z.string().min(1).regex(/^[^/]/, 'A path inside the source, without a leading /.').optional(),
     chunking: ChunkingConfigSchema
 });
 
@@ -34,7 +44,11 @@ export const GitSourceConfigSchema = z.object({
     branch: z.string().min(1).optional().describe('Branch to index. Defaults to the repository\'s default branch.'),
     include: z.array(z.string()).default(['raw/', 'work/', 'mirror/'])
         .describe('Path prefixes to index. The first path segment becomes `metadata.area`.'),
-    extensions: z.array(z.string().startsWith('.')).default(['.md'])
+    extensions: z.array(z.string().startsWith('.')).default(['.md']),
+    repository: z.string().regex(GITHUB_REPOSITORY_PATTERN).optional()
+        .describe('`owner/name` of the repository to read, from those the App covers, compared case-insensitively. Required when the App covers several, and always with a token. Comes from a secret, never from values.'),
+    github: GitHubConfigSchema.optional()
+        .describe('The GitHub App or token of this knowledge base. Defaults to the root `github`.')
 }).prefault({});
 
 export const GitKnowledgeBaseConfigSchema = KnowledgeBaseBaseSchema.extend({

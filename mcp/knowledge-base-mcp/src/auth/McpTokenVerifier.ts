@@ -2,7 +2,7 @@ import { OAuthError, OAuthErrorCode, type AuthInfo, type OAuthTokenVerifier } fr
 import { Authenticator, credentialSourceOf, VerificationReason, VerifierType } from '@radoslavirha/auth';
 import { NumberUtils, ObjectUtils, StringUtils } from '@radoslavirha/utils';
 import { logger } from '@tsed/di';
-import type { McpServerAuthConfig } from '../models/config/McpServerAuthConfig.js';
+import type { McpServerOAuthConfig } from '../models/config/McpServerAuthConfig.js';
 
 /**
  * The claims the SDK needs beyond what a `Principal` carries, as Authentik writes them. Read only
@@ -41,7 +41,7 @@ export class McpTokenVerifier implements OAuthTokenVerifier {
 
     public constructor(
         private readonly method: string,
-        private readonly auth: McpServerAuthConfig
+        private readonly auth: McpServerOAuthConfig
     ) {
         // One trusted issuer, the shared client registration. People sign in through it.
         this.#authenticator = new Authenticator({

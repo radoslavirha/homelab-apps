@@ -38,13 +38,15 @@ export class McpEndpointService {
      * Refuses the call unless the caller holds this endpoint's role for `level` — an exact
      * string, no hierarchy, as in the APIs: Authentik gives an editor the reader role too.
      * `McpTokenVerifier` has already turned away a caller holding none of the endpoint's roles;
-     * this is the per-tool floor on top. The refusal names no role.
+     * this is the per-tool floor on top. A level an `unauthenticated` endpoint does not map is
+     * held by nobody. The refusal names no role.
      */
     public requireRole(level: KnowledgeBaseRole): void {
         const { endpoint, ctx } = this.current();
         const principal = McpEndpointService.principalOf(ctx);
+        const role = endpoint.auth.roles[level];
 
-        if (CommonUtils.isUndefined(principal) || !principal.roles.includes(endpoint.auth.roles[level])) {
+        if (CommonUtils.isUndefined(principal) || CommonUtils.isUndefined(role) || !principal.roles.includes(role)) {
             throw new Forbidden('Insufficient permissions.');
         }
     }

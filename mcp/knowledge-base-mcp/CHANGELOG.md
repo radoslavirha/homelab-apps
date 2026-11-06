@@ -1,5 +1,42 @@
 # knowledge-base
 
+## 0.7.0
+
+### Minor Changes
+
+- [#433](https://github.com/radoslavirha/homelab-apps/pull/433) [`d963d9c`](https://github.com/radoslavirha/homelab-apps/commit/d963d9c9f054bea2673ff29127576b65077ca31f) Thanks [@radoslavirha](https://github.com/radoslavirha)! - New read-only `conventions` tool returns the knowledge base's own rules, and every endpoint sends MCP server `instructions` (new optional `mcpServers.<KEY>.instructions`, with a generic default) telling agents to call it before writing or preparing files. `write_document` now spells out the frontmatter it requires, including the allowed `status` values.
+
+- [#436](https://github.com/radoslavirha/homelab-apps/pull/436) [`279f41d`](https://github.com/radoslavirha/homelab-apps/commit/279f41d237e0d190a16e4daf9013ae151b958daa) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Endpoints choose their auth type with `mcpServers.<key>.auth.type`; `oauth` stays the default, so existing configs parse unchanged.
+
+### Patch Changes
+
+- Updated dependencies [[`0c4b327`](https://github.com/radoslavirha/homelab-apps/commit/0c4b3276fcf804b8f90ec09616c66d326dc10410)]:
+  - @radoslavirha/auth@0.4.0
+
+## 0.6.0
+
+### Minor Changes
+
+- [#430](https://github.com/radoslavirha/homelab-apps/pull/430) [`70bdcd6`](https://github.com/radoslavirha/homelab-apps/commit/70bdcd612002ed6763de427bc748d3a95e0d1fef) Thanks [@radoslavirha](https://github.com/radoslavirha)! - MCP endpoints come from config alone: `mcpServers` takes any number of `UPPER_SNAKE_CASE` keys (at least one), and the fixed `McpServer` enum is gone.
+
+## 0.5.0
+
+### Minor Changes
+
+- [#426](https://github.com/radoslavirha/homelab-apps/pull/426) [`ad19d7e`](https://github.com/radoslavirha/homelab-apps/commit/ad19d7e942418238d06e5d1a8182974f98c9409f) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Add the `LOXONE_KB` endpoint, serving a second knowledge base with the same tools. The config now requires a `mcpServers.LOXONE_KB` entry.
+
+## 0.4.2
+
+### Patch Changes
+
+- [#405](https://github.com/radoslavirha/homelab-apps/pull/405) [`a9ed347`](https://github.com/radoslavirha/homelab-apps/commit/a9ed347bebcfad93ac160c7a881c4f72022187d4) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - The request log no longer writes tool-call arguments (documents, and any secret the API refuses) at info.
+
+- [#409](https://github.com/radoslavirha/homelab-apps/pull/409) [`3f1536c`](https://github.com/radoslavirha/homelab-apps/commit/3f1536c9e215d704e9db82ed1f9e5b485ca28d8f) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - A refusal of the server's own client by the token endpoint is no longer reported to the agent as its own bad input.
+
+- [#418](https://github.com/radoslavirha/homelab-apps/pull/418) [`9b284cd`](https://github.com/radoslavirha/homelab-apps/commit/9b284cda876b89ff4485fa4cd5901be851e61dfe) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Tool descriptions no longer assume the homelab repositories, since every endpoint shares them. A test now runs two endpoints in one app.
+- Updated dependencies [[`7b3d6bb`](https://github.com/radoslavirha/homelab-apps/commit/7b3d6bb2d9895c4dd7136b6391fb51f588b39247)]:
+  - @radoslavirha/tsed-http-provider@0.2.14
+
 ## 0.4.1
 
 ### Patch Changes

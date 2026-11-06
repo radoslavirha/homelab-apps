@@ -79,3 +79,40 @@ describe('describeAuthConfig — methods', () => {
         expect(describeAuthConfig(AuthConfigSchema.parse({})).methods).toEqual([]);
     });
 });
+
+describe('describeAuthConfig — unauthenticated methods', () => {
+    const open = { type: VerifierType.Unauthenticated, roles: ['kb.reader', 'kb.editor'], defaultSubject: 'developer' };
+
+    it('warns, and names the method and every role it grants, so an open method is never quiet at boot', () => {
+        const summary = describeAuthConfig(AuthConfigSchema.parse({ OPEN: open }));
+
+        expect(summary.level).toBe('warn');
+        expect(summary.message).toBe(
+            "auth — accepting OPEN; OPEN admits EVERY request without a credential as 'developer' with roles [kb.reader, kb.editor]."
+        );
+        expect(summary.unauthenticated).toEqual([
+            { method: 'OPEN', roles: ['kb.reader', 'kb.editor'], defaultSubject: 'developer', subjectKind: 'human' }
+        ]);
+    });
+
+    it('reports the unverified subject header when one is configured', () => {
+        const summary = describeAuthConfig(AuthConfigSchema.parse({ OPEN: { ...open, subjectHeader: 'X-User' } }));
+
+        expect(summary.unauthenticated[0]).toHaveProperty('subjectHeader', 'X-User');
+    });
+
+    it('still warns when an open method sits beside a verified one, and lists both', () => {
+        const summary = describeAuthConfig(AuthConfigSchema.parse({
+            [TEST_METHOD]: { type: VerifierType.BearerJwt, trustedIssuers: [jwksIssuer] },
+            OPEN: open
+        }));
+
+        expect(summary.level).toBe('warn');
+        expect(summary.message).toContain('trusting idp');
+        expect(summary.message).toContain('OPEN admits EVERY request');
+    });
+
+    it('lists no unauthenticated methods when every entry verifies a credential', () => {
+        expect(summaryOf(staticIssuer).unauthenticated).toEqual([]);
+    });
+});

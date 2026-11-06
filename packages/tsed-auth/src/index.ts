@@ -37,5 +37,7 @@ export type {
     AuthConfigSummary,
     Principal,
     PrincipalKind,
-    TrustedIssuer
+    TrustedIssuer,
+    UnauthenticatedSummary,
+    UnauthenticatedVerifierConfig
 } from '@radoslavirha/auth';

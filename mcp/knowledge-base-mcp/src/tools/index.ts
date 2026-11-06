@@ -1,3 +1,4 @@
+export * from './ConventionsTool.js';
 export * from './CreateNoteTool.js';
 export * from './DeleteDocumentTool.js';
 export * from './ReadTool.js';

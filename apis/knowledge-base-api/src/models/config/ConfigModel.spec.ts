@@ -44,7 +44,162 @@ describe('ConfigSchema', () => {
 
         delete config.github;
 
-        expect(issues(config)).toContain('github: Knowledge base "development" has source GIT, which needs github.');
+        expect(issues(config)).toContain('github: Knowledge base "development" has source GIT, which needs github, its own or the root one.');
+    });
+
+    it('accepts a git knowledge base with a GitHub App of its own and no root one', () => {
+        const config = base();
+        const { github } = config;
+        const [kb] = config.knowledgeBases as Record<string, unknown>[];
+
+        delete config.github;
+        config.knowledgeBases = [{ ...kb, git: { github } }];
+
+        expect(issues(config)).toEqual([]);
+    });
+
+    describe('github', () => {
+        const TOKEN = { type: 'token', token: { source: 'file', path: '/run/secrets/github-token' } };
+        const withKb = (config: Record<string, unknown>, git: Record<string, unknown>): Record<string, unknown> => {
+            const [kb] = config.knowledgeBases as Record<string, unknown>[];
+
+            return { ...config, knowledgeBases: [{ ...kb, git }] };
+        };
+
+        it('reads an App entry written before tokens, without type, as an App', () => {
+            const config = ConfigSchema.parse(base());
+
+            expect(config.github).toMatchObject({ type: 'app', clientId: 'Iv-test-client-id', retries: 0 });
+        });
+
+        it('reads a knowledge base\'s own App without type as an App', () => {
+            const config = base();
+
+            expect(ConfigSchema.parse(withKb(config, { github: config.github })).knowledgeBases[0].git.github).toMatchObject({ type: 'app' });
+        });
+
+        it('accepts a root token with git.repository, and fills in the client defaults', () => {
+            const config = ConfigSchema.parse(withKb({ ...base(), github: TOKEN }, { repository: 'owner/repo' }));
+
+            expect(config.github).toEqual({ ...TOKEN, baseUrl: 'https://api.github.com', timeoutMs: 15_000, retries: 3 });
+        });
+
+        it('accepts a knowledge base\'s own token with git.repository', () => {
+            expect(issues(withKb(base(), { repository: 'owner/repo', github: TOKEN }))).toEqual([]);
+        });
+
+        it('fails at boot when a knowledge base on the root token has no git.repository', () => {
+            expect(issues({ ...base(), github: TOKEN })).toContain('knowledgeBases.0.git.repository: Knowledge base "development" reads GitHub with a token, which needs git.repository.');
+        });
+
+        it('fails at boot when a knowledge base on its own token has no git.repository', () => {
+            expect(issues(withKb(base(), { github: TOKEN }))).toContain('knowledgeBases.0.git.repository: Knowledge base "development" reads GitHub with a token, which needs git.repository.');
+        });
+
+        it('does not ask for git.repository when the knowledge base\'s own App overrides a root token', () => {
+            const config = base();
+
+            expect(issues(withKb({ ...config, github: TOKEN }, { github: config.github }))).toEqual([]);
+        });
+
+        it('refuses a token entry without a token', () => {
+            expect(issues(withKb({ ...base(), github: { type: 'token' } }, { repository: 'owner/repo' })).some((issue) => issue.startsWith('github.token'))).toBe(true);
+        });
+
+        it('refuses an unknown type', () => {
+            expect(issues({ ...base(), github: { ...base().github as object, type: 'oauth' } }).some((issue) => issue.startsWith('github'))).toBe(true);
+        });
+    });
+
+    describe('conventionsPath', () => {
+        const withConventions = (conventionsPath?: string): Record<string, unknown> => {
+            const config = base();
+            const [kb] = config.knowledgeBases as Record<string, unknown>[];
+
+            config.knowledgeBases = [{ ...kb, conventionsPath }];
+
+            return config;
+        };
+
+        it('is optional, so a configuration without it still parses', () => {
+            expect(ConfigSchema.parse(withConventions()).knowledgeBases[0].conventionsPath).toBeUndefined();
+        });
+
+        it('refuses a path with a leading /', () => {
+            expect(issues(withConventions('/README.md'))).toContain('knowledgeBases.0.conventionsPath: A path inside the source, without a leading /.');
+        });
+    });
+
+    describe('git.repository', () => {
+        const withRepository = (repository: string): Record<string, unknown> => {
+            const config = base();
+            const [kb] = config.knowledgeBases as Record<string, unknown>[];
+
+            config.knowledgeBases = [{ ...kb, git: { repository } }];
+
+            return config;
+        };
+
+        it('is optional', () => {
+            expect(ConfigSchema.parse(base()).knowledgeBases[0].git.repository).toBeUndefined();
+        });
+
+        it.each(['owner/repo', 'Owner-1/repo.name_2', 'owner_x/REPO-3'])('accepts %s', (repository) => {
+            expect(ConfigSchema.parse(withRepository(repository)).knowledgeBases[0].git.repository).toBe(repository);
+        });
+
+        it.each(['', 'repo', 'owner/', '/repo', 'owner/repo/extra', 'owner/re po', 'https://github.test/owner/repo', 'own.er/repo'])('refuses "%s"', (repository) => {
+            expect(issues(withRepository(repository)).some((issue) => issue.startsWith('knowledgeBases.0.git.repository'))).toBe(true);
+        });
+    });
+
+    describe('auth', () => {
+        const withIdp = (idp: Record<string, unknown>): Record<string, unknown> => ({ ...base(), auth: { IDP: idp } });
+
+        it('accepts an unauthenticated IDP entry, with no change to the schema', () => {
+            const config = ConfigSchema.parse(withIdp({
+                type: 'unauthenticated',
+                roles: ['knowledge-base-api.reader', 'knowledge-base-api.editor', 'knowledge-base-api.admin'],
+                defaultSubject: 'developer',
+                subjectHeader: 'X-User'
+            }));
+
+            expect(config.auth.IDP).toEqual({
+                type: 'unauthenticated',
+                roles: ['knowledge-base-api.reader', 'knowledge-base-api.editor', 'knowledge-base-api.admin'],
+                defaultSubject: 'developer',
+                subjectHeader: 'X-User',
+                subjectKind: 'human'
+            });
+        });
+
+        it('still accepts the bearer-jwt entry of the test configuration', () => {
+            expect(ConfigSchema.parse(base()).auth.IDP?.type).toBe('bearer-jwt');
+        });
+
+        it('fails at boot when the IDP entry is missing, rather than admitting everyone', () => {
+            expect(issues({ ...base(), auth: {} }).some((issue) => issue.startsWith('auth'))).toBe(true);
+        });
+
+        it('gives an unauthenticated entry without roles every role this API checks', () => {
+            const config = ConfigSchema.parse(withIdp({ type: 'unauthenticated', defaultSubject: 'developer' }));
+
+            expect(config.auth.IDP).toMatchObject({
+                type: 'unauthenticated',
+                roles: ['knowledge-base-api.reader', 'knowledge-base-api.editor', 'knowledge-base-api.admin']
+            });
+        });
+
+        it('keeps the roles an unauthenticated entry names', () => {
+            const config = ConfigSchema.parse(withIdp({ type: 'unauthenticated', roles: ['knowledge-base-api.reader'], defaultSubject: 'developer' }));
+
+            expect(config.auth.IDP).toMatchObject({ roles: ['knowledge-base-api.reader'] });
+        });
+
+        it('fails at boot on an unauthenticated entry that grants no role', () => {
+            expect(issues(withIdp({ type: 'unauthenticated', roles: [], defaultSubject: 'developer' }))
+                .some((issue) => issue.startsWith('auth.IDP.roles'))).toBe(true);
+        });
     });
 
     it('fails at boot on duplicate knowledge base ids', () => {

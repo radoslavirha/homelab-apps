@@ -12,10 +12,16 @@ const MAP_PANEL = { west: 11.267, east: 19.624, north: 51.458, south: 48.047 };
 
 /**
  * png_masked draws an echo in full colour only where precipitation reaches the ground and in a lighter, less
- * saturated shade elsewhere. The radar scale is fully saturated (the pale shades seen are at most 0.26), so
+ * saturated shade elsewhere. The radar scale is saturated except its white top bucket (the pale shades seen are at most 0.26), so
  * anything below this saturation is precipitation aloft, or the grey out-of-range mask.
  */
 const MIN_RAIN_SATURATION = 0.5;
+
+/**
+ * The one unsaturated colour of the scale: the top bucket (60 dBZ, about 100 mm/h) is drawn white. It is
+ * accepted by exact match, so pale near-white shades of precipitation aloft are still ignored.
+ */
+const SCALE_TOP_WHITE = { r: 252, g: 252, b: 252 };
 
 @Service()
 @Scope(ProviderScope.SINGLETON)
@@ -59,7 +65,8 @@ export class RasterService {
                 continue;
             }
             const max = Math.max(pixel.r, pixel.g, pixel.b);
-            if ((max - Math.min(pixel.r, pixel.g, pixel.b)) / max < MIN_RAIN_SATURATION) {
+            const isScaleTop = pixel.r === SCALE_TOP_WHITE.r && pixel.g === SCALE_TOP_WHITE.g && pixel.b === SCALE_TOP_WHITE.b;
+            if (!isScaleTop && (max - Math.min(pixel.r, pixel.g, pixel.b)) / max < MIN_RAIN_SATURATION) {
                 continue;
             }
             const key = `${pixel.r},${pixel.g},${pixel.b},${pixel.a}`;

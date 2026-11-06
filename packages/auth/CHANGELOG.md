@@ -1,5 +1,11 @@
 # @radoslavirha/auth
 
+## 0.4.0
+
+### Minor Changes
+
+- [#435](https://github.com/radoslavirha/homelab-apps/pull/435) [`0c4b327`](https://github.com/radoslavirha/homelab-apps/commit/0c4b3276fcf804b8f90ec09616c66d326dc10410) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Add the `unauthenticated` verifier type: an explicit, per-entry choice, mostly for testing, that admits every request as a configured principal (all configured roles, optional unverified `subjectHeader` label) and makes the boot summary warn.
+
 ## 0.3.0
 
 ### Minor Changes

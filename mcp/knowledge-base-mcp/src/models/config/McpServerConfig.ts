@@ -9,27 +9,37 @@ export const McpServerConfigSchema = z.object({
     name: z.string().min(1).describe('Machine name clients see in `serverInfo.name`.'),
     title: z.string().min(1).describe('Human-readable name clients show.'),
     description: z.string().min(1).optional().describe('What the server is for. Defaults to the package description.'),
-    auth: McpServerAuthConfigSchema.describe('Who may call the endpoint. Required: there is no anonymous endpoint.')
+    instructions: z.string().min(1).optional().describe('The MCP server `instructions` clients hand their agent: how to use this knowledge base. Defaults to `DEFAULT_INSTRUCTIONS` — search first, call `conventions` before writing or preparing files, approve writes.'),
+    auth: McpServerAuthConfigSchema.describe('Who may call the endpoint, by `type`: `oauth` (the default when `type` is absent) or `unauthenticated`. Required: an endpoint is never open by omission.')
 });
 
 export type McpServerConfig = z.infer<typeof McpServerConfigSchema>;
 
+/** An endpoint's key in `mcpServers`: `UPPER_SNAKE_CASE`, e.g. `DEVELOPMENT_KB`. It names the endpoint in logs and refusals. */
+export const MCP_SERVER_KEY = /^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$/;
+
 /**
- * One required entry per key, like `createExternalApisSchema`: a server the code mounts but the
- * config forgot fails the boot, naming it. Two servers on one path would shadow each other, so
- * paths must differ, ignoring case (Express routes `/Dev` and `/dev` alike).
+ * The MCP endpoints this app mounts, by key: as many as the config has, at least one. Nothing in
+ * the code names a key — a tool finds its endpoint by the request path — so an endpoint is
+ * config only. Two servers on one path would shadow each other, so paths must differ, ignoring
+ * case (Express routes `/Dev` and `/dev` alike).
  */
-export const createMcpServersSchema = <K extends string>(keys: readonly K[]) =>
-    z.object(Object.fromEntries(keys.map((key) => [key, McpServerConfigSchema])) as Record<K, typeof McpServerConfigSchema>)
-        .superRefine((servers, ctx) => {
-            const seen = new Map<string, string>();
+export const McpServersSchema = z.record(
+    z.string().regex(MCP_SERVER_KEY, 'A key is UPPER_SNAKE_CASE, e.g. DEVELOPMENT_KB.'),
+    McpServerConfigSchema
+)
+    .refine((servers) => !CommonUtils.isEmpty(servers), 'At least one MCP server is required.')
+    .superRefine((servers, ctx) => {
+        const seen = new Map<string, string>();
 
-            for (const [key, server] of Object.entries(servers as Record<string, McpServerConfig>)) {
-                const other = seen.get(server.path.toLowerCase());
+        for (const [key, server] of Object.entries(servers)) {
+            const other = seen.get(server.path.toLowerCase());
 
-                if (CommonUtils.notUndefined(other)) {
-                    ctx.addIssue({ code: 'custom', path: [key, 'path'], message: `Path ${server.path} is already used by ${other}.` });
-                }
-                seen.set(server.path.toLowerCase(), key);
+            if (CommonUtils.notUndefined(other)) {
+                ctx.addIssue({ code: 'custom', path: [key, 'path'], message: `Path ${server.path} is already used by ${other}.` });
             }
-        });
+            seen.set(server.path.toLowerCase(), key);
+        }
+    });
+
+export type McpServersConfig = z.infer<typeof McpServersSchema>;

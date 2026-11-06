@@ -150,20 +150,61 @@ export const JwtVerifierSchema = z.object({
 });
 
 /**
+ * What an `unauthenticated` entry's subject must look like — the configured
+ * default and any value read from `subjectHeader` alike.
+ *
+ * Downstream the subject becomes an `On-Behalf-Of` header and a commit trailer,
+ * so it is a short single-line token: no whitespace, no newline.
+ */
+export const UNAUTHENTICATED_SUBJECT_PATTERN = /^[\w.@+-]{1,150}$/;
+
+/**
+ * Settings for an `unauthenticated` verifier: no credential is checked, and every
+ * request is admitted as one principal holding all of `roles`.
+ *
+ * Chosen per entry, deliberately — mostly for testing without an IdP. Nothing grants
+ * it implicitly: it exists only where a config names `"type": "unauthenticated"`.
+ */
+export const UnauthenticatedVerifierSchema = z.object({
+    type: z.literal(VerifierType.Unauthenticated),
+    /**
+     * Every role every request gets. At least one, because an entry that grants
+     * nothing would admit callers to a route only to answer `403` on every
+     * `@RequireRoles` — a config mistake better caught at boot.
+     */
+    roles: z.array(z.string().min(1))
+        .min(1, 'an unauthenticated verifier needs at least one role; every request is given all of them'),
+    /** The principal's `subject` when no usable `subjectHeader` value arrives. */
+    defaultSubject: z.string().regex(UNAUTHENTICATED_SUBJECT_PATTERN),
+    /**
+     * Header whose value, when present and matching
+     * `UNAUTHENTICATED_SUBJECT_PATTERN`, becomes the subject instead of
+     * `defaultSubject` (e.g. `X-User`). Absent or malformed falls back to the
+     * default; it never refuses a request.
+     *
+     * **Unverified.** Any caller can put any name in it. It is a label for logs
+     * and commit attribution, never an identity and never a basis for access.
+     */
+    subjectHeader: z.string().min(1).optional(),
+    /** Which caller class the principal is. Stamped onto the `Principal`. */
+    subjectKind: z.enum(['human', 'service', 'device']).default('human')
+});
+
+/**
  * One entry of the `auth` block: whichever verifier kind it declares.
  *
  * A discriminated union on `type`, so a second mechanism — an API key, an HMAC
  * signature — is a new member here plus a new `ITokenVerifier`, and no change to
  * any controller. Controllers name an `AuthMethod`; they never name a type.
  *
- * **There is deliberately no permissive member.** A `dummy` or `allow-all` type
- * would be `mode: disabled` under a new name: a value in a config file that
- * leaves a guarded route open, which is exactly the fail-open state this schema
- * was reshaped to make unrepresentable. Tests do not need one — `config/test.json`
- * verifies real signatures against an inline HS256 key, and `FakeTokenVerifier`
- * drives a guard through any outcome without a config at all.
+ * **The one permissive member, `unauthenticated`, is explicit and named.** What
+ * this schema makes unrepresentable is the *accidental* open state: an on/off
+ * switch, a missing key, a default that admits everyone. None of those exist —
+ * a forgotten entry still fails at boot. `unauthenticated` is a deliberate
+ * per-entry choice, mostly for testing without an IdP; it names the principal
+ * and roles it grants, and the boot log warns about it.
  */
-export const VerifierSchema = z.discriminatedUnion('type', [JwtVerifierSchema]);
+export const VerifierSchema = z.discriminatedUnion('type', [JwtVerifierSchema, UnauthenticatedVerifierSchema]);
 
 /**
  * The `auth` block of a service's configuration: named entries, each declaring
@@ -191,7 +232,9 @@ export const VerifierSchema = z.discriminatedUnion('type', [JwtVerifierSchema]);
  * turned out to be either a state where a forgotten config key leaves a service
  * unauthenticated, or a copy of something the source already says. A route is
  * guarded by `@Authenticate()` or opened by `@Anonymous()`, and both are visible
- * next to the route rather than in a file that can drift from it.
+ * next to the route rather than in a file that can drift from it. (An entry of
+ * type `unauthenticated` still guards: its route keeps its `@Authenticate` and
+ * role checks; only *who* is admitted is decided by the deployment.)
  */
 export const AuthConfigSchema = z.record(z.string(), VerifierSchema);
 
@@ -241,4 +284,5 @@ export type JwksKey = z.output<typeof JwksKeySchema>;
 export type KeyConfig = z.output<typeof KeySchema>;
 export type TrustedIssuer = z.output<typeof TrustedIssuerSchema>;
 export type JwtVerifierConfig = z.output<typeof JwtVerifierSchema>;
+export type UnauthenticatedVerifierConfig = z.output<typeof UnauthenticatedVerifierSchema>;
 export type VerifierConfig = z.output<typeof VerifierSchema>;

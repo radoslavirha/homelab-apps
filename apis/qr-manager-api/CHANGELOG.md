@@ -1,5 +1,13 @@
 # qr-manager-api
 
+## 0.10.10
+
+### Patch Changes
+
+- Updated dependencies [[`0c4b327`](https://github.com/radoslavirha/homelab-apps/commit/0c4b3276fcf804b8f90ec09616c66d326dc10410)]:
+  - @radoslavirha/auth@0.4.0
+  - @radoslavirha/tsed-auth@0.4.0
+
 ## 0.10.9
 
 ### Patch Changes

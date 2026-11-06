@@ -4,6 +4,7 @@ import { VerifierType } from './VerifierType.js';
 import { recordVerification } from './authTelemetry.js';
 import { createKeySource } from './keys/createKeySource.js';
 import { JwtVerifier } from './verifiers/JwtVerifier.js';
+import { UnauthenticatedVerifier } from './verifiers/UnauthenticatedVerifier.js';
 import type { CredentialSource } from './CredentialSource.js';
 import type { ITokenVerifier } from './ITokenVerifier.js';
 import type { Principal } from './Principal.js';
@@ -17,7 +18,9 @@ import { VerificationReason, type RefusedOutcome, type VerificationOutcome } fro
  * `allowed` and `principal` are separate because a refusal has nobody to
  * attribute. No synthetic "local-dev" principal is ever fabricated — a fake
  * subject in an audit column is worse than an empty one, because it is
- * indistinguishable from a real one later.
+ * indistinguishable from a real one later. (An `unauthenticated` entry's
+ * principal is not fabricated here: the deployment configures it, and its
+ * `issuer` says `unauthenticated` so it is never mistaken for a verified one.)
  */
 export type AuthDecision =
     | { readonly allowed: true; readonly principal: Principal; readonly reason: typeof VerificationReason.Ok }
@@ -36,9 +39,11 @@ export type AuthDecision =
  * guard, an MQTT hook, a test — applies the decision. That split is what keeps
  * every outcome testable without a server.
  *
- * There is no "allow anyway" path. A credential verifies or the request is
- * refused; whether a route is guarded at all is decided at the route, by
- * `@Authenticate()` or `@Anonymous()`, where it is visible in the source.
+ * There is no "allow anyway" path here. A method's verifier admits the request
+ * or it is refused; whether a route is guarded at all is decided at the route,
+ * by `@Authenticate()` or `@Anonymous()`, where it is visible in the source. A
+ * method configured as `unauthenticated` is a verifier that always admits — a
+ * named per-entry choice in config, not a bypass in this class.
  */
 export class Authenticator {
     readonly #verifiers: AuthVerifiers;
@@ -155,6 +160,9 @@ export const buildVerifiers = (config: AuthConfig): AuthVerifiers => {
         switch (entry.type) {
             case VerifierType.BearerJwt:
                 built.set(method, new JwtVerifier(entry.trustedIssuers, createKeySource(entry.trustedIssuers)));
+                break;
+            case VerifierType.Unauthenticated:
+                built.set(method, new UnauthenticatedVerifier(entry));
                 break;
         }
     }

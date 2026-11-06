@@ -1,12 +1,14 @@
 import { createServer, type IncomingHttpHeaders, type Server as HttpServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { Serializer } from '@radoslavirha/tsed-common';
+import { Logger } from '@radoslavirha/tsed-logger';
 import { ObjectUtils } from '@radoslavirha/utils';
 import { getInterceptorOptions } from '@tsed/di';
 import { BadGateway, GatewayTimeout } from '@tsed/exceptions';
 import { PlatformTest } from '@tsed/platform-http/testing';
 import SuperTest from 'supertest';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ConventionsResponseDTO } from '../endpoints/knowledge-base-api/dto/ConventionsResponseDTO.js';
 import { DocumentDeleteResponseDTO } from '../endpoints/knowledge-base-api/dto/DocumentDeleteResponseDTO.js';
 import { DocumentResponseDTO } from '../endpoints/knowledge-base-api/dto/DocumentResponseDTO.js';
 import { DocumentWriteResponseDTO } from '../endpoints/knowledge-base-api/dto/DocumentWriteResponseDTO.js';
@@ -17,7 +19,7 @@ import { toMcpSettings } from '../mcp/toMcpSettings.js';
 import { Server } from '../Server.js';
 import { ConfigService } from '../services/ConfigService.js';
 import { KnowledgeBaseRole } from '../models/config/KnowledgeBaseRole.enum.js';
-import { TEST_PUBLIC_URL, TEST_ROLES, TEST_SERVER, userToken } from '../test/fixtures.js';
+import { TEST_PUBLIC_URL, TEST_ROLES, TEST_SERVERS, userToken } from '../test/fixtures.js';
 import * as tools from './index.js';
 
 const MCP_HEADERS = { Accept: 'application/json, text/event-stream', 'Content-Type': 'application/json' };
@@ -53,7 +55,7 @@ describe('Tools (integration, through MCP)', () => {
     // index.ts builds the endpoints and registers the tools the same way.
     beforeEach(PlatformTest.bootstrap(Server, {
         mcp: toMcpSettings(
-            { publicURL: TEST_PUBLIC_URL, mcpServers: { DEVELOPMENT_KB: TEST_SERVER } },
+            { publicURL: TEST_PUBLIC_URL, mcpServers: TEST_SERVERS },
             { version: '9.9.9' },
             ObjectUtils.values(tools)
         )
@@ -65,12 +67,12 @@ describe('Tools (integration, through MCP)', () => {
     afterEach(PlatformTest.reset);
     afterEach(() => vi.restoreAllMocks());
 
-    it('lists the five tools, each with an input and an output schema, none taking a knowledge base', async () => {
+    it('lists the six tools, each with an input and an output schema, none taking a knowledge base', async () => {
         expect.assertions(3);
 
         const { tools: listed } = await call('tools/list') as { tools: { name: string; inputSchema: { properties?: object }; outputSchema?: object }[] };
 
-        expect(listed.map((tool) => tool.name).sort()).toEqual(['create_note', 'delete_document', 'read', 'search', 'write_document']);
+        expect(listed.map((tool) => tool.name).sort()).toEqual(['conventions', 'create_note', 'delete_document', 'read', 'search', 'write_document']);
         expect(listed.every((tool) => !Object.keys(tool.inputSchema.properties ?? {}).includes('kb'))).toBe(true);
         expect(listed.every((tool) => tool.inputSchema && tool.outputSchema)).toBe(true);
     });
@@ -82,6 +84,7 @@ describe('Tools (integration, through MCP)', () => {
 
         // MCP clients that ask before running a tool which changes something read these.
         expect(Object.fromEntries(listed.map(({ name, annotations }) => [name, [annotations.readOnlyHint, annotations.destructiveHint, annotations.openWorldHint]]))).toEqual({
+            conventions: [true, undefined, false],
             read: [true, undefined, false],
             search: [true, undefined, false],
             create_note: [false, false, false],
@@ -166,6 +169,19 @@ describe('Tools (integration, through MCP)', () => {
             expect(result.isError).toBeUndefined();
             expect(remove).toHaveBeenCalledWith(expect.objectContaining({ kb: 'development', id: 'raw/2026-01-01-a-note.md', version: 'b1', reason: 'a mistake' }), 'radoslav');
             expect(result.structuredContent).toEqual({ id: 'raw/2026-01-01-a-note.md', commit: 'c3' });
+        });
+
+        it('write_document: the request log carries no tool arguments — a document is knowledge-base content and may hold a secret the API refuses', async () => {
+            expect.assertions(2);
+
+            vi.spyOn(api, 'writeDocument').mockResolvedValue(Serializer.deserialize({ id: 'work/2026-10-20-x/spec.md', version: 'b2', commit: 'c2' }, DocumentWriteResponseDTO));
+            const httpLog = (PlatformTest.get<Logger>(Logger) as unknown as { httpLog: { info: (...args: unknown[]) => void } }).httpLog;
+            const info = vi.spyOn(httpLog, 'info');
+
+            await callTool('write_document', { ...WRITES[1][1], content: '# X\n\ntoken: ghp_SECRETSECRETSECRETSECRETSECRETSECRET' });
+
+            expect(info).toHaveBeenCalledWith('Request completed', expect.objectContaining({ url: '/development' }));
+            expect(JSON.stringify(info.mock.calls)).not.toContain('ghp_SECRET');
         });
 
         it('write_document: a refusal reaches the caller with the document as it is now, to apply the change to and retry with', async () => {
@@ -275,6 +291,32 @@ describe('Tools (integration, through MCP)', () => {
         expect(search).not.toHaveBeenCalled();
     });
 
+    it('conventions: the endpoint\'s knowledge base\'s conventions, with structured content its output schema accepts', async () => {
+        expect.assertions(3);
+
+        const conventions = vi.spyOn(api, 'conventions').mockResolvedValue(Serializer.deserialize({
+            kb: 'development', path: 'README.md', markdown: '# House rules\n', version: 'b1'
+        }, ConventionsResponseDTO));
+
+        const result = await callTool('conventions', { kb: 'home' });
+
+        expect(result.isError).toBeUndefined();
+        // A `kb` argument is ignored, as on every tool: the endpoint is its knowledge base.
+        expect(conventions).toHaveBeenCalledWith(expect.objectContaining({ kb: 'development' }));
+        expect(result.structuredContent).toEqual({ path: 'README.md', markdown: '# House rules\n' });
+    });
+
+    it('conventions: a knowledge base that publishes none answers empty markdown, not an error', async () => {
+        expect.assertions(2);
+
+        vi.spyOn(api, 'conventions').mockResolvedValue(Serializer.deserialize({ kb: 'development', path: null, markdown: null, version: null }, ConventionsResponseDTO));
+
+        const result = await callTool('conventions');
+
+        expect(result.isError).toBeUndefined();
+        expect(result.structuredContent).toEqual({ path: null, markdown: '' });
+    });
+
     it('read: the whole document from the endpoint\'s knowledge base, with structured content its output schema accepts', async () => {
         expect.assertions(3);
 
@@ -367,6 +409,7 @@ describe('Writing tools (integration, through MCP to a fake knowledge-base-api)'
     const received: { method: string | undefined; url: string | undefined; headers: IncomingHttpHeaders }[] = [];
     let upstreamServer: HttpServer;
     let callerToken: string;
+    let refuseClient = false;
 
     // Authentik's token endpoint and knowledge-base-api in one, as KnowledgeBaseApiEndpoint.integration.spec does.
     beforeAll(async () => {
@@ -374,6 +417,13 @@ describe('Writing tools (integration, through MCP to a fake knowledge-base-api)'
             res.setHeader('content-type', 'application/json');
 
             if (req.url === '/token') {
+                if (refuseClient) {
+                    res.statusCode = 400;
+                    res.end(JSON.stringify({ error: 'invalid_client', error_description: 'Client authentication failed.' }));
+
+                    return;
+                }
+
                 res.end(JSON.stringify({ access_token: 'server-own-token', token_type: 'Bearer', expires_in: 600 }));
 
                 return;
@@ -405,7 +455,7 @@ describe('Writing tools (integration, through MCP to a fake knowledge-base-api)'
     });
 
     beforeEach(PlatformTest.bootstrap(Server, {
-        mcp: toMcpSettings({ publicURL: TEST_PUBLIC_URL, mcpServers: { DEVELOPMENT_KB: TEST_SERVER } }, { version: '9.9.9' }, ObjectUtils.values(tools))
+        mcp: toMcpSettings({ publicURL: TEST_PUBLIC_URL, mcpServers: TEST_SERVERS }, { version: '9.9.9' }, ObjectUtils.values(tools))
     }));
     beforeEach(async () => {
         callerToken = await userToken({ subject: 'radoslav', claims: { roles: [TEST_ROLES.READER, TEST_ROLES.EDITOR] } });
@@ -423,5 +473,23 @@ describe('Writing tools (integration, through MCP to a fake knowledge-base-api)'
         expect(received[0].headers.authorization).toBe('Bearer server-own-token');
         expect(received[0].headers['on-behalf-of']).toBe('radoslav');
         expect(JSON.stringify(received)).not.toContain(callerToken);
+    });
+
+    it('a token endpoint refusing the server\'s own client is not reported as the caller\'s bad input', async () => {
+        expect.assertions(3);
+
+        refuseClient = true;
+
+        const send = (name: string, args: object) => SuperTest(PlatformTest.callback()).post('/development').set(MCP_HEADERS).set('Authorization', `Bearer ${callerToken}`)
+            .send({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } });
+
+        const search = (await send('search', { query: 'pods' })).body.result;
+        const note = (await send('create_note', { title: 'A gotcha', type: 'GOTCHA', context: 'c', decisionOrFact: 'd' })).body.result;
+
+        refuseClient = false;
+
+        expect(search.isError).toBe(true);
+        expect(JSON.stringify(search.content)).not.toContain('check `filter`');
+        expect(note.structuredContent.status_code).not.toBe(400);
     });
 });

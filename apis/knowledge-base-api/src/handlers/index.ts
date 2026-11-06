@@ -1,3 +1,4 @@
+export * from './ConventionsGetHandler.js';
 export * from './DocumentsDeleteHandler.js';
 export * from './DocumentsGetHandler.js';
 export * from './DocumentsPutHandler.js';

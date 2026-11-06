@@ -148,6 +148,21 @@ describe('buildVerifiers', () => {
         expect(decision).toHaveProperty('principal.kind', 'service');
     });
 
+    it('builds an unauthenticated entry that admits a request with no credential', async () => {
+        expect.assertions(1);
+
+        const parsed = AuthConfigSchema.parse({
+            [TEST_METHOD]: { type: VerifierType.Unauthenticated, roles: ['my-api.reader'], defaultSubject: 'developer' }
+        });
+
+        const decision = await new Authenticator(parsed).authenticate(credentialSourceOf({}), [TEST_METHOD]);
+
+        expect(decision).toMatchObject({
+            allowed: true,
+            principal: { subject: 'developer', roles: ['my-api.reader'], issuer: 'unauthenticated' }
+        });
+    });
+
     it('builds nothing when nothing is configured', () => {
         expect([...buildVerifiers(AuthConfigSchema.parse({})).keys()]).toEqual([]);
     });

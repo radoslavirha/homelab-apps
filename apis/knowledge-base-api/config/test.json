@@ -47,7 +47,8 @@
             ],
             "readers": [
                 "knowledge-base-api.reader"
-            ]
+            ],
+            "conventionsPath": "README.md"
         }
     ],
     "indexer": {

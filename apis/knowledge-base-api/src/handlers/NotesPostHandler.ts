@@ -7,6 +7,7 @@ import type { NotesPostResponse } from '../models/NotesPostResponse.js';
 import { DocumentValidationService } from '../services/DocumentValidationService.js';
 import { DocumentWriteService } from '../services/DocumentWriteService.js';
 import { KnowledgeBaseAccessService } from '../services/KnowledgeBaseAccessService.js';
+import { OnBehalfOfService } from '../services/OnBehalfOfService.js';
 import { NoteRenderService } from '../services/NoteRenderService.js';
 
 @Injectable()
@@ -14,6 +15,7 @@ import { NoteRenderService } from '../services/NoteRenderService.js';
 export class NotesPostHandler {
     public constructor(
         private readonly access: KnowledgeBaseAccessService,
+        private readonly author: OnBehalfOfService,
         private readonly notes: NoteRenderService,
         private readonly validation: DocumentValidationService,
         private readonly writes: DocumentWriteService,
@@ -22,7 +24,7 @@ export class NotesPostHandler {
 
     /** Renders the note, refuses a secret or a `supersedes` that names no note, and commits it as a create. */
     public async execute(request: NotesPostRequest, header: string | undefined): Promise<NotesPostResponse> {
-        const onBehalfOf = this.validation.onBehalfOf(header);
+        const onBehalfOf = this.author.resolve(header);
         const [kb] = this.access.resolve(request.kb);
         const note = this.notes.render(request, onBehalfOf);
 

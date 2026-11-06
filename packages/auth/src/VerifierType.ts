@@ -2,9 +2,9 @@
  * How an `AuthMethod` entry's credentials are actually verified.
  *
  * The `type` field of a verifier's configuration, and the discriminant of
- * `VerifierSchema`. One member today, and the axis exists so a second mechanism
- * is a new member plus a new `ITokenVerifier` — not a change to any controller,
- * because controllers name an `AuthMethod` and never a type.
+ * `VerifierSchema`. A new mechanism is a new member plus a new `ITokenVerifier` —
+ * not a change to any controller, because controllers name an `AuthMethod` and
+ * never a type.
  *
  * The mirror of `AuthStrategy` in `http-provider`, which does the same job for
  * outbound calls.
@@ -24,5 +24,18 @@ export enum VerifierType {
      * Says nothing about where keys come from: an inline HS256 secret and a
      * remote JWKS are both this type, chosen per issuer by `key.source`.
      */
-    BearerJwt = 'bearer-jwt'
+    BearerJwt = 'bearer-jwt',
+    /**
+     * No credential at all: every request is admitted as one configured
+     * principal, holding every configured role.
+     *
+     * Mostly for testing — running a service without an IdP to verify against.
+     * Anyone who can reach the service is that principal, with all its roles.
+     *
+     * Named, never implied. It is never a default, a missing key or a flag: an
+     * entry is this type only because its config says `"type": "unauthenticated"`,
+     * a forgotten `auth` entry still fails at boot, and `describeAuthConfig`
+     * raises the boot log to `warn` for as long as one is configured.
+     */
+    Unauthenticated = 'unauthenticated'
 }

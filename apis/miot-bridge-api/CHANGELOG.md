@@ -1,5 +1,33 @@
 # miot-bridge
 
+## 0.30.7
+
+### Patch Changes
+
+- Updated dependencies [[`0c4b327`](https://github.com/radoslavirha/homelab-apps/commit/0c4b3276fcf804b8f90ec09616c66d326dc10410)]:
+  - @radoslavirha/auth@0.4.0
+  - @radoslavirha/tsed-auth@0.4.0
+
+## 0.30.6
+
+### Patch Changes
+
+- [#428](https://github.com/radoslavirha/homelab-apps/pull/428) [`c91bc3a`](https://github.com/radoslavirha/homelab-apps/commit/c91bc3aebde84e28c011adb26d958d4a127a59ce) Thanks [@radoslavirha](https://github.com/radoslavirha)! - `mqtt.notifications.publishIntervalMs` defaults to 3000 instead of 1500, because Loxone processes only the newest message per 2 s and 1500 still lost messages.
+
+## 0.30.5
+
+### Patch Changes
+
+- [#421](https://github.com/radoslavirha/homelab-apps/pull/421) [`07454df`](https://github.com/radoslavirha/homelab-apps/commit/07454df2bb1d994cd01f205abe5f28706daf600f) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Notifications wait in the queue while the MQTT client is offline and stay paced after a reconnect, instead of being flushed together as a burst that Loxone partly loses.
+
+## 0.30.4
+
+### Patch Changes
+
+- [#419](https://github.com/radoslavirha/homelab-apps/pull/419) [`bca98b0`](https://github.com/radoslavirha/homelab-apps/commit/bca98b0ae02e905d557ed35896cfeb7bae54d2aa) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Notifications are published one at a time, at least `mqtt.notifications.publishIntervalMs` apart (default 1500), so a burst no longer loses values in Loxone.
+- Updated dependencies [[`7b3d6bb`](https://github.com/radoslavirha/homelab-apps/commit/7b3d6bb2d9895c4dd7136b6391fb51f588b39247)]:
+  - @radoslavirha/tsed-http-provider@0.2.14
+
 ## 0.30.3
 
 ### Patch Changes
