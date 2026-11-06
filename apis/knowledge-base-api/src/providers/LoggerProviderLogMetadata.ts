@@ -12,10 +12,16 @@ import type { PrincipalKind } from '@radoslavirha/auth';
  */
 export interface LoggerProviderLogMetadata {
     [key: string]: unknown;
-    /** The verified caller's `sub`, e.g. `ak-development-kb-mcp-client_credentials` for a service account. */
+    /**
+     * The verified caller's `sub`, e.g. `ak-development-kb-mcp-client_credentials` for a service account.
+     * Under an `unauthenticated` auth entry, its `defaultSubject` or the unverified `subjectHeader` label.
+     */
     principalSubject?: string;
-    /** `human`, `service` or `device` — from the trusted issuer's `subjectKind`. */
+    /** `human`, `service` or `device` — from the trusted issuer's (or unauthenticated entry's) `subjectKind`. */
     principalKind?: PrincipalKind;
-    /** The `iss` that vouched for the caller: one Authentik provider per client, so it names the client. */
+    /**
+     * The `iss` that vouched for the caller: one Authentik provider per client, so it names the client.
+     * `unauthenticated` when nobody did — an `unauthenticated` auth entry admitted the request.
+     */
     principalIssuer?: string;
 }

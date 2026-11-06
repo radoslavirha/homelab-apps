@@ -5,12 +5,14 @@ import type { DocumentsDeleteResponse } from '../models/DocumentsDeleteResponse.
 import { DocumentValidationService } from '../services/DocumentValidationService.js';
 import { DocumentWriteService } from '../services/DocumentWriteService.js';
 import { KnowledgeBaseAccessService } from '../services/KnowledgeBaseAccessService.js';
+import { OnBehalfOfService } from '../services/OnBehalfOfService.js';
 
 @Injectable()
 @Scope(ProviderScope.SINGLETON)
 export class DocumentsDeleteHandler {
     public constructor(
         private readonly access: KnowledgeBaseAccessService,
+        private readonly author: OnBehalfOfService,
         private readonly validation: DocumentValidationService,
         private readonly writes: DocumentWriteService,
         private readonly mapper: DocumentWriteMapper
@@ -18,7 +20,7 @@ export class DocumentsDeleteHandler {
 
     /** Deletes a note or a work/ document at the caller's version, the reason kept in the commit. */
     public async execute(request: DocumentsDeleteRequest, header: string | undefined): Promise<DocumentsDeleteResponse> {
-        const onBehalfOf = this.validation.onBehalfOf(header);
+        const onBehalfOf = this.author.resolve(header);
         const [kb] = this.access.resolve(request.kb);
 
         this.validation.deletablePath(request.id);
