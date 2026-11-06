@@ -1,5 +1,11 @@
 # knowledge-base-api
 
+## 0.7.0
+
+### Minor Changes
+
+- [#438](https://github.com/radoslavirha/homelab-apps/pull/438) [`66024be`](https://github.com/radoslavirha/homelab-apps/commit/66024be9a7a567be3fe46ff5565cd85df20cbadb) Thanks [@radoslavirha](https://github.com/radoslavirha)! - The git source can authenticate with a GitHub token (a fine-grained personal access token) as well as a GitHub App: `github` and `git.github` take `type: token` with the token from a file or a value. A knowledge base on a token must set `git.repository`. Existing App configs parse unchanged.
+
 ## 0.6.0
 
 ### Minor Changes
