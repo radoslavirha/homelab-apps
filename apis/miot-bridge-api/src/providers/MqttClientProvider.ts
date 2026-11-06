@@ -30,7 +30,8 @@ const PROTOCOL_VERSION = 5;
  *   with a simple null-check.
  * - The connection is established asynchronously during server startup
  *   (`asyncFactory`) and torn down cleanly via the `$onDestroy` hook.
- * - Reconnects automatically on transient errors (e.g. ECONNRESET).
+ * - Reconnects automatically on transient errors (e.g. ECONNRESET) and on a refused CONNACK
+ *   (e.g. a broker that is still starting).
  *   During startup, up to {@link MAX_STARTUP_ERRORS} consecutive errors are
  *   tolerated before the bootstrap promise is rejected.
  *
@@ -74,7 +75,10 @@ export const MqttClientProvider = injectable(Symbol.for('MqttClient'))
                 username: mqttConfig.username,
                 password: mqttConfig.password,
                 protocolVersion: PROTOCOL_VERSION,
-                reconnectPeriod: RECONNECT_PERIOD_MS
+                reconnectPeriod: RECONNECT_PERIOD_MS,
+                // mqtt.js stops reconnecting for good after a refused CONNACK unless told otherwise.
+                // A broker that is still starting answers that way, and the pod would stay off MQTT.
+                reconnectOnConnackError: true
             });
 
             client.on('connect', () => {
