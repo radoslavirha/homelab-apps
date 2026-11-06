@@ -1,4 +1,5 @@
 export * from './ConfigService.js';
+export * from './ConventionsService.js';
 export * from './DocumentValidationService.js';
 export * from './DocumentWriteService.js';
 export * from './EmbeddingService.js';

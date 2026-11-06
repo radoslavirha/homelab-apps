@@ -8,7 +8,7 @@ import { KnowledgeBaseApiEndpoint } from '../endpoints/knowledge-base-api/Knowle
 import { Server } from '../Server.js';
 import { TEST_LOXONE_ROLES, TEST_LOXONE_SERVER, TEST_PUBLIC_URL, TEST_SERVERS, userToken } from '../test/fixtures.js';
 import * as tools from '../tools/index.js';
-import { toMcpSettings } from './toMcpSettings.js';
+import { DEFAULT_INSTRUCTIONS, toMcpSettings } from './toMcpSettings.js';
 
 const MCP_HEADERS = { Accept: 'application/json, text/event-stream', 'Content-Type': 'application/json' };
 const API = { description: 'Test description', version: '9.9.9' };
@@ -44,6 +44,19 @@ describe('two MCP endpoints in one app (integration)', () => {
 
         expect(response.body.result.isError).toBeUndefined();
         expect(search).toHaveBeenCalledWith(expect.objectContaining({ kb }));
+    });
+
+    it('hands every endpoint\'s instructions to the client when it initializes', async () => {
+        expect.assertions(1);
+
+        const initialize = {
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'initialize',
+            params: { protocolVersion: '2025-11-25', capabilities: {}, clientInfo: { name: 'test-client', version: '1.0.0' } }
+        };
+
+        expect((await post('/development', await userToken(), initialize)).body.result.instructions).toBe(DEFAULT_INSTRUCTIONS);
     });
 
     it('offers the same tools on both', async () => {

@@ -1,3 +1,4 @@
+export * from './ConventionsHandler.js';
 export * from './CreateNoteHandler.js';
 export * from './DeleteDocumentHandler.js';
 export * from './ReadHandler.js';

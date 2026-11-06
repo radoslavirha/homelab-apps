@@ -56,48 +56,13 @@ describe('GitSourceWriter', () => {
     afterEach(() => vi.restoreAllMocks());
 
     describe('read', () => {
-        it('decodes the file on the default branch, its blob SHA as version', async () => {
+        it('reads the file as the branch holds it now (GitFileReader)', async () => {
             expect.assertions(2);
 
             const get = vi.spyOn(github, 'getContent').mockResolvedValue(content({}));
 
             expect(await writer().read(ID)).toEqual({ content: '# Spec\n', version: 'blob' });
             expect(get).toHaveBeenCalledWith(REPOSITORY, ID, 'main');
-        });
-
-        it('reads the configured branch when there is one', async () => {
-            expect.assertions(1);
-
-            const get = vi.spyOn(github, 'getContent').mockResolvedValue(content({}));
-
-            await writer({ ...kb, git: { ...kb.git, branch: 'kb' } }).read(ID);
-
-            expect(get).toHaveBeenCalledWith(REPOSITORY, ID, 'kb');
-        });
-
-        it('is null when there is no file', async () => {
-            expect.assertions(1);
-
-            vi.spyOn(github, 'getContent').mockRejectedValue(requestError(404));
-
-            expect(await writer().read(ID)).toBeNull();
-        });
-
-        it('passes any other failure on', async () => {
-            expect.assertions(1);
-
-            vi.spyOn(github, 'getContent').mockRejectedValue(requestError(502));
-
-            await expect(writer().read(ID)).rejects.toBeInstanceOf(RequestError);
-        });
-
-        it('refuses a path that is not a file it can read whole', async () => {
-            expect.assertions(2);
-
-            vi.spyOn(github, 'getContent').mockResolvedValueOnce(content({ type: 'dir' })).mockResolvedValueOnce(content({ encoding: 'none', content: '' }));
-
-            await expect(writer().read(ID)).rejects.toThrow(/not a file/);
-            await expect(writer().read(ID)).rejects.toThrow(/not a file/);
         });
     });
 

@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExternalApi } from '../../models/config/ExternalApi.enum.js';
 // registers the HttpProviderService override bound to this server's config
 import '../../providers/HttpProviderProvider.js';
+import { ConventionsQueryDTO } from './dto/ConventionsQueryDTO.js';
+import { ConventionsResponseDTO } from './dto/ConventionsResponseDTO.js';
 import { DocumentDeleteRequestDTO } from './dto/DocumentDeleteRequestDTO.js';
 import { DocumentDeleteResponseDTO } from './dto/DocumentDeleteResponseDTO.js';
 import { DocumentQueryDTO } from './dto/DocumentQueryDTO.js';
@@ -73,6 +75,18 @@ describe('KnowledgeBaseApiEndpoint', () => {
         expect(get).toHaveBeenCalledWith('/documents', { params: { id: RESULT.externalId, kb: 'development' } });
         expect(document).toBeInstanceOf(DocumentResponseDTO);
         expect(document.content).toBe('# A note');
+    });
+
+    it('reads a knowledge base\'s conventions by its id, a knowledge base that names none answering nulls', async () => {
+        expect.assertions(3);
+
+        get.mockResolvedValue({ kb: 'development', path: null, markdown: null, version: null });
+
+        const conventions = await endpoint.conventions(CommonUtils.buildModelStrict(ConventionsQueryDTO, { kb: 'development' }));
+
+        expect(get).toHaveBeenCalledWith('/conventions', { params: { kb: 'development' } });
+        expect(conventions).toBeInstanceOf(ConventionsResponseDTO);
+        expect(conventions).toEqual(expect.objectContaining({ path: null, markdown: null }));
     });
 
     it('creates a note with its fields as the body, naming the user it is for in On-Behalf-Of, sent once', async () => {

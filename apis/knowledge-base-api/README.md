@@ -28,6 +28,7 @@ Every route but `/health*` and the API documentation (the Swagger landing page a
 | POST | `/notes` | A new `raw/` note, as fields — see *Writing*. Header `On-Behalf-Of: <username>`. Body: `kb`, `title` (one line), `type` (`DECISION`\|`CONTRACT`\|`GOTCHA`\|`NOTE`), `context`, `decisionOrFact`, `alternativesRejected[]` (required for a `DECISION`, refused otherwise), `howToApply?`, `links[]?`, `repos[]?`, `date?` (default today), `supersedes?` (must exist). `201 { id: raw/<date>-<slug>.md, version, commit }` |
 | PUT | `/documents` | A whole `work/` spec or plan. Header `On-Behalf-Of`. Body: `kb`, `id` (`work/<date>-<slug>/spec.md`\|`plan.md`), `content` (frontmatter included), `version` (required to rewrite, absent to create), `message?` (commit body). `200 { id, version, commit }` |
 | DELETE | `/documents` | A `raw/` note or a `work/` document. Header `On-Behalf-Of`. Body: `kb`, `id`, `version`, `reason`. `200 { id, commit }` |
+| GET | `/conventions` | The knowledge base's house rules — see *Conventions*. Query: `kb` (one id, required). `200 { kb, path, markdown, version }`, all but `kb` `null` when it names no `conventionsPath`; `404` for a KB the caller cannot read; `500` when the named file is missing from the source; `501` when the source cannot read single files |
 | GET | `/status` | Per readable KB: cursor (git: indexed commit), last run (start, end, outcome, error), last success, document and chunk counts, documents per `area`, per model embedded and pending chunks; plus this pod's loop state |
 | POST | `/reindex` | Starts a run. Query: `kb`, `full=true` (ignore the cursor and read everything — the recovery path). The only way to build a knowledge base for the first time or to embed a backlog above `indexer.maxScheduledEmbeddings`. Answers once it is known what happened: `202 { knowledgeBases, full, state: STARTED }` when this pod took the index lock; `202 { …, state: QUEUED }` when a run is in progress in this pod (this one follows it, merged with other queued requests); **`409`** when another pod holds the lock — nothing was started, try again when its run ends |
 
@@ -65,6 +66,14 @@ A `work/` document is checked as the knowledge base's note checker does: folder 
 Apply the change to the `CURRENT` entry's `content` and write it with its `version`. (A create refused twice while the file does not exist is a plain `409`, no `CURRENT`.) The `version` a write answers is valid at once for the next write of that document.
 
 Writes run one at a time in a pod (GitHub's contents API conflicts on parallel writes to one branch). After each one an **incremental indexing run is started** for that knowledge base, not awaited — the same run `POST /reindex` starts, under the same lock — so `GET /documents` and search see the write within seconds. A source that cannot be written answers `501`.
+
+## Conventions
+
+A knowledge base can name one file in its source as its conventions — `knowledgeBases[].conventionsPath`, e.g. `README.md`: what goes where, naming, the frontmatter each kind of document carries. `GET /conventions` serves it, so an agent facing an empty knowledge base, or preparing files for someone to commit by hand, learns its rules from the knowledge base itself (knowledge-base-mcp's `conventions` tool).
+
+- **Read from the source, as it is now, on every call** — not from the index: the file is usually outside `git.include`, and an agent asks for it rarely. For git, one GitHub contents call.
+- **Unset is a normal answer** (`200`, nulls). A named file the source does not hold is a configuration mistake and answers `500`, rather than reading as "none".
+- **It informs, it does not enforce.** Indexing takes any markdown under `git.include`, and the write routes check their own rules (*Writing*), whatever the file says.
 
 ## Search
 
@@ -107,7 +116,7 @@ Git documents get `metadata` from their frontmatter plus `area` (first path segm
 | `github` | `clientId`, `privateKey` (`{ source: value, value }` or `{ source: file, path }`, PEM as GitHub issues it), `baseUrl`, `timeoutMs` (per attempt: each retry gets its own; a rate-limit wait is not counted), `retries`. The default App of every git knowledge base without its own `git.github`. The repository is a knowledge base's `git.repository` |
 | `embeddings.models[]` | `name` (Ollama tag), `dimensions`, `documentTemplate` (`{title}`, `{text}`), `queryTemplate` (`{query}`). Each model gets its own partial HNSW index at startup. Correcting a wrong `dimensions` before anything was embedded drops the old index; with vectors of the old size stored, the boot fails — a model's dimensions cannot change under one name, add a new entry |
 | `embeddings` | `batchSize`, `keepAlive` (default `1m`) |
-| `knowledgeBases[]` | `id`, `source` (`GIT`), `contentType` (`MARKDOWN`), `tsConfig` (Postgres text search configuration), `models` (first answers questions), `readers` (roles), `chunking` (`maxChars` default 3000, `overlapChars`), `git` (`branch`, `include` path prefixes, `extensions`, `repository`, `github`: this knowledge base's own App, same shape as the root `github`). `git.repository` is `owner/name`, one of the repositories the App's installations cover, compared case-insensitively; a repository the App does not cover refuses. Unset, the App must cover exactly one repository. The name never appears in this repo or in deployment values: the deployment reads it from a secret |
+| `knowledgeBases[]` | `id`, `source` (`GIT`), `contentType` (`MARKDOWN`), `tsConfig` (Postgres text search configuration), `models` (first answers questions), `readers` (roles), `conventionsPath` (optional: the file in the source `GET /conventions` serves, e.g. `README.md`; no leading `/`), `chunking` (`maxChars` default 3000, `overlapChars`), `git` (`branch`, `include` path prefixes, `extensions`, `repository`, `github`: this knowledge base's own App, same shape as the root `github`). `git.repository` is `owner/name`, one of the repositories the App's installations cover, compared case-insensitively; a repository the App does not cover refuses. Unset, the App must cover exactly one repository. The name never appears in this repo or in deployment values: the deployment reads it from a secret |
 | `indexer` | `enabled`, `intervalMs`, `initialDelayMs`, `fetchConcurrency`, `maxScheduledEmbeddings` (default 300) |
 | `search` | `defaultLimit`, `candidates` per leg, `rrfK`, `weights` (`fullText` default 0, `vector` default 1), `fullTextMatch` (`ANY` ORs the question's lexemes; `ALL` is `websearch_to_tsquery`) |
 | `externalApis.OLLAMA` | Indexing: base URL, timeout, retry, circuit breaker. A batch of chunks on a CPU needs a long budget (60 s) |
@@ -125,8 +134,9 @@ A knowledge base in its own repository, with the same writes and the same layout
    - **The same App:** install the existing App on that repository as well, and set `git.repository` on every knowledge base that App serves. Before that install, also set it on the ones already running: unset, they refuse an App covering two repositories.
    - **Its own App:** create one, install it on that repository and nothing else, and put it in the entry's `git.github`, its key from a secret. `git.repository` is then optional.
 2. Add a `knowledgeBases[]` entry, with `git.repository` read from a secret, never written in values. The schema, the row and the index are created at boot.
-3. Build it once, as an admin: `POST /reindex?kb=<id>&full=true`. A scheduled run skips a knowledge base that was never built.
-4. For MCP clients, add an endpoint: see `mcp/knowledge-base-mcp/README.md`.
+3. Optionally set `conventionsPath` to the file that states its rules (e.g. `README.md`), so agents can read them before writing.
+4. Build it once, as an admin: `POST /reindex?kb=<id>&full=true`. A scheduled run skips a knowledge base that was never built.
+5. For MCP clients, add an endpoint: see `mcp/knowledge-base-mcp/README.md`.
 
 ## Telemetry
 

@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GitHubBlobDTO } from '../../endpoints/github/dto/GitHubBlobDTO.js';
 import { GitHubBranchDTO } from '../../endpoints/github/dto/GitHubBranchDTO.js';
 import { GitHubCompareDTO } from '../../endpoints/github/dto/GitHubCompareDTO.js';
+import { GitHubContentDTO } from '../../endpoints/github/dto/GitHubContentDTO.js';
 import { GitHubRepositoryDTO } from '../../endpoints/github/dto/GitHubRepositoryDTO.js';
 import { GitHubTreeDTO } from '../../endpoints/github/dto/GitHubTreeDTO.js';
 import { GitHubEndpoint } from '../../endpoints/github/GitHubEndpoint.js';
@@ -87,6 +88,21 @@ describe('GitSourceAdapter', () => {
 
     it('is writable, through the contents API', () => {
         expect(adapter().writer).toBeInstanceOf(GitSourceWriter);
+    });
+
+    it('reads any one file on the branch, indexed or not', async () => {
+        expect.assertions(2);
+
+        const get = vi.spyOn(github, 'getContent').mockResolvedValue(Serializer.deserialize({
+            type: 'file',
+            path: 'README.md',
+            sha: 'sha-readme',
+            content: Buffer.from('# Conventions\n').toString('base64'),
+            encoding: 'base64'
+        }, GitHubContentDTO));
+
+        expect(await adapter().file('README.md')).toEqual({ content: '# Conventions\n', version: 'sha-readme' });
+        expect(get).toHaveBeenCalledWith(REPOSITORY, 'README.md', 'main');
     });
 
     describe('first run', () => {

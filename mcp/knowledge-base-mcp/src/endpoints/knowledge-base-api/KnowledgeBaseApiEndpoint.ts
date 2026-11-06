@@ -2,6 +2,8 @@ import { Serializer } from '@radoslavirha/tsed-common';
 import { InjectHttpClient, type HttpClient, type HttpRequestOptions } from '@radoslavirha/tsed-http-provider';
 import { ProviderScope, Scope, Service } from '@tsed/di';
 import { ExternalApi } from '../../models/config/ExternalApi.enum.js';
+import { ConventionsQueryDTO } from './dto/ConventionsQueryDTO.js';
+import { ConventionsResponseDTO } from './dto/ConventionsResponseDTO.js';
 import { DocumentDeleteRequestDTO } from './dto/DocumentDeleteRequestDTO.js';
 import { DocumentDeleteResponseDTO } from './dto/DocumentDeleteResponseDTO.js';
 import { DocumentQueryDTO } from './dto/DocumentQueryDTO.js';
@@ -16,6 +18,7 @@ import { SearchResponseDTO } from './dto/SearchResponseDTO.js';
 const SEARCH_PATH = '/search';
 const DOCUMENTS_PATH = '/documents';
 const NOTES_PATH = '/notes';
+const CONVENTIONS_PATH = '/conventions';
 
 /** Names the person a write is for; the API puts it in the commit. The caller is this server. */
 const ON_BEHALF_OF_HEADER = 'On-Behalf-Of';
@@ -50,6 +53,12 @@ export class KnowledgeBaseApiEndpoint {
         const response = await this.client.get<object>(DOCUMENTS_PATH, { params: KnowledgeBaseApiEndpoint.params(query, DocumentQueryDTO) });
 
         return Serializer.deserialize(response, DocumentResponseDTO);
+    }
+
+    public async conventions(query: ConventionsQueryDTO): Promise<ConventionsResponseDTO> {
+        const response = await this.client.get<object>(CONVENTIONS_PATH, { params: KnowledgeBaseApiEndpoint.params(query, ConventionsQueryDTO) });
+
+        return Serializer.deserialize(response, ConventionsResponseDTO);
     }
 
     /** A write is one commit. A refusal (`409`) carries the current document in its error body. */
