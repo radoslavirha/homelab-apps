@@ -46,12 +46,20 @@ interface GitHubClient {
 }
 
 /**
+ * Request options of a contents write: Octokit's retry plugin reads `request.retries` per request.
+ * A `5xx` or a timeout may come after GitHub committed the write, and a replay with the same `sha`
+ * then answers `409`/`422`/`404` for a write that succeeded. A write goes to GitHub once; the
+ * caller reads before it tries again. Reads keep their retries.
+ */
+export const SEND_ONCE = { retries: 0 };
+
+/**
  * GitHub, as the GitHub App or the token a knowledge base is configured with, through Octokit.
  *
  * Octokit owns the App's token dance: it signs the App JWT from the private key (PKCS#1 as
  * GitHub issues it), finds the installations, mints installation tokens and renews them before
- * they expire. Retries on server errors and waiting out rate limits are its plugins too; a
- * refusal is never retried ({@link DO_NOT_RETRY}).
+ * they expire. Retries of reads on server errors and waiting out rate limits are its plugins too; a
+ * refusal is never retried ({@link DO_NOT_RETRY}), nor is a contents write ({@link SEND_ONCE}).
  * `github.timeoutMs` bounds each attempt, not the call: see {@link fetchWithTimeout}.
  *
  * Every read takes an optional `signal` — the indexing run's — that aborts it, retries included.
@@ -202,7 +210,8 @@ export class GitHubEndpoint {
             repo: repo.name,
             path,
             // The wire names are the DTO's own: no field is renamed, so the serialized body has its type.
-            ...Serializer.serialize(request, GitHubContentPutRequestDTO) as GitHubContentPutRequestDTO
+            ...Serializer.serialize(request, GitHubContentPutRequestDTO) as GitHubContentPutRequestDTO,
+            request: SEND_ONCE
         });
 
         return Serializer.deserialize(data, GitHubContentCommitDTO);
@@ -214,7 +223,8 @@ export class GitHubEndpoint {
             owner: repo.owner.login,
             repo: repo.name,
             path,
-            ...Serializer.serialize(request, GitHubContentDeleteRequestDTO) as GitHubContentDeleteRequestDTO
+            ...Serializer.serialize(request, GitHubContentDeleteRequestDTO) as GitHubContentDeleteRequestDTO,
+            request: SEND_ONCE
         });
 
         return Serializer.deserialize(data, GitHubContentCommitDTO);
