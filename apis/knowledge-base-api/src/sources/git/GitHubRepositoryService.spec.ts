@@ -1,8 +1,10 @@
 import { Serializer } from '@radoslavirha/tsed-common';
 import { PlatformTest } from '@tsed/platform-http/testing';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 import { GitHubRepositoryDTO } from '../../endpoints/github/dto/GitHubRepositoryDTO.js';
 import { GitHubEndpoint } from '../../endpoints/github/GitHubEndpoint.js';
+import type { GitHubAppConfig } from '../../models/config/GitHubAppConfig.js';
+import type { GitHubTokenConfig } from '../../models/config/GitHubTokenConfig.js';
 import type { GitKnowledgeBaseConfig } from '../../models/config/KnowledgeBaseConfig.js';
 import { ConfigService } from '../../services/ConfigService.js';
 import { GitHubRepositoryService } from './GitHubRepositoryService.js';
@@ -20,16 +22,19 @@ describe('GitHubRepositoryService', () => {
     let kb: GitKnowledgeBaseConfig;
     /** A knowledge base with a GitHub App of its own. */
     let own: GitKnowledgeBaseConfig;
+    let configService: ConfigService;
 
     beforeEach(PlatformTest.create);
     beforeEach(() => {
         repositories = PlatformTest.get<GitHubRepositoryService>(GitHubRepositoryService);
         github = PlatformTest.get<GitHubEndpoint>(GitHubEndpoint);
 
-        const config = PlatformTest.get<ConfigService>(ConfigService).config;
+        configService = PlatformTest.get<ConfigService>(ConfigService);
+
+        const config = configService.config;
 
         [kb] = config.knowledgeBases;
-        own = { ...kb, id: 'own', git: { ...kb.git, github: { ...config.github!, clientId: 'Iv-own' } } };
+        own = { ...kb, id: 'own', git: { ...kb.git, github: { ...config.github as GitHubAppConfig, clientId: 'Iv-own' } } };
     });
     afterEach(PlatformTest.reset);
     afterEach(() => vi.restoreAllMocks());
@@ -219,6 +224,86 @@ describe('GitHubRepositoryService', () => {
 
             expect(await repositories.repository(kb)).toEqual(await repositories.repository({ ...kb, id: 'same-app' }));
             expect(github.listRepositories).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('with a token', () => {
+        const TOKEN: GitHubTokenConfig = { type: 'token', token: { source: 'value', value: 'test-token' }, baseUrl: 'https://api.github.test', timeoutMs: 1000, retries: 0 };
+        /** A knowledge base reading `repository` with a token of its own. */
+        const tokened = (id: string, repository: string, token = TOKEN): GitKnowledgeBaseConfig => ({ ...kb, id, git: { ...kb.git, repository, github: token } });
+        let read: MockInstance<GitHubEndpoint['getRepository']>;
+        let listing: MockInstance<GitHubEndpoint['listRepositories']>;
+
+        beforeEach(() => {
+            read = vi.spyOn(github, 'getRepository').mockResolvedValue(repo('kb'));
+            listing = vi.spyOn(github, 'listRepositories').mockResolvedValue([repo('kb')]);
+        });
+
+        it('reads the named repository with the token, listing no installations', async () => {
+            expect.assertions(3);
+
+            expect(await repositories.repository(tokened('a', 'someone/kb'))).toEqual(repo('kb'));
+            expect(read).toHaveBeenCalledWith(TOKEN, 'someone/kb');
+            expect(listing).not.toHaveBeenCalled();
+        });
+
+        it('uses the root token for a knowledge base without its own', async () => {
+            expect.assertions(1);
+
+            vi.spyOn(configService, 'config', 'get').mockReturnValue({ ...configService.config, github: TOKEN });
+
+            await repositories.repository({ ...kb, git: { ...kb.git, repository: 'someone/kb' } });
+
+            expect(read).toHaveBeenCalledWith(TOKEN, 'someone/kb');
+        });
+
+        it('remembers it, and reads it again after forget', async () => {
+            expect.assertions(2);
+
+            const a = tokened('a', 'someone/kb');
+
+            await repositories.repository(a);
+            await repositories.repository(a);
+            expect(read).toHaveBeenCalledTimes(1);
+
+            repositories.forget(a);
+            await repositories.repository(a);
+            expect(read).toHaveBeenCalledTimes(2);
+        });
+
+        it('does not remember a failure', async () => {
+            expect.assertions(2);
+
+            read.mockRejectedValueOnce(new Error('Bad credentials'));
+
+            await expect(repositories.repository(tokened('a', 'someone/kb'))).rejects.toThrow('Bad credentials');
+            expect(await repositories.repository(tokened('a', 'someone/kb'))).toEqual(repo('kb'));
+        });
+
+        it('keeps a token and an App on one repository apart', async () => {
+            expect.assertions(2);
+
+            await repositories.repository(tokened('a', 'someone/kb'));
+            await repositories.repository({ ...kb, id: 'b', git: { ...kb.git, repository: 'someone/kb' } });
+
+            expect(read).toHaveBeenCalledOnce();
+            expect(listing).toHaveBeenCalledOnce();
+        });
+
+        it('keeps two tokens on one repository apart', async () => {
+            expect.assertions(1);
+
+            await repositories.repository(tokened('a', 'someone/kb'));
+            await repositories.repository(tokened('b', 'someone/kb', { ...TOKEN, token: { source: 'file', path: '/run/secrets/other' } }));
+
+            expect(read).toHaveBeenCalledTimes(2);
+        });
+
+        it('refuses a token knowledge base without git.repository, should one reach it', async () => {
+            expect.assertions(2);
+
+            await expect(repositories.repository({ ...kb, git: { ...kb.git, github: TOKEN } })).rejects.toThrow(/needs git\.repository/);
+            expect(read).not.toHaveBeenCalled();
         });
     });
 });

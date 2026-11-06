@@ -15,7 +15,7 @@ import { defaultUnauthenticatedRoles } from './defaultUnauthenticatedRoles.js';
 import { DatabaseConfigSchema } from './DatabaseConfig.js';
 import { EmbeddingsConfigSchema } from './EmbeddingsConfig.js';
 import { ExternalApi } from './ExternalApi.enum.js';
-import { GitHubAppConfigSchema } from './GitHubAppConfig.js';
+import { GitHubConfigSchema } from './GitHubConfig.js';
 import { IndexerConfigSchema } from './IndexerConfig.js';
 import { KnowledgeBaseConfigSchema } from './KnowledgeBaseConfig.js';
 import { KnowledgeBaseSource } from './KnowledgeBaseSource.enum.js';
@@ -25,7 +25,7 @@ export const ConfigSchema = BaseConfig.extend({
     externalApis: createExternalApisSchema(Object.values(ExternalApi))
         .describe('External APIs this service calls — base URL, auth, resilience and logging per API.'),
     database: DatabaseConfigSchema.describe('The Postgres database this service owns: schema, index and search.'),
-    github: GitHubAppConfigSchema.optional().describe('GitHub App credentials, for every knowledge base with source GIT that has no `git.github` of its own.'),
+    github: GitHubConfigSchema.optional().describe('GitHub credentials — an App or a token — for every knowledge base with source GIT that has no `git.github` of its own.'),
     embeddings: EmbeddingsConfigSchema.describe('Embedding models served by Ollama.'),
     knowledgeBases: z.array(KnowledgeBaseConfigSchema).min(1).describe('Every knowledge base this service indexes and serves.'),
     indexer: IndexerConfigSchema.describe('The background indexing loop.'),
@@ -67,8 +67,19 @@ export const ConfigSchema = BaseConfig.extend({
             }
         });
 
-        if (kb.source === KnowledgeBaseSource.Git && CommonUtils.isUndefined(kb.git.github) && CommonUtils.isUndefined(config.github)) {
-            ctx.addIssue({ code: 'custom', path: ['github'], message: `Knowledge base "${kb.id}" has source GIT, which needs github, its own or the root one.` });
+        if (kb.source === KnowledgeBaseSource.Git) {
+            const github = kb.git.github ?? config.github;
+
+            if (CommonUtils.isUndefined(github)) {
+                ctx.addIssue({ code: 'custom', path: ['github'], message: `Knowledge base "${kb.id}" has source GIT, which needs github, its own or the root one.` });
+            } else if (github.type === 'token' && CommonUtils.isUndefined(kb.git.repository)) {
+                // A token has no installations to list: nothing to pick a repository from.
+                ctx.addIssue({
+                    code: 'custom',
+                    path: ['knowledgeBases', index, 'git', 'repository'],
+                    message: `Knowledge base "${kb.id}" reads GitHub with a token, which needs git.repository.`
+                });
+            }
         }
     });
 });

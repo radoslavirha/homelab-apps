@@ -58,6 +58,59 @@ describe('ConfigSchema', () => {
         expect(issues(config)).toEqual([]);
     });
 
+    describe('github', () => {
+        const TOKEN = { type: 'token', token: { source: 'file', path: '/run/secrets/github-token' } };
+        const withKb = (config: Record<string, unknown>, git: Record<string, unknown>): Record<string, unknown> => {
+            const [kb] = config.knowledgeBases as Record<string, unknown>[];
+
+            return { ...config, knowledgeBases: [{ ...kb, git }] };
+        };
+
+        it('reads an App entry written before tokens, without type, as an App', () => {
+            const config = ConfigSchema.parse(base());
+
+            expect(config.github).toMatchObject({ type: 'app', clientId: 'Iv-test-client-id', retries: 0 });
+        });
+
+        it('reads a knowledge base\'s own App without type as an App', () => {
+            const config = base();
+
+            expect(ConfigSchema.parse(withKb(config, { github: config.github })).knowledgeBases[0].git.github).toMatchObject({ type: 'app' });
+        });
+
+        it('accepts a root token with git.repository, and fills in the client defaults', () => {
+            const config = ConfigSchema.parse(withKb({ ...base(), github: TOKEN }, { repository: 'owner/repo' }));
+
+            expect(config.github).toEqual({ ...TOKEN, baseUrl: 'https://api.github.com', timeoutMs: 15_000, retries: 3 });
+        });
+
+        it('accepts a knowledge base\'s own token with git.repository', () => {
+            expect(issues(withKb(base(), { repository: 'owner/repo', github: TOKEN }))).toEqual([]);
+        });
+
+        it('fails at boot when a knowledge base on the root token has no git.repository', () => {
+            expect(issues({ ...base(), github: TOKEN })).toContain('knowledgeBases.0.git.repository: Knowledge base "development" reads GitHub with a token, which needs git.repository.');
+        });
+
+        it('fails at boot when a knowledge base on its own token has no git.repository', () => {
+            expect(issues(withKb(base(), { github: TOKEN }))).toContain('knowledgeBases.0.git.repository: Knowledge base "development" reads GitHub with a token, which needs git.repository.');
+        });
+
+        it('does not ask for git.repository when the knowledge base\'s own App overrides a root token', () => {
+            const config = base();
+
+            expect(issues(withKb({ ...config, github: TOKEN }, { github: config.github }))).toEqual([]);
+        });
+
+        it('refuses a token entry without a token', () => {
+            expect(issues(withKb({ ...base(), github: { type: 'token' } }, { repository: 'owner/repo' })).some((issue) => issue.startsWith('github.token'))).toBe(true);
+        });
+
+        it('refuses an unknown type', () => {
+            expect(issues({ ...base(), github: { ...base().github as object, type: 'oauth' } }).some((issue) => issue.startsWith('github'))).toBe(true);
+        });
+    });
+
     describe('conventionsPath', () => {
         const withConventions = (conventionsPath?: string): Record<string, unknown> => {
             const config = base();

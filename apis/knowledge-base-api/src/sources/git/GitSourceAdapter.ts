@@ -64,7 +64,7 @@ export class GitSourceAdapter implements SourceAdapter {
         try {
             return await this.read(cursor, signal);
         } catch (error) {
-            // The installation may have changed (key rotated, App moved): find it again next run.
+            // The installation may have changed (key rotated, App moved) or the token been rotated: find it again next run.
             this.repositories.forget(this.kb);
             throw error;
         }

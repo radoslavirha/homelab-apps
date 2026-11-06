@@ -1,9 +1,13 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { Serializer } from '@radoslavirha/tsed-common';
 import { CommonUtils } from '@radoslavirha/utils';
 import { PlatformTest } from '@tsed/platform-http/testing';
 import { Octokit, RequestError } from 'octokit';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 import type { GitHubAppConfig } from '../../models/config/GitHubAppConfig.js';
+import type { GitHubTokenConfig } from '../../models/config/GitHubTokenConfig.js';
 import { ConfigService } from '../../services/ConfigService.js';
 import { GitHubBlobDTO } from './dto/GitHubBlobDTO.js';
 import { GitHubBranchDTO } from './dto/GitHubBranchDTO.js';
@@ -81,7 +85,7 @@ describe('GitHubEndpoint', () => {
         appOptions.length = 0;
         listing = undefined;
         github = PlatformTest.get<GitHubEndpoint>(GitHubEndpoint);
-        app = PlatformTest.get<ConfigService>(ConfigService).config.github!;
+        app = PlatformTest.get<ConfigService>(ConfigService).config.github as GitHubAppConfig;
     });
     afterEach(PlatformTest.reset);
 
@@ -299,6 +303,92 @@ describe('GitHubEndpoint', () => {
 
             await expect(github.getBranch(second, 'main')).rejects.toThrow(/list repositories first/);
             expect(otherOctokit.rest.repos.getBranch).toHaveBeenCalledOnce();
+        });
+    });
+
+    describe('with a token', () => {
+        const json = (status: number, body: unknown): Response => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
+        const BRANCH = { name: 'main', commit: { sha: 'abc', url: 'x' }, protected: false };
+        let fetch: MockInstance<typeof globalThis.fetch>;
+        let token: GitHubTokenConfig;
+        let dir: string;
+
+        /** The URL and `authorization` header of the `n`th request. */
+        const sent = (n: number): { url: string; authorization: string | null } => {
+            const [input, init] = fetch.mock.calls[n];
+
+            return { url: String(input), authorization: new Headers(init?.headers).get('authorization') };
+        };
+
+        beforeEach(() => {
+            dir = mkdtempSync(join(tmpdir(), 'kb-token-'));
+            token = { type: 'token', token: { source: 'value', value: 'test-token-not-real' }, baseUrl: app.baseUrl, timeoutMs: 1000, retries: 0 };
+            fetch = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) =>
+                String(input).endsWith('/branches/main') ? json(200, BRANCH) : json(200, { ...INSTALLED, id: 7, full_name: 'someone/kb' }));
+        });
+        afterEach(() => {
+            fetch.mockRestore();
+            rmSync(dir, { recursive: true, force: true });
+        });
+
+        it('reads the configured repository with the token, at the configured base URL', async () => {
+            expect.assertions(3);
+
+            const repository = await github.getRepository(token, 'someone/kb');
+
+            expect(repository).toBeInstanceOf(GitHubRepositoryDTO);
+            expect(repository).toEqual(Serializer.deserialize(INSTALLED, GitHubRepositoryDTO));
+            expect(sent(0)).toEqual({ url: 'https://api.github.test/repos/someone/kb', authorization: 'token test-token-not-real' });
+        });
+
+        it('calls the repository with the token client it registered, not an App\'s', async () => {
+            expect.assertions(3);
+
+            const repository = await github.getRepository(token, 'someone/kb');
+            const branch = await github.getBranch(repository, 'main');
+
+            expect(branch.commit.sha).toBe('abc');
+            expect(sent(1)).toEqual({ url: 'https://api.github.test/repos/someone/kb/branches/main', authorization: 'token test-token-not-real' });
+            expect(appOptions).toEqual([]);
+        });
+
+        it('reads the token from its file without the trailing newline, again on every discovery', async () => {
+            expect.assertions(2);
+
+            const path = join(dir, 'github-token');
+            const fromFile: GitHubTokenConfig = { ...token, token: { source: 'file', path } };
+
+            writeFileSync(path, 'first-token\n');
+            await github.getRepository(fromFile, 'someone/kb');
+            writeFileSync(path, 'rotated-token\n');
+            await github.getRepository(fromFile, 'someone/kb');
+
+            expect(sent(0).authorization).toBe('token first-token');
+            expect(sent(1).authorization).toBe('token rotated-token');
+        });
+
+        it('keeps the earlier client when GitHub refuses a rediscovery', async () => {
+            expect.assertions(2);
+
+            const repository = await github.getRepository(token, 'someone/kb');
+
+            fetch.mockResolvedValueOnce(json(404, { message: 'Not Found' }));
+            await expect(github.getRepository({ ...token, token: { source: 'value', value: 'revoked' } }, 'someone/kb')).rejects.toMatchObject({ status: 404 });
+            await github.getBranch(repository, 'main');
+
+            expect(sent(2).authorization).toBe('token test-token-not-real');
+        });
+
+        it('never retries a 409 on the token client either', async () => {
+            expect.assertions(2);
+
+            const repository = await github.getRepository({ ...token, retries: 3 }, 'someone/kb');
+
+            fetch.mockResolvedValue(json(409, { message: 'x' }));
+
+            await expect(github.deleteContent(repository, 'raw/a.md', CommonUtils.buildModelStrict(GitHubContentDeleteRequestDTO, { message: 'm', sha: 'stale', branch: 'main' })))
+                .rejects.toMatchObject({ status: 409 });
+            expect(fetch).toHaveBeenCalledTimes(2);
         });
     });
 
