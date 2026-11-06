@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Filters } from '../components/Filters.js';
 import { useQrCodesClient } from '../api/useQrCodesClient.js';
+import { useApiRecoveryCount } from '../runtime/ApiStatusContext.js';
 import type { QrCode, QrCodeListFilter } from '../api/types.js';
 
 export const QrCodeListPage = () => {
@@ -11,6 +12,19 @@ export const QrCodeListPage = () => {
     const [items, setItems] = useState<QrCode[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
+
+    // Bumped on API recovery, but only when the last load failed.
+    const recoveryCount = useApiRecoveryCount();
+    const [reloadKey, setReloadKey] = useState(0);
+    const failedRef = useRef(false);
+    failedRef.current = error !== null;
+    const seenRecovery = useRef(recoveryCount);
+    useEffect(() => {
+        if (seenRecovery.current !== recoveryCount) {
+            seenRecovery.current = recoveryCount;
+            if (failedRef.current) setReloadKey(k => k + 1);
+        }
+    }, [recoveryCount]);
 
     useEffect(() => {
         let cancelled = false;
@@ -33,7 +47,7 @@ export const QrCodeListPage = () => {
         return () => {
             cancelled = true;
         };
-    }, [client, filter]);
+    }, [client, filter, reloadKey]);
 
     return (
         <section className="page page-list">

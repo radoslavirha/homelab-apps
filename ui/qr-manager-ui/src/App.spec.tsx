@@ -153,6 +153,29 @@ describe('<App />', () => {
         expect(fetchMock.mock.calls.length).toBeGreaterThan(callsAtBanner);
     });
 
+    it('reloads the list page once the recovery probe clears the banner', async () => {
+        expect.assertions(3);
+        vi.useFakeTimers({ shouldAdvanceTime: true });
+        const fetchMock = vi.fn()
+            .mockResolvedValueOnce(new Response('boom', { status: 503 }))
+            .mockImplementation(async () => new Response(JSON.stringify({ items: [sample] }), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' }
+            }));
+        Object.assign(globalThis, { fetch: fetchMock });
+
+        window.history.replaceState(null, '', '/admin');
+        render(<App config={config()} />);
+
+        await waitFor(() => expect(screen.getByText(/having problems — retrying/)).toBeInTheDocument());
+
+        await act(async () => { await vi.advanceTimersByTimeAsync(120_000); });
+        vi.useRealTimers();
+
+        expect(screen.queryByText(/having problems/)).not.toBeInTheDocument();
+        await waitFor(() => expect(screen.getByText('Shelf 1')).toBeInTheDocument());
+    });
+
     it('shows no banner for a 4xx — the API answered, the request was wrong', async () => {
         Object.assign(globalThis, {
             fetch: vi.fn().mockResolvedValue(new Response('bad filter', { status: 422 }))

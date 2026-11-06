@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { QrImage } from '../components/QrImage.js';
 import { useQrCodesClient } from '../api/useQrCodesClient.js';
 import type { QrCode } from '../api/types.js';
+import { useApiRecoveryCount } from '../runtime/ApiStatusContext.js';
 import { useRuntimeConfig } from '../runtime/RuntimeConfigContext.js';
 
 export const QrCodeDetailPage = () => {
@@ -17,8 +18,22 @@ export const QrCodeDetailPage = () => {
     const [busy, setBusy] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Reload on API recovery only when nothing loaded yet, so draft edits survive.
+    const recoveryCount = useApiRecoveryCount();
+    const [reloadKey, setReloadKey] = useState(0);
+    const needsLoadRef = useRef(false);
+    needsLoadRef.current = qrCode === null && error !== null;
+    const seenRecovery = useRef(recoveryCount);
+    useEffect(() => {
+        if (seenRecovery.current !== recoveryCount) {
+            seenRecovery.current = recoveryCount;
+            if (needsLoadRef.current) setReloadKey(k => k + 1);
+        }
+    }, [recoveryCount]);
+
     useEffect(() => {
         let cancelled = false;
+        setError(null);
         client.list({})
             .then(list => list.find(q => q.id === id))
             .then(found => {
@@ -37,7 +52,7 @@ export const QrCodeDetailPage = () => {
         return () => {
             cancelled = true;
         };
-    }, [client, id]);
+    }, [client, id, reloadKey]);
 
     const save = async () => {
         if (!qrCode) return;
