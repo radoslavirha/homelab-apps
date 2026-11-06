@@ -1,5 +1,19 @@
 # knowledge-base-api
 
+## 0.6.0
+
+### Minor Changes
+
+- [#437](https://github.com/radoslavirha/homelab-apps/pull/437) [`388a4bc`](https://github.com/radoslavirha/homelab-apps/commit/388a4bc79663ed2212ed41d8b0aef4bf5fb8a519) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Accept every auth verifier type `@radoslavirha/auth` offers.
+
+- [#433](https://github.com/radoslavirha/homelab-apps/pull/433) [`d963d9c`](https://github.com/radoslavirha/homelab-apps/commit/d963d9c9f054bea2673ff29127576b65077ca31f) Thanks [@radoslavirha](https://github.com/radoslavirha)! - `GET /conventions?kb=` serves a knowledge base's house rules: the file its new optional `knowledgeBases[].conventionsPath` names (e.g. `README.md`), read live from the source, so it need not be indexed. Unset answers `200` with nulls.
+
+### Patch Changes
+
+- Updated dependencies [[`0c4b327`](https://github.com/radoslavirha/homelab-apps/commit/0c4b3276fcf804b8f90ec09616c66d326dc10410)]:
+  - @radoslavirha/auth@0.4.0
+  - @radoslavirha/tsed-auth@0.4.0
+
 ## 0.5.0
 
 ### Minor Changes

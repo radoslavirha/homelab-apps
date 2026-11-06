@@ -1,5 +1,18 @@
 # knowledge-base
 
+## 0.7.0
+
+### Minor Changes
+
+- [#433](https://github.com/radoslavirha/homelab-apps/pull/433) [`d963d9c`](https://github.com/radoslavirha/homelab-apps/commit/d963d9c9f054bea2673ff29127576b65077ca31f) Thanks [@radoslavirha](https://github.com/radoslavirha)! - New read-only `conventions` tool returns the knowledge base's own rules, and every endpoint sends MCP server `instructions` (new optional `mcpServers.<KEY>.instructions`, with a generic default) telling agents to call it before writing or preparing files. `write_document` now spells out the frontmatter it requires, including the allowed `status` values.
+
+- [#436](https://github.com/radoslavirha/homelab-apps/pull/436) [`279f41d`](https://github.com/radoslavirha/homelab-apps/commit/279f41d237e0d190a16e4daf9013ae151b958daa) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Endpoints choose their auth type with `mcpServers.<key>.auth.type`; `oauth` stays the default, so existing configs parse unchanged.
+
+### Patch Changes
+
+- Updated dependencies [[`0c4b327`](https://github.com/radoslavirha/homelab-apps/commit/0c4b3276fcf804b8f90ec09616c66d326dc10410)]:
+  - @radoslavirha/auth@0.4.0
+
 ## 0.6.0
 
 ### Minor Changes
