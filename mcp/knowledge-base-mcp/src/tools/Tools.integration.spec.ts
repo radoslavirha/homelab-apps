@@ -45,11 +45,9 @@ describe('Tools (integration, through MCP)', () => {
     let id = 0;
 
     /** One JSON-RPC call to the MCP endpoint; resolves to its `result`. */
-    const call = async (method: string, params?: object): Promise<Record<string, unknown>> => {
-        const response = await request.post('/development').set(MCP_HEADERS).send({ jsonrpc: '2.0', id: ++id, method, params });
-
-        return response.body.result;
-    };
+    const send = async (method: string, params?: object): Promise<{ result?: Record<string, unknown>; error?: { code: number; message: string } }> =>
+        (await request.post('/development').set(MCP_HEADERS).send({ jsonrpc: '2.0', id: ++id, method, params })).body;
+    const call = async (method: string, params?: object): Promise<Record<string, unknown>> => (await send(method, params)).result!;
     const callTool = (name: string, args: object = {}): Promise<Record<string, unknown>> => call('tools/call', { name, arguments: args });
 
     // index.ts builds the endpoints and registers the tools the same way.
@@ -67,9 +65,38 @@ describe('Tools (integration, through MCP)', () => {
     afterEach(PlatformTest.reset);
     afterEach(() => vi.restoreAllMocks());
 
+    /** The caller's token for the rest of the test, holding `roles`. */
+    const signInWith = async (roles: string[]): Promise<void> => {
+        request = SuperTest.agent(PlatformTest.callback()).set('Authorization', `Bearer ${await userToken({ claims: { roles } })}`);
+    };
+    const listedNames = async (): Promise<string[]> => ((await call('tools/list')).tools as { name: string }[]).map(({ name }) => name).sort();
+
+    it('shows a reader the three reading tools only', async () => {
+        expect.assertions(1);
+
+        await expect(listedNames()).resolves.toEqual(['conventions', 'read', 'search']);
+    });
+
+    it('shows an editor, who holds both roles, all six tools', async () => {
+        expect.assertions(1);
+
+        await signInWith([TEST_ROLES.READER, TEST_ROLES.EDITOR]);
+
+        await expect(listedNames()).resolves.toEqual(['conventions', 'create_note', 'delete_document', 'read', 'search', 'write_document']);
+    });
+
+    it('shows a caller holding only the editor role the writing tools only: exact strings, no hierarchy', async () => {
+        expect.assertions(1);
+
+        await signInWith([TEST_ROLES.EDITOR]);
+
+        await expect(listedNames()).resolves.toEqual(['create_note', 'delete_document', 'write_document']);
+    });
+
     it('lists the six tools, each with an input and an output schema, none taking a knowledge base', async () => {
         expect.assertions(3);
 
+        await signInWith([TEST_ROLES.READER, TEST_ROLES.EDITOR]);
         const { tools: listed } = await call('tools/list') as { tools: { name: string; inputSchema: { properties?: object }; outputSchema?: object }[] };
 
         expect(listed.map((tool) => tool.name).sort()).toEqual(['conventions', 'create_note', 'delete_document', 'read', 'search', 'write_document']);
@@ -80,6 +107,7 @@ describe('Tools (integration, through MCP)', () => {
     it('marks the reading tools read-only and the writing ones not, only delete as destructive, none open-world', async () => {
         expect.assertions(1);
 
+        await signInWith([TEST_ROLES.READER, TEST_ROLES.EDITOR]);
         const { tools: listed } = await call('tools/list') as { tools: { name: string; annotations: { readOnlyHint?: boolean; destructiveHint?: boolean; openWorldHint?: boolean } }[] };
 
         // MCP clients that ask before running a tool which changes something read these.
@@ -102,29 +130,25 @@ describe('Tools (integration, through MCP)', () => {
         expect(declared.filter(([, level]) => !Object.values(KnowledgeBaseRole).includes(level as KnowledgeBaseRole))).toEqual([]);
     });
 
-    it('a caller holding another of the endpoint\'s roles, but not the tool\'s, is refused by the tool before the API is called', async () => {
-        expect.assertions(3);
+    it('a caller holding another of the endpoint\'s roles, but not the tool\'s, who calls it anyway is refused before the API is called', async () => {
+        expect.assertions(2);
 
         const search = vi.spyOn(api, 'search');
 
         // Passes the door (it holds an endpoint role) but lacks READER, which `search` declares.
-        request = SuperTest.agent(PlatformTest.callback()).set('Authorization', `Bearer ${await userToken({ claims: { roles: [TEST_ROLES.EDITOR] } })}`);
-        const result = await callTool('search', { query: 'q' });
+        await signInWith([TEST_ROLES.EDITOR]);
 
-        expect(result.isError).toBe(true);
-        expect(JSON.stringify(result.content)).toContain('Insufficient permissions.');
+        // Its server has no such tool: the same answer as for a tool that does not exist.
+        await expect(send('tools/call', { name: 'search', arguments: { query: 'q' } })).resolves.toEqual(expect.objectContaining({ error: { code: -32602, message: 'Tool search not found' } }));
         expect(search).not.toHaveBeenCalled();
     });
 
-    it.each(WRITES)('%s: a reader is refused before the API is called', async (name, args) => {
-        expect.assertions(3);
+    it.each(WRITES)('%s: a reader who calls it anyway, though not shown it, is refused before the API is called', async (name, args) => {
+        expect.assertions(2);
 
         const calls = [vi.spyOn(api, 'createNote'), vi.spyOn(api, 'writeDocument'), vi.spyOn(api, 'deleteDocument')];
 
-        const result = await callTool(name, args);
-
-        expect(result.isError).toBe(true);
-        expect(JSON.stringify(result.content)).toContain('Insufficient permissions.');
+        await expect(send('tools/call', { name, arguments: args })).resolves.toEqual(expect.objectContaining({ error: { code: -32602, message: `Tool ${name} not found` } }));
         expect(calls.filter((spy) => spy.mock.calls.length > 0)).toEqual([]);
     });
 

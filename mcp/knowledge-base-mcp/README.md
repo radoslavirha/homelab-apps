@@ -35,7 +35,7 @@ Each endpoint is an OAuth resource server. A request without a valid token gets 
 
 The token is checked by `@radoslavirha/auth` (issuer, audience, signature, expiry), as in the APIs, then for one of the endpoint's roles. It never leaves this server: tools call knowledge-base-api with the server's own token (*Upstream token*).
 
-Each tool then requires its own level: `search`, `read` and `conventions` need `READER` (`knowledge-base-mcp-<endpoint>.reader`, e.g. `knowledge-base-mcp-development.reader`); `create_note`, `write_document` and `delete_document` need `EDITOR` (`knowledge-base-mcp-<endpoint>.editor`, whose holders Authentik also gives the reader role). Each endpoint checks its own roles and audience: a token for one is refused on the other. A caller below a tool's level gets the tool error "Insufficient permissions." and the API is not called.
+Each tool then requires its own level: `search`, `read` and `conventions` need `READER` (`knowledge-base-mcp-<endpoint>.reader`, e.g. `knowledge-base-mcp-development.reader`); `create_note`, `write_document` and `delete_document` need `EDITOR` (`knowledge-base-mcp-<endpoint>.editor`, whose holders Authentik also gives the reader role). Each endpoint checks its own roles and audience: a token for one is refused on the other. A caller is shown only the tools of the levels it holds: a reader's `tools/list` has the three reading tools, an editor's all six. A caller that calls a tool it was not shown gets the JSON-RPC error `Tool <name> not found` (`-32602`), the same as for a tool that does not exist, and the API is not called.
 
 Claude Code uses a pre-registered client with a fixed callback port:
 
@@ -46,7 +46,7 @@ claude mcp add --transport http --scope user --client-id <client_id> --callback-
 
 ## Tools
 
-All work on the endpoint's own knowledge base; none takes a `kb` (an extra `kb` argument is ignored). A failure comes back as a tool result with `isError`, carrying the message.
+All work on the endpoint's own knowledge base; none takes a `kb` (an extra `kb` argument is ignored). `tools/list` lists a tool only to a caller holding its level (*Sign-in*). A failure comes back as a tool result with `isError`, carrying the message.
 
 | Tool | Level | Input | Returns |
 |------|-------|-------|---------|

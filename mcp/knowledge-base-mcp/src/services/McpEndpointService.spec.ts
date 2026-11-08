@@ -90,6 +90,23 @@ describe('McpEndpointService', () => {
         });
     });
 
+    describe('holdsRole', () => {
+        it('answers by the same rule as requireRole: the endpoint\'s exact role for the level', async () => {
+            expect.assertions(4);
+
+            await expect(onRequestTo('/development', () => endpoint.holdsRole(KnowledgeBaseRole.Reader), [TEST_ROLES.READER])).resolves.toBe(true);
+            await expect(onRequestTo('/development', () => endpoint.holdsRole(KnowledgeBaseRole.Editor), [TEST_ROLES.READER])).resolves.toBe(false);
+            await expect(onRequestTo('/development', () => endpoint.holdsRole(KnowledgeBaseRole.Reader), [TEST_ROLES.EDITOR])).resolves.toBe(false);
+            await expect(onRequestTo('/development', () => endpoint.holdsRole(KnowledgeBaseRole.Editor), [TEST_ROLES.READER, TEST_ROLES.EDITOR])).resolves.toBe(true);
+        });
+
+        it('is false for a request nobody was verified on', async () => {
+            expect.assertions(1);
+
+            await expect(onRequestTo('/development', () => endpoint.holdsRole(KnowledgeBaseRole.Reader))).resolves.toBe(false);
+        });
+    });
+
     describe('username', () => {
         it('is the subject of the verified token', async () => {
             expect.assertions(1);

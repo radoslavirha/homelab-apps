@@ -75,13 +75,21 @@ describe('unauthenticated MCP endpoint (integration)', () => {
     });
     afterEach(PlatformTest.reset);
 
-    it('lists the tools with no Authorization header', async () => {
+    const listedNames = (response: SuperTest.Response): string[] => (response.body.result.tools as { name: string }[]).map(({ name }) => name).sort();
+
+    it('lists all six tools with no Authorization header: the default principal holds every level', async () => {
         expect.assertions(2);
 
         const response = await call('/open', 'tools/list');
 
         expect(response.status).toBe(200);
-        expect((response.body.result.tools as { name: string }[]).map(({ name }) => name)).toContain('search');
+        expect(listedNames(response)).toEqual(['conventions', 'create_note', 'delete_document', 'read', 'search', 'write_document']);
+    });
+
+    it('lists only the reading tools when the endpoint grants only READER', async () => {
+        expect.assertions(1);
+
+        expect(listedNames(await call('/open-read', 'tools/list'))).toEqual(['conventions', 'read', 'search']);
     });
 
     it('searches its own knowledge base with no Authorization header, sending none upstream either', async () => {
@@ -123,8 +131,8 @@ describe('unauthenticated MCP endpoint (integration)', () => {
 
         const response = await createNote('/open-read', { 'X-User': 'alice' });
 
-        expect(response.body.result.isError).toBe(true);
-        expect(JSON.stringify(response.body.result.content)).toContain('Insufficient permissions.');
+        expect(response.body.result).toBeUndefined();
+        expect(response.body.error).toEqual({ code: -32602, message: 'Tool create_note not found' });
         expect(upstream).toEqual([]);
     });
 });
