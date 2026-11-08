@@ -42,13 +42,22 @@ export class McpEndpointService {
      * held by nobody. The refusal names no role.
      */
     public requireRole(level: KnowledgeBaseRole): void {
+        if (!this.holdsRole(level)) {
+            throw new Forbidden('Insufficient permissions.');
+        }
+    }
+
+    /**
+     * Whether the caller holds this endpoint's role for `level`, by the same rule as
+     * {@link requireRole}: `tools/list` asks it to show a caller only the tools it may call.
+     * `false` for a request no one has authenticated yet.
+     */
+    public holdsRole(level: KnowledgeBaseRole): boolean {
         const { endpoint, ctx } = this.current();
         const principal = McpEndpointService.principalOf(ctx);
         const role = endpoint.auth.roles[level];
 
-        if (CommonUtils.isUndefined(principal) || CommonUtils.isUndefined(role) || !principal.roles.includes(role)) {
-            throw new Forbidden('Insufficient permissions.');
-        }
+        return CommonUtils.notNil(principal) && CommonUtils.notNil(role) && principal.roles.includes(role);
     }
 
     /**

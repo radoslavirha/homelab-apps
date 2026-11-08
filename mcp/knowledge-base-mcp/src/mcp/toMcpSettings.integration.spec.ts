@@ -91,8 +91,9 @@ describe('two MCP endpoints in one app (integration)', () => {
         const note = { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'create_note', arguments: { title: 'A gotcha', type: 'GOTCHA', context: 'c', decisionOrFact: 'd' } } };
         const response = await post('/loxone', await loxoneToken(), note);
 
-        expect(response.body.result.isError).toBe(true);
-        expect(response.body.result.content[0].text).toContain('Insufficient permissions.');
+        // A loxone reader: create_note is not on its server, whatever it holds on /development.
+        expect(response.body.result).toBeUndefined();
+        expect(response.body.error).toEqual({ code: -32602, message: 'Tool create_note not found' });
     });
 
     it.each(Object.entries(TEST_SERVERS))('mounts %s from config, with its own Protected Resource Metadata', async (_key, server) => {
