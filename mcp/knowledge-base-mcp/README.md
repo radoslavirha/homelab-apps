@@ -29,7 +29,7 @@ Each endpoint is an OAuth resource server. A request without a valid token gets 
 
 | Answer | When |
 |--------|------|
-| `401` `invalid_token` | No token, or one from another issuer, for another audience, expired, or badly signed. The reason is logged (`MCP_AUTH_REFUSED`), never sent |
+| `401` `invalid_token` | No token, or one from another issuer, for another audience, expired, or badly signed. The reason is logged (`MCP_AUTH_REFUSED`), never sent. The request log records this `401` at `info`, not `error`: every new client starts with one |
 | `403` `insufficient_scope` | A good token holding none of the endpoint's roles. Signing in again cannot help; the refusal names no role |
 | `500` `server_error` | Authentik's signing keys could not be fetched — the token may be fine |
 
