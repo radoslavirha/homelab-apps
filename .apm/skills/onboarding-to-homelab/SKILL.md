@@ -143,4 +143,7 @@ PR body:
   sync sandbox, then production (or production alone), once each (homelab `network-egress` skill), or
   the new pods' egress is dropped; the `authentik-server3` sync and apply check, if blueprints changed; the `REVOKE CONNECT`,
   if a database was added;
+- if the app adds a shared client with a gate group (`kind: client`, e.g. `<name>-user`): add
+  `claude-norole` to that gate group in the Authentik UI, and to no role group. Without it, login stops
+  at Authentik and the app's `403` is never reached;
 - that the image tag is a placeholder the first release overwrites.

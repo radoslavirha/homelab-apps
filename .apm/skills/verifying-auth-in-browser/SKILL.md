@@ -26,7 +26,7 @@ cannot run it, say which specific thing is unverified and why — never let it r
 ## Who signs in
 
 The Authentik test user **`claude`**, for every check below. Its password and TOTP secret come from
-OpenBao through the operator's `claude-e2e` helper (`~/.local/bin/claude-e2e`), which hands them to
+the operator's local secret store through the `claude-e2e` helper (`~/.local/bin/claude-e2e`), which hands them to
 **one** child process as `E2E_USERNAME`, `E2E_PASSWORD` and `E2E_TOTP_SECRET`:
 
 ```bash
@@ -42,15 +42,26 @@ The design lives in the homelab repo, `docs/identity.md` § The E2E test user.
   30-second TOTP time step once, so a second login inside the same window fails. Both scripts wait for
   a fresh window, which means a login takes up to 30 s.
 - **On a failure, stop.** Never loop a login: every failed attempt counts toward the reputation
-  lockout, five of them lock `claude` out for 24 hours. A failed OpenBao login means it is sealed or
-  unreachable; tell the operator.
+  lockout, five of them lock `claude` out for 24 hours. A failed credential read means the store is not
+  seeded or is locked; tell the operator.
 - **Sandbox by default.** `claude` holds production groups for the few tests that need them. Touch
   production only when the task names it, and only read unless the task says to change something.
 - Its Authentik groups decide the `roles` in every token. A test that needs a role `claude` lacks is a
   request to the operator, not something to work around.
 
+**Negative tests use `claude-norole`**, a permanent user with no application role. To prove that a
+logged-in user with no role is refused, run the login under `claude-e2e --user noroles run -- <cmd>`:
+
+- Through the app's own client, expect Authentik's *Permission denied* and no token.
+  `scripts/authentik_token.py` passes MFA, then exits 1 with `authorize answered 200, expected a
+  redirect`. That is the refusal, measured 2026-11-08.
+- Through a shared client whose gate group holds `claude-norole`, expect a token with no roles for the
+  API, and `403` from it.
+
+Sandbox by default, once per run. It has its own lockout counter. Never add it to a role group.
+
 Throwaway users are no longer cheap: MFA is mandatory, so a new user's first login is forced into
-enrolment. Use `claude`.
+enrolment. Use `claude`, or `claude-norole` for negative tests.
 
 ## How to run it
 
