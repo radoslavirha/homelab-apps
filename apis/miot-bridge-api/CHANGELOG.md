@@ -1,5 +1,11 @@
 # miot-bridge
 
+## 0.30.8
+
+### Patch Changes
+
+- [#410](https://github.com/radoslavirha/homelab-apps/pull/410) [`53306ab`](https://github.com/radoslavirha/homelab-apps/commit/53306ab9f69a5210f197feda9065f363a7935011) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Keep reconnecting to the MQTT broker after it refuses a CONNACK (e.g. while it restarts) instead of staying off MQTT until the pod is restarted.
+
 ## 0.30.7
 
 ### Patch Changes

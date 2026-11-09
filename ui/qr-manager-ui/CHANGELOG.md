@@ -1,5 +1,11 @@
 # qr-manager-ui
 
+## 0.13.9
+
+### Patch Changes
+
+- [#432](https://github.com/radoslavirha/homelab-apps/pull/432) [`412f229`](https://github.com/radoslavirha/homelab-apps/commit/412f22991406d306f1b4a6a0ba6050b927c2e5d0) Thanks [@claude-agent-irha](https://github.com/apps/claude-agent-irha)! - Reload the list and detail pages when the API recovers after their load failed, instead of leaving the old error on screen.
+
 ## 0.13.8
 
 ### Patch Changes

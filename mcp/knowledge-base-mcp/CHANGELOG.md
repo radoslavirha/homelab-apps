@@ -1,5 +1,15 @@
 # knowledge-base
 
+## 0.8.0
+
+### Minor Changes
+
+- [#441](https://github.com/radoslavirha/homelab-apps/pull/441) [`2f75807`](https://github.com/radoslavirha/homelab-apps/commit/2f758077dd6cf5d0f80421708d6c5aa3de55519e) Thanks [@radoslavirha](https://github.com/radoslavirha)! - `tools/list` shows a caller only the tools its roles allow: a reader sees `search`, `read` and `conventions`, an editor all six. A hidden tool called anyway answers `Tool <name> not found`; the per-tool role check stays.
+
+### Patch Changes
+
+- [#442](https://github.com/radoslavirha/homelab-apps/pull/442) [`418555e`](https://github.com/radoslavirha/homelab-apps/commit/418555eca8bdf0cd019821fb3d904d0d2e5f07f0) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Log a `401` carrying a `WWW-Authenticate` challenge at `info`, so the login discovery every new MCP client makes no longer counts as an error.
+
 ## 0.7.0
 
 ### Minor Changes
