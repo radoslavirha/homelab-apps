@@ -1,4 +1,5 @@
 import { diag, DiagLogLevel } from '@opentelemetry/api';
+import type { Resource } from '@opentelemetry/resources';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { OTELConfig } from './OtelConfig.js';
 
@@ -90,6 +91,33 @@ describe('OpenTelemetryService', () => {
             const options = mocks.WinstonInstrumentation.mock.calls[0][0] as { enabled: boolean; disableLogSending: boolean };
             expect(options.disableLogSending).toBe(false);
             expect(options.enabled).toBe(true);
+        });
+
+        it('Should put configured resource attributes next to service name and version', () => {
+            new OpenTelemetryService().init({
+                ...OPTIONS,
+                otel: { ...CONFIG, resourceAttributes: { 'deployment.environment.name': 'sandbox', 'host.count': 2 } }
+            });
+
+            expect((sdkOptions().resource as Resource).attributes).toEqual({
+                'deployment.environment.name': 'sandbox',
+                'host.count': 2,
+                'service.name': 'test-api',
+                'service.version': '1.0.0'
+            });
+        });
+
+        it('Should keep service name and version when config tries to set them', () => {
+            new OpenTelemetryService().init({
+                ...OPTIONS,
+                // Bypasses the schema, which rejects these keys: the service must not depend on it.
+                otel: { ...CONFIG, resourceAttributes: { 'service.name': 'other', 'service.version': '9.9.9' } }
+            });
+
+            expect((sdkOptions().resource as Resource).attributes).toMatchObject({
+                'service.name': 'test-api',
+                'service.version': '1.0.0'
+            });
         });
 
         it('Should wire only the signals that are enabled', () => {

@@ -106,6 +106,7 @@ export class OpenTelemetryService {
 
         const sdk = new NodeSDK({
             resource: resourceFromAttributes({
+                ...config.resourceAttributes,
                 [ATTR_SERVICE_NAME]: serviceName,
                 [ATTR_SERVICE_VERSION]: serviceVersion
             }),

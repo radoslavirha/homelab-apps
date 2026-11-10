@@ -82,10 +82,14 @@ dependency. If a new helper seems to need a client type, take the plain data it 
 | Field | Meaning |
 |---|---|
 | `debug` | Enable OTel SDK debug logging via `DiagConsoleLogger`. |
+| `resourceAttributes` | Extra resource attributes (string, number or boolean values) on every span, metric and log record, e.g. `deployment.environment.name`. |
 | `traces` / `metrics` / `logs` | Per-signal `{ enabled, exporter: { url } }`. |
 
 Each signal is a discriminated union: `enabled: true` **requires** `exporter.url`, so a signal
 cannot be switched on with nowhere to send it. Omitting a section disables that signal.
+
+`resourceAttributes` may not set `service.name` or `service.version`: the app sets those from
+`serviceName` and its package.json, and the schema rejects them.
 
 ## API
 
