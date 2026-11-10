@@ -17,7 +17,7 @@ import { VerifierType } from '../VerifierType.js';
  * disable flag *is* the whole vulnerability.
  */
 export const StaticKeySchema = z.object({
-    source: z.literal('value'),
+    source: z.literal('value').describe('Inline key, carried in the configuration itself.'),
     /**
      * Algorithm this key is for, and the only one accepted from this issuer.
      *
@@ -25,15 +25,17 @@ export const StaticKeySchema = z.object({
      * algorithm named in the JWS header is the classic JWT failure — `alg:
      * none`, or an RSA public key accepted as an HMAC secret.
      */
-    algorithm: z.string().min(1).default('HS256'),
+    algorithm: z.string().min(1).default('HS256')
+        .describe('Algorithm this key is for, and the only one accepted from this issuer. The `alg` in the token header is never trusted on its own.'),
     /** `HS*`: the shared secret. Otherwise: a PEM-encoded public key. */
     value: z.string().min(1)
+        .describe('For `HS*`: the shared secret. Otherwise: a PEM-encoded public key.')
 });
 
 /** Keys fetched from a remote JWKS endpoint. */
 export const JwksKeySchema = z.object({
-    source: z.literal('jwks'),
-    uri: z.url(),
+    source: z.literal('jwks').describe('Keys fetched from a remote JWKS endpoint.'),
+    uri: z.url().describe('URL of the JWKS endpoint.'),
     /**
      * Whether the JWKS fetch itself needs a credential.
      *
@@ -42,11 +44,14 @@ export const JwksKeySchema = z.object({
      * not a branch in the verifier — which is what lets the same binary run
      * outside a cluster.
      */
-    auth: z.enum(['none', 'serviceAccountToken']).default('none'),
+    auth: z.enum(['none', 'serviceAccountToken']).default('none')
+        .describe('Credential for the JWKS fetch itself. `serviceAccountToken` sends the pod\'s Kubernetes service account token, for the apiserver JWKS, which is not anonymously readable.'),
     /** Signature algorithms accepted from this issuer. An allowlist, always. */
-    algorithms: z.array(z.string().min(1)).default(['RS256']),
+    algorithms: z.array(z.string().min(1)).default(['RS256'])
+        .describe('Signature algorithms accepted from this issuer (an allowlist).'),
     /** How long a fetched key set is reused, so the IdP is not on every request's path. */
-    cacheTtlSeconds: z.number().int().positive().default(300),
+    cacheTtlSeconds: z.number().int().positive().default(300)
+        .describe('How long a fetched key set is reused, in seconds.'),
     /**
      * Floor on how often a key set may be refetched, independent of the cache
      * age above.
@@ -56,7 +61,8 @@ export const JwksKeySchema = z.object({
      * becomes a fetch per request — a bad token turned into a denial of service
      * against the IdP.
      */
-    refreshCooldownMs: z.number().int().positive().default(30_000),
+    refreshCooldownMs: z.number().int().positive().default(30_000)
+        .describe('Minimum time between two key set fetches, in ms, so tokens with an unknown `kid` cannot force a fetch per request.'),
     /**
      * Hard ceiling on the fetch. Required, because the failure mode is the
      * point: a JWKS endpoint that never answers turns every request into a hang
@@ -64,9 +70,11 @@ export const JwksKeySchema = z.object({
      * routes that need no authentication at all.
      */
     timeoutMs: z.number().int().positive().default(3000)
+        .describe('Time limit for one JWKS fetch, in ms.')
 });
 
-export const KeySchema = z.discriminatedUnion('source', [StaticKeySchema, JwksKeySchema]);
+export const KeySchema = z.discriminatedUnion('source', [StaticKeySchema, JwksKeySchema])
+    .describe('Key that verifies token signatures from this issuer.');
 
 /**
  * One trust source: an issuer we are willing to believe, and the terms.
@@ -80,7 +88,8 @@ export const TrustedIssuerSchema = z.object({
      * boot-time log can name each trusted issuer, which is the answer to "why
      * is my token rejected" nine times in ten.
      */
-    name: z.string().min(1),
+    name: z.string().min(1)
+        .describe('Label for this issuer in the boot log. Not matched against anything.'),
     /**
      * Exact `iss` value to match, compared as a string.
      *
@@ -89,25 +98,29 @@ export const TrustedIssuerSchema = z.object({
      * A helpful normalisation here would silently accept a token from a
      * different issuer.
      */
-    issuer: z.string().min(1),
+    issuer: z.string().min(1)
+        .describe('Exact `iss` value to match, compared as a string. Never normalised: a trailing slash matters.'),
     /**
      * Audience this service answers to. A token minted for another service must
      * be refused even though its signature is perfectly valid — that refusal is
      * the only thing standing between "a token" and "a token for us".
      */
-    audience: z.string().min(1),
+    audience: z.string().min(1)
+        .describe('Audience (`aud`) this service answers to. Tokens minted for another audience are refused.'),
     key: KeySchema,
     /**
      * Which caller class tokens from this issuer represent. Stamped onto the
      * `Principal`; a property of the trust source, not of the token.
      */
-    subjectKind: z.enum(['human', 'service', 'device']).default('human'),
+    subjectKind: z.enum(['human', 'service', 'device']).default('human')
+        .describe('Caller class that tokens from this issuer represent, stamped onto the principal.'),
     /**
      * Claim to read roles from. Authentik puts them in `roles`; the Kubernetes
      * apiserver has no equivalent, so a source with no such claim yields an
      * empty list rather than an error.
      */
     rolesClaim: z.string().default('roles')
+        .describe('Token claim the roles are read from. A token without it has no roles.')
 });
 
 /**
@@ -120,7 +133,7 @@ export const TrustedIssuerSchema = z.object({
  * without admitting the other.
  */
 export const JwtVerifierSchema = z.object({
-    type: z.literal(VerifierType.BearerJwt),
+    type: z.literal(VerifierType.BearerJwt).describe('Verify a bearer JWT from the `Authorization` header.'),
     /**
      * Trust sources, in no particular order — a token is matched to one by its
      * `iss`, never by position.
@@ -147,6 +160,7 @@ export const JwtVerifierSchema = z.object({
                 seen.add(trusted.issuer);
             });
         })
+        .describe('Issuers whose tokens are accepted. At least one; each `issuer` at most once. A token is matched to a row by its `iss`.')
 });
 
 /**
@@ -166,16 +180,19 @@ export const UNAUTHENTICATED_SUBJECT_PATTERN = /^[\w.@+-]{1,150}$/;
  * it implicitly: it exists only where a config names `"type": "unauthenticated"`.
  */
 export const UnauthenticatedVerifierSchema = z.object({
-    type: z.literal(VerifierType.Unauthenticated),
+    type: z.literal(VerifierType.Unauthenticated)
+        .describe('No credential is checked: every request is admitted as one principal holding all of `roles`. Meant for testing without an IdP; the boot log warns about it.'),
     /**
      * Every role every request gets. At least one, because an entry that grants
      * nothing would admit callers to a route only to answer `403` on every
      * `@RequireRoles` — a config mistake better caught at boot.
      */
     roles: z.array(z.string().min(1))
-        .min(1, 'an unauthenticated verifier needs at least one role; every request is given all of them'),
+        .min(1, 'an unauthenticated verifier needs at least one role; every request is given all of them')
+        .describe('Roles every request is given. At least one.'),
     /** The principal's `subject` when no usable `subjectHeader` value arrives. */
-    defaultSubject: z.string().regex(UNAUTHENTICATED_SUBJECT_PATTERN),
+    defaultSubject: z.string().regex(UNAUTHENTICATED_SUBJECT_PATTERN)
+        .describe('Subject of the principal when no usable `subjectHeader` value arrives.'),
     /**
      * Header whose value, when present and matching
      * `UNAUTHENTICATED_SUBJECT_PATTERN`, becomes the subject instead of
@@ -185,9 +202,11 @@ export const UnauthenticatedVerifierSchema = z.object({
      * **Unverified.** Any caller can put any name in it. It is a label for logs
      * and commit attribution, never an identity and never a basis for access.
      */
-    subjectHeader: z.string().min(1).optional(),
+    subjectHeader: z.string().min(1).optional()
+        .describe('Header whose value, when present and matching the subject pattern, becomes the subject (e.g. `X-User`). Unverified: a label for logs and attribution, never a basis for access.'),
     /** Which caller class the principal is. Stamped onto the `Principal`. */
     subjectKind: z.enum(['human', 'service', 'device']).default('human')
+        .describe('Caller class of the principal.')
 });
 
 /**
@@ -204,7 +223,8 @@ export const UnauthenticatedVerifierSchema = z.object({
  * per-entry choice, mostly for testing without an IdP; it names the principal
  * and roles it grants, and the boot log warns about it.
  */
-export const VerifierSchema = z.discriminatedUnion('type', [JwtVerifierSchema, UnauthenticatedVerifierSchema]);
+export const VerifierSchema = z.discriminatedUnion('type', [JwtVerifierSchema, UnauthenticatedVerifierSchema])
+    .describe('How callers of the routes guarded by this method are verified.');
 
 /**
  * The `auth` block of a service's configuration: named entries, each declaring

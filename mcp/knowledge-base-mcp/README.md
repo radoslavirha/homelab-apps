@@ -70,6 +70,8 @@ All work on the endpoint's own knowledge base; none takes a `kb` (an extra `kb` 
 
 ## Configuration
 
+Every key with its type, default and meaning: [CONFIGURATION.md](./CONFIGURATION.md), generated from the configuration schema.
+
 `config/localhost.json` (gitignored, local runs) and `config/test.json` (tests). Before a local run, put `knowledge-base-mcp`'s client secret into `externalApis.KNOWLEDGE_BASE_API.auth.request.body.client_secret` in `config/localhost.json` — it is read from the client's Authentik provider page and never committed. `config/localhost.json` mounts whichever `mcpServers` entries it has; at least one is required.
 
 | Key | Description |

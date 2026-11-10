@@ -1,3 +1,4 @@
+import { ConfigDocs } from '@radoslavirha/tsed-configuration';
 import { describe, expect, it } from 'vitest';
 import { TEST_SERVER, TEST_SERVERS } from '../../test/fixtures.js';
 import { ConfigSchema } from './ConfigModel.js';
@@ -97,5 +98,13 @@ describe('ConfigSchema', () => {
 
     it('refuses a log level the logger does not have', () => {
         expect(ConfigSchema.safeParse({ ...MINIMAL, logger: { level: 'chatty' } }).success).toBe(false);
+    });
+});
+
+describe('CONFIGURATION.md', () => {
+    it('Should match the configuration schema', async () => {
+        expect.assertions(1);
+        await expect(ConfigDocs.render(ConfigSchema, { title: 'knowledge-base-mcp' }))
+            .toMatchFileSnapshot('../../../CONFIGURATION.md');
     });
 });

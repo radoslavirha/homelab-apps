@@ -1,3 +1,4 @@
+import { ConfigDocs } from '@radoslavirha/tsed-configuration';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { ConfigSchema } from './ConfigModel.js';
@@ -225,5 +226,13 @@ describe('ConfigSchema', () => {
         (config.embeddings as { models: { documentTemplate: string }[] }).models[0].documentTemplate = 'title: {title}';
 
         expect(issues(config).some((issue) => issue.startsWith('embeddings.models.0.documentTemplate'))).toBe(true);
+    });
+});
+
+describe('CONFIGURATION.md', () => {
+    it('Should match the configuration schema', async () => {
+        expect.assertions(1);
+        await expect(ConfigDocs.render(ConfigSchema, { title: 'knowledge-base-api' }))
+            .toMatchFileSnapshot('../../../CONFIGURATION.md');
     });
 });

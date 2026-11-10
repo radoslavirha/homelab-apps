@@ -1,12 +1,12 @@
 lockfile_version: '1'
-generated_at: '2026-10-27T19:05:34.246651+00:00'
-apm_version: 0.28.0
+generated_at: '2026-11-10T10:37:40.075605+00:00'
+apm_version: 0.31.0
 dependencies:
 - repo_url: radoslavirha/toolkit-hub
   name: toolkit-adoption
   host: github.com
-  resolved_commit: 43146e459b727b4c008d92495e13830ca83804a9
-  version: 0.1.0
+  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
+  version: 0.1.1
   virtual_path: apm-plugins/adoption
   is_virtual: true
   package_type: apm_package
@@ -14,14 +14,14 @@ dependencies:
   - .claude/skills/adopting-toolkit-hub
   - .claude/skills/adopting-toolkit-hub/SKILL.md
   deployed_file_hashes:
-    .claude/skills/adopting-toolkit-hub/SKILL.md: sha256:0bfb62a19b57f35213685bd0ef95be0d39ac9b6eace075edd7875d0d97ca8f41
-  content_hash: sha256:30ba1b21a33fde9ea3813e7dff08035e2035fc4e46899cd5d8ba7ae9f4b957a0
+    .claude/skills/adopting-toolkit-hub/SKILL.md: sha256:efa84489f382bcb8a9c37b7f73ae9eb6cf298c00280adaeb20838e93940f9cca
+  content_hash: sha256:1a1db652bbc2532e686bcb988bf2ccb3b2de3fd80d725ea07544330806bee149
   declared_license: MIT
 - repo_url: radoslavirha/toolkit-hub
   name: tsed-service
   host: github.com
-  resolved_commit: 43146e459b727b4c008d92495e13830ca83804a9
-  version: 0.2.0
+  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
+  version: 0.2.2
   virtual_path: apm-plugins/tsed-service
   is_virtual: true
   package_type: apm_package
@@ -29,14 +29,14 @@ dependencies:
   - .claude/skills/building-a-tsed-service
   - .claude/skills/building-a-tsed-service/SKILL.md
   deployed_file_hashes:
-    .claude/skills/building-a-tsed-service/SKILL.md: sha256:d0d1c490ef94d02b58019c8688a354d5b9298405aaa9eb2ec7d72127ae390775
-  content_hash: sha256:7b2e3c3609c9386bbe6e22633270e261c4325c42faabd94ff85a7e031e928c16
+    .claude/skills/building-a-tsed-service/SKILL.md: sha256:954c206dd581fe40004d9ad53ba561ad7596f783b10ae1a69f575c0c570ba62b
+  content_hash: sha256:887f66ba51f355148771bc5fc9179ae43a7c8d9aa86f663e4d33e0e113dad5f7
   declared_license: MIT
 - repo_url: radoslavirha/toolkit-hub
   name: config-eslint
   host: github.com
-  resolved_commit: 43146e459b727b4c008d92495e13830ca83804a9
-  version: 0.4.9
+  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
+  version: 0.5.1
   virtual_path: config/config-eslint
   is_virtual: true
   package_type: apm_package
@@ -44,14 +44,14 @@ dependencies:
   - .claude/skills/using-config-eslint
   - .claude/skills/using-config-eslint/SKILL.md
   deployed_file_hashes:
-    .claude/skills/using-config-eslint/SKILL.md: sha256:eaaa31e21e558a5c762e3f377a6ccaa82201db44a5d10060e8bc3b4eea4a7b9a
-  content_hash: sha256:7aaf4e697d4cf3e10db436bd523897d066e40f36d837cf0399e7fb111496de06
+    .claude/skills/using-config-eslint/SKILL.md: sha256:75397d11da7d0693e8e541126bf08f4e1caace0a542abe5d1011f917638fc13e
+  content_hash: sha256:a0945208ed37a91a7679074e25cbda6a1a0e9e4d38211c8bacf4449fe1bcd04a
   declared_license: MIT
 - repo_url: radoslavirha/toolkit-hub
   name: config-tsdown
   host: github.com
-  resolved_commit: 43146e459b727b4c008d92495e13830ca83804a9
-  version: 0.2.5
+  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
+  version: 0.2.7
   virtual_path: config/config-tsdown
   is_virtual: true
   package_type: apm_package
@@ -60,13 +60,13 @@ dependencies:
   - .claude/skills/using-config-tsdown/SKILL.md
   deployed_file_hashes:
     .claude/skills/using-config-tsdown/SKILL.md: sha256:0e253ff7ae7dba25c2968d016c43f79e0644709d30c71e2a232cc28c4b32c5f0
-  content_hash: sha256:649ac6640c68ac6fe208d528be3d32ffbf987e20aa4632f156ecff5644aa6c5a
+  content_hash: sha256:1ccc184e2bb89469e9115a0ed217084f2a1e87dd72416812c086cb55ee0b8fc0
   declared_license: MIT
 - repo_url: radoslavirha/toolkit-hub
   name: config-typescript
   host: github.com
-  resolved_commit: 43146e459b727b4c008d92495e13830ca83804a9
-  version: 1.1.6
+  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
+  version: 1.1.8
   virtual_path: config/config-typescript
   is_virtual: true
   package_type: apm_package
@@ -75,13 +75,13 @@ dependencies:
   - .claude/skills/using-config-typescript/SKILL.md
   deployed_file_hashes:
     .claude/skills/using-config-typescript/SKILL.md: sha256:d2c95454a5c7beafba15acde0fa673c0e79741c714d102e24b6159b9323bf4cc
-  content_hash: sha256:b0121ed80917d554f7f1237153f50232772130d2eea065e30cc0d434c796169d
+  content_hash: sha256:eaa3ad8a2840ee6749a00f1d5fa6b5cfdfbef82f36f1ad220ae68cd1a9f35e5e
   declared_license: MIT
 - repo_url: radoslavirha/toolkit-hub
   name: config-vitest
   host: github.com
-  resolved_commit: 43146e459b727b4c008d92495e13830ca83804a9
-  version: 0.4.7
+  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
+  version: 0.4.10
   virtual_path: config/config-vitest
   is_virtual: true
   package_type: apm_package
@@ -89,14 +89,14 @@ dependencies:
   - .claude/skills/using-config-vitest
   - .claude/skills/using-config-vitest/SKILL.md
   deployed_file_hashes:
-    .claude/skills/using-config-vitest/SKILL.md: sha256:0102031218f321860c8ee3112578e9d1230e61ef82a8d573be3ea5ccd713d762
-  content_hash: sha256:ad30df32bd1b081c944a5629cf9ae34b0017b58ea3a24d57cb0e5b17f671bc5a
+    .claude/skills/using-config-vitest/SKILL.md: sha256:8fccf14fe3696e6fab3de3c6b397e1b108440ebfbeb9116c3cfccf54ca2b1dac
+  content_hash: sha256:210a566e4f68e07d40a7be9b0750b595c6a8ac8618e56112bc0cf26f24b8f968
   declared_license: MIT
 - repo_url: radoslavirha/toolkit-hub
   name: redaction
   host: github.com
-  resolved_commit: 43146e459b727b4c008d92495e13830ca83804a9
-  version: 0.3.3
+  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
+  version: 0.3.9
   virtual_path: packages/redaction
   is_virtual: true
   package_type: apm_package
@@ -104,14 +104,14 @@ dependencies:
   - .claude/skills/using-redaction
   - .claude/skills/using-redaction/SKILL.md
   deployed_file_hashes:
-    .claude/skills/using-redaction/SKILL.md: sha256:45244313c34b9992894a6b73f7116b224eaa372fafa49415f862fab8e99100d7
-  content_hash: sha256:924608de182e2fe8680855102a0bf2103c1a38aa58a362919dd3de7a6dc09557
+    .claude/skills/using-redaction/SKILL.md: sha256:25db3e2d8503c09f984df520cde019f31a2d64b4c4513ce86a7361a93faeaf00
+  content_hash: sha256:515a88927389a168b9a68f5ecfdf322408954126cf7b94107ebcb756b128aa83
   declared_license: MIT
 - repo_url: radoslavirha/toolkit-hub
   name: utils
   host: github.com
-  resolved_commit: 43146e459b727b4c008d92495e13830ca83804a9
-  version: 0.9.3
+  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
+  version: 0.11.0
   virtual_path: packages/utils
   is_virtual: true
   package_type: apm_package
@@ -119,14 +119,14 @@ dependencies:
   - .claude/skills/using-utils
   - .claude/skills/using-utils/SKILL.md
   deployed_file_hashes:
-    .claude/skills/using-utils/SKILL.md: sha256:92211b8de878664382ab051723a4194df0c1ac3f108723ca609cfd3712358f74
-  content_hash: sha256:9598686afc27e0d3ee3f6e0ea38ae4e36bb5fd0c787b7849396580b292aeff2e
+    .claude/skills/using-utils/SKILL.md: sha256:6a3fbeb9a83ba5c3f33ed08010a16e7c000366de290c803934d70720577c980a
+  content_hash: sha256:b3842e08bf0a9b886bbb532ed5b1ac28d543aeb5b5b93baee6ec0a0e3dabf211
   declared_license: MIT
 - repo_url: radoslavirha/toolkit-hub
   name: tsed-common
   host: github.com
-  resolved_commit: 43146e459b727b4c008d92495e13830ca83804a9
-  version: 0.5.11
+  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
+  version: 0.7.2
   virtual_path: tsed/common
   is_virtual: true
   package_type: apm_package
@@ -134,14 +134,14 @@ dependencies:
   - .claude/skills/using-tsed-common
   - .claude/skills/using-tsed-common/SKILL.md
   deployed_file_hashes:
-    .claude/skills/using-tsed-common/SKILL.md: sha256:33fa6e43e68daad842a3413f7b925ff0dcaf5a0d0b6edc424922fb03bc83460f
-  content_hash: sha256:c87da3bbb7c22357961d4e6a2d4ead317fb906ad78ad40323360611adaa1a5df
+    .claude/skills/using-tsed-common/SKILL.md: sha256:30ea8bf5b4db217a69ccd52e1d381c1d5151c3e287cf7000a8f5983000f97fe3
+  content_hash: sha256:93f3c428cdf5977506e657c9320739855eeaf34d7b6561a79962d573f1eecd0b
   declared_license: MIT
 - repo_url: radoslavirha/toolkit-hub
   name: tsed-configuration
   host: github.com
-  resolved_commit: 43146e459b727b4c008d92495e13830ca83804a9
-  version: 0.9.0
+  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
+  version: 0.10.0
   virtual_path: tsed/configuration
   is_virtual: true
   package_type: apm_package
@@ -149,14 +149,14 @@ dependencies:
   - .claude/skills/using-tsed-configuration
   - .claude/skills/using-tsed-configuration/SKILL.md
   deployed_file_hashes:
-    .claude/skills/using-tsed-configuration/SKILL.md: sha256:6734efd5ebb7954497d08315294447b260e4904574187e0cb8b5d0436f4b1869
-  content_hash: sha256:e547574013ac698ee0ebd70cbc380fb7757dcdd22c8b32cbc9c41775086f469c
+    .claude/skills/using-tsed-configuration/SKILL.md: sha256:be2cf12bef61b28d0c5254be558897fbdb8c184995d4588c3c05f1b88d7bf3df
+  content_hash: sha256:87f6a638f1de14927fb0f0cb6591ef8ae01232978848521c80e0161b47665402
   declared_license: MIT
 - repo_url: radoslavirha/toolkit-hub
   name: tsed-logger
   host: github.com
-  resolved_commit: 43146e459b727b4c008d92495e13830ca83804a9
-  version: 0.7.4
+  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
+  version: 0.7.10
   virtual_path: tsed/logger
   is_virtual: true
   package_type: apm_package
@@ -165,13 +165,13 @@ dependencies:
   - .claude/skills/using-tsed-logger/SKILL.md
   deployed_file_hashes:
     .claude/skills/using-tsed-logger/SKILL.md: sha256:e0d6ac3bc76bd677f4bdffba62e10fd5bc92c01eaa17ba6e5dac5a6fbc1951f7
-  content_hash: sha256:d2d58b89caec8300703b109d615904d5e83eecfd9100698726fa698691220680
+  content_hash: sha256:cc9e6afe38221459c974a1f7751db2a27a4712c1b3d0e2d2fa45d82d3141cc90
   declared_license: MIT
 - repo_url: radoslavirha/toolkit-hub
   name: tsed-mongoose
   host: github.com
-  resolved_commit: 43146e459b727b4c008d92495e13830ca83804a9
-  version: 5.0.12
+  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
+  version: 5.1.3
   virtual_path: tsed/mongoose
   is_virtual: true
   package_type: apm_package
@@ -179,14 +179,14 @@ dependencies:
   - .claude/skills/using-tsed-mongoose
   - .claude/skills/using-tsed-mongoose/SKILL.md
   deployed_file_hashes:
-    .claude/skills/using-tsed-mongoose/SKILL.md: sha256:f57773a9b520cb0aa47987df4a7881c1e79debdaf902e682d20c155414dbcd7c
-  content_hash: sha256:9db7aa85235116ac9828188dcb1a8af55d040de18441a9c7c21dbd9416a34111
+    .claude/skills/using-tsed-mongoose/SKILL.md: sha256:3c43672a82d17216ec3cb0e223283df63878644e85fc4ea3bef80d8db47c5d33
+  content_hash: sha256:d690b65651cb23f4ae1f0db52a2d35bf40cc79eef9ce93ed2715d69dbf2a61d3
   declared_license: MIT
 - repo_url: radoslavirha/toolkit-hub
   name: tsed-platform
   host: github.com
-  resolved_commit: 43146e459b727b4c008d92495e13830ca83804a9
-  version: 5.0.7
+  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
+  version: 6.0.2
   virtual_path: tsed/platform
   is_virtual: true
   package_type: apm_package
@@ -194,14 +194,14 @@ dependencies:
   - .claude/skills/using-tsed-platform
   - .claude/skills/using-tsed-platform/SKILL.md
   deployed_file_hashes:
-    .claude/skills/using-tsed-platform/SKILL.md: sha256:594ac4205010f2ef840d245a08434500f99382ac044c3307ea87c416f7f1e963
-  content_hash: sha256:3fc1d046802eed56bcc7efd22eec497765bf88f5d8a5e6521711cb1a61cb7502
+    .claude/skills/using-tsed-platform/SKILL.md: sha256:8d5a0c2a27de870b667a4c57cdfc024b381c445b00db2e0a355dbec541b12a9b
+  content_hash: sha256:dbb29e796ae309505557a2ee9f2a1e872eadb51804b9e185cba36375a957d328
   declared_license: MIT
 - repo_url: radoslavirha/toolkit-hub
   name: tsed-swagger
   host: github.com
-  resolved_commit: 43146e459b727b4c008d92495e13830ca83804a9
-  version: 9.1.11
+  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
+  version: 9.1.17
   virtual_path: tsed/swagger
   is_virtual: true
   package_type: apm_package
@@ -210,99 +210,9 @@ dependencies:
   - .claude/skills/using-tsed-swagger/SKILL.md
   deployed_file_hashes:
     .claude/skills/using-tsed-swagger/SKILL.md: sha256:cc2057a96be42f4e619b73b5ea5dae48170284ea35c5a3c49421ac5e9ec44389
-  content_hash: sha256:8f247636063ab8fbeb9cb98e0d5e90a63fda06ef724c233878052fb58dc33a96
+  content_hash: sha256:596c5b9da4fdcb319dfd17bbaf74a455503d8b846cbcb75ee4db970d204631ed
   declared_license: MIT
 deployments:
-- kind: project-relative
-  target: agents
-  value: .agents/skills/add-workspace-member
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-- kind: project-relative
-  target: agents
-  value: .agents/skills/add-workspace-member/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: sha256:0d8be337dc14c9daad150789ffa8854dafd72e64d927697b998f69c7017bc972
-- kind: project-relative
-  target: agents
-  value: .agents/skills/instrument-entry-point
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-- kind: project-relative
-  target: agents
-  value: .agents/skills/instrument-entry-point/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: sha256:dde43317847d390b4f6d3515d52e8d6ab6d99adce9533f3507f4e99597a80f79
-- kind: project-relative
-  target: agents
-  value: .agents/skills/onboard-to-homelab
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-- kind: project-relative
-  target: agents
-  value: .agents/skills/onboard-to-homelab/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: sha256:a63e5f55956b4be8111c7afe109b5f453a96ad662add3ccaaf9b2c31cdbe5a8e
-- kind: project-relative
-  target: agents
-  value: .agents/skills/update-docs
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-- kind: project-relative
-  target: agents
-  value: .agents/skills/update-docs/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: sha256:7a1d94bcdfecfdb6dbabde23c41994664a6a343ddc04ed755b847ec60cdcd43e
-- kind: project-relative
-  target: agents
-  value: .agents/skills/verify-auth-in-browser
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: null
-- kind: project-relative
-  target: agents
-  value: .agents/skills/verify-auth-in-browser/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: sha256:d4f05055a8381ab1b04bad9d2fd19836269fc907a2d7fb97d07562b4b0b54f75
 - kind: project-relative
   target: claude
   value: .claude/rules/react-testing.md
@@ -320,7 +230,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:c465de86ebe068a3c1c56d72012818dfd906ad4f7a5469d8e5be07ed102dd88e
+  content_hash: sha256:2a6077d6bd800bb2c426784855a306edbb91b5d8ca0884ada663192562699a13
 - kind: project-relative
   target: claude
   value: .claude/rules/tsed-testing.md
@@ -347,7 +257,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:91c56633e7dcf067b5a524e3b4410e704958e30b7fefe515b3606e4c7c454e31
+  content_hash: sha256:8d842f066ca4a8d195b58438112732c674263020457db8ee65e191451a73e6f2
 - kind: project-relative
   target: claude
   value: .claude/skills/adding-a-workspace-member/reference/api.md
@@ -356,7 +266,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:7352060b8092bafc3c62e48b40d6bc6899df5b3c234f73c598dd8406138ad0e1
+  content_hash: sha256:6b72d10514ba798a4e76a3699b82f837101369b5abb2f2b02ac42e2c85f4b57a
 - kind: project-relative
   target: claude
   value: .claude/skills/adding-a-workspace-member/reference/dockerfile.md
@@ -410,7 +320,7 @@ deployments:
   owners:
   - radoslavirha/toolkit-hub/apm-plugins/adoption
   active_owner: radoslavirha/toolkit-hub/apm-plugins/adoption
-  content_hash: sha256:0bfb62a19b57f35213685bd0ef95be0d39ac9b6eace075edd7875d0d97ca8f41
+  content_hash: sha256:efa84489f382bcb8a9c37b7f73ae9eb6cf298c00280adaeb20838e93940f9cca
 - kind: project-relative
   target: claude
   value: .claude/skills/building-a-tsed-service
@@ -428,7 +338,7 @@ deployments:
   owners:
   - radoslavirha/toolkit-hub/apm-plugins/tsed-service
   active_owner: radoslavirha/toolkit-hub/apm-plugins/tsed-service
-  content_hash: sha256:d0d1c490ef94d02b58019c8688a354d5b9298405aaa9eb2ec7d72127ae390775
+  content_hash: sha256:954c206dd581fe40004d9ad53ba561ad7596f783b10ae1a69f575c0c570ba62b
 - kind: project-relative
   target: claude
   value: .claude/skills/instrumenting-entry-points
@@ -464,7 +374,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:be44857c1904e91f4dfd2a57fd0788accbad49d18194496d58b958c47fe037ab
+  content_hash: sha256:f2a8173686e0f7d53a08f4b57a20c28bc9dbcb385f396cab057852822bc654f8
 - kind: project-relative
   target: claude
   value: .claude/skills/onboarding-to-homelab/scripts/validate-app.sh
@@ -491,7 +401,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:6b247d0ed9c24da452ae2d65294fbded95bc8638003a5e4f750ac2a7693585a8
+  content_hash: sha256:aac56df105ef4074c373dca8d2abe8927991e0414360b1d9f43409c56b55405f
 - kind: project-relative
   target: claude
   value: .claude/skills/using-config-eslint
@@ -509,7 +419,7 @@ deployments:
   owners:
   - radoslavirha/toolkit-hub/config/config-eslint
   active_owner: radoslavirha/toolkit-hub/config/config-eslint
-  content_hash: sha256:eaaa31e21e558a5c762e3f377a6ccaa82201db44a5d10060e8bc3b4eea4a7b9a
+  content_hash: sha256:75397d11da7d0693e8e541126bf08f4e1caace0a542abe5d1011f917638fc13e
 - kind: project-relative
   target: claude
   value: .claude/skills/using-config-tsdown
@@ -563,7 +473,7 @@ deployments:
   owners:
   - radoslavirha/toolkit-hub/config/config-vitest
   active_owner: radoslavirha/toolkit-hub/config/config-vitest
-  content_hash: sha256:0102031218f321860c8ee3112578e9d1230e61ef82a8d573be3ea5ccd713d762
+  content_hash: sha256:8fccf14fe3696e6fab3de3c6b397e1b108440ebfbeb9116c3cfccf54ca2b1dac
 - kind: project-relative
   target: claude
   value: .claude/skills/using-redaction
@@ -581,7 +491,7 @@ deployments:
   owners:
   - radoslavirha/toolkit-hub/packages/redaction
   active_owner: radoslavirha/toolkit-hub/packages/redaction
-  content_hash: sha256:45244313c34b9992894a6b73f7116b224eaa372fafa49415f862fab8e99100d7
+  content_hash: sha256:25db3e2d8503c09f984df520cde019f31a2d64b4c4513ce86a7361a93faeaf00
 - kind: project-relative
   target: claude
   value: .claude/skills/using-tsed-common
@@ -599,7 +509,7 @@ deployments:
   owners:
   - radoslavirha/toolkit-hub/tsed/common
   active_owner: radoslavirha/toolkit-hub/tsed/common
-  content_hash: sha256:33fa6e43e68daad842a3413f7b925ff0dcaf5a0d0b6edc424922fb03bc83460f
+  content_hash: sha256:30ea8bf5b4db217a69ccd52e1d381c1d5151c3e287cf7000a8f5983000f97fe3
 - kind: project-relative
   target: claude
   value: .claude/skills/using-tsed-configuration
@@ -617,7 +527,7 @@ deployments:
   owners:
   - radoslavirha/toolkit-hub/tsed/configuration
   active_owner: radoslavirha/toolkit-hub/tsed/configuration
-  content_hash: sha256:6734efd5ebb7954497d08315294447b260e4904574187e0cb8b5d0436f4b1869
+  content_hash: sha256:be2cf12bef61b28d0c5254be558897fbdb8c184995d4588c3c05f1b88d7bf3df
 - kind: project-relative
   target: claude
   value: .claude/skills/using-tsed-logger
@@ -653,7 +563,7 @@ deployments:
   owners:
   - radoslavirha/toolkit-hub/tsed/mongoose
   active_owner: radoslavirha/toolkit-hub/tsed/mongoose
-  content_hash: sha256:f57773a9b520cb0aa47987df4a7881c1e79debdaf902e682d20c155414dbcd7c
+  content_hash: sha256:3c43672a82d17216ec3cb0e223283df63878644e85fc4ea3bef80d8db47c5d33
 - kind: project-relative
   target: claude
   value: .claude/skills/using-tsed-platform
@@ -671,7 +581,7 @@ deployments:
   owners:
   - radoslavirha/toolkit-hub/tsed/platform
   active_owner: radoslavirha/toolkit-hub/tsed/platform
-  content_hash: sha256:594ac4205010f2ef840d245a08434500f99382ac044c3307ea87c416f7f1e963
+  content_hash: sha256:8d5a0c2a27de870b667a4c57cdfc024b381c445b00db2e0a355dbec541b12a9b
 - kind: project-relative
   target: claude
   value: .claude/skills/using-tsed-swagger
@@ -707,7 +617,7 @@ deployments:
   owners:
   - radoslavirha/toolkit-hub/packages/utils
   active_owner: radoslavirha/toolkit-hub/packages/utils
-  content_hash: sha256:92211b8de878664382ab051723a4194df0c1ac3f108723ca609cfd3712358f74
+  content_hash: sha256:6a3fbeb9a83ba5c3f33ed08010a16e7c000366de290c803934d70720577c980a
 - kind: project-relative
   target: claude
   value: .claude/skills/verifying-auth-in-browser
@@ -725,7 +635,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:f287f0fa80c25477560069917746814464e78533da39017f82b9753888776bb2
+  content_hash: sha256:97495d396d2151e236eb90059ef69ba7b94cab390a0a67660d0657ce2adc10ca
 - kind: project-relative
   target: claude
   value: .claude/skills/verifying-auth-in-browser/scripts/authentik_token.py
@@ -744,6 +654,96 @@ deployments:
   - .
   active_owner: .
   content_hash: sha256:12da1e23b9ac546e533e5904d0cb29a9f19b551cc789afb3fd0cf9aa73e67466
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/add-workspace-member
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/add-workspace-member/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:0d8be337dc14c9daad150789ffa8854dafd72e64d927697b998f69c7017bc972
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/instrument-entry-point
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/instrument-entry-point/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:dde43317847d390b4f6d3515d52e8d6ab6d99adce9533f3507f4e99597a80f79
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/onboard-to-homelab
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/onboard-to-homelab/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:a63e5f55956b4be8111c7afe109b5f453a96ad662add3ccaaf9b2c31cdbe5a8e
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/update-docs
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/update-docs/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:7a1d94bcdfecfdb6dbabde23c41994664a6a343ddc04ed755b847ec60cdcd43e
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/verify-auth-in-browser
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/verify-auth-in-browser/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:d4f05055a8381ab1b04bad9d2fd19836269fc907a2d7fb97d07562b4b0b54f75
 local_deployed_files:
 - .agents/skills/add-workspace-member
 - .agents/skills/add-workspace-member/SKILL.md
@@ -783,18 +783,18 @@ local_deployed_file_hashes:
   .agents/skills/update-docs/SKILL.md: sha256:7a1d94bcdfecfdb6dbabde23c41994664a6a343ddc04ed755b847ec60cdcd43e
   .agents/skills/verify-auth-in-browser/SKILL.md: sha256:d4f05055a8381ab1b04bad9d2fd19836269fc907a2d7fb97d07562b4b0b54f75
   .claude/rules/react-testing.md: sha256:56d8de4d1ded844e807bf2dfd0696764566bd08cf25b183020ec1c9c5f874965
-  .claude/rules/tsed-api.md: sha256:c465de86ebe068a3c1c56d72012818dfd906ad4f7a5469d8e5be07ed102dd88e
+  .claude/rules/tsed-api.md: sha256:2a6077d6bd800bb2c426784855a306edbb91b5d8ca0884ada663192562699a13
   .claude/rules/tsed-testing.md: sha256:5720c8000602f7ea313145d23646cc896a9ba13c114f736b59303e926d6f8d9f
-  .claude/skills/adding-a-workspace-member/SKILL.md: sha256:91c56633e7dcf067b5a524e3b4410e704958e30b7fefe515b3606e4c7c454e31
-  .claude/skills/adding-a-workspace-member/reference/api.md: sha256:7352060b8092bafc3c62e48b40d6bc6899df5b3c234f73c598dd8406138ad0e1
+  .claude/skills/adding-a-workspace-member/SKILL.md: sha256:8d842f066ca4a8d195b58438112732c674263020457db8ee65e191451a73e6f2
+  .claude/skills/adding-a-workspace-member/reference/api.md: sha256:6b72d10514ba798a4e76a3699b82f837101369b5abb2f2b02ac42e2c85f4b57a
   .claude/skills/adding-a-workspace-member/reference/dockerfile.md: sha256:6e1ed83f52ec474b4143337850502c43068fd185e3c2ce26e60120d2e759be07
   .claude/skills/adding-a-workspace-member/reference/package.md: sha256:d71faf8e295af4e95c94a6df3bde788632d15acd17f9b8ede9d6dc18c29b53ca
   .claude/skills/adding-a-workspace-member/reference/ui.md: sha256:663c9eb47e17ea58500a0bd0a8fad9c31cc66f83a9da6122b111fd234fad1a04
   .claude/skills/adding-a-workspace-member/scripts/check-member.sh: sha256:855fc7acbb96de3db425587cd165f628d47a90c056c89399eaa45102feb4d872
   .claude/skills/instrumenting-entry-points/SKILL.md: sha256:5506012895969fbbd5569fa9799cdb65600bed8ff0806891b1f3a6a4c66c3678
-  .claude/skills/onboarding-to-homelab/SKILL.md: sha256:be44857c1904e91f4dfd2a57fd0788accbad49d18194496d58b958c47fe037ab
+  .claude/skills/onboarding-to-homelab/SKILL.md: sha256:f2a8173686e0f7d53a08f4b57a20c28bc9dbcb385f396cab057852822bc654f8
   .claude/skills/onboarding-to-homelab/scripts/validate-app.sh: sha256:c8dbb46b8c7b2aa768ac7b9a9726cb0a18321f7835124aa772acc532ad9273fc
-  .claude/skills/updating-docs/SKILL.md: sha256:6b247d0ed9c24da452ae2d65294fbded95bc8638003a5e4f750ac2a7693585a8
-  .claude/skills/verifying-auth-in-browser/SKILL.md: sha256:f287f0fa80c25477560069917746814464e78533da39017f82b9753888776bb2
+  .claude/skills/updating-docs/SKILL.md: sha256:aac56df105ef4074c373dca8d2abe8927991e0414360b1d9f43409c56b55405f
+  .claude/skills/verifying-auth-in-browser/SKILL.md: sha256:97495d396d2151e236eb90059ef69ba7b94cab390a0a67660d0657ce2adc10ca
   .claude/skills/verifying-auth-in-browser/scripts/authentik_token.py: sha256:82a4e59788692ef4acbc8fa252707560c888d38cebfdfba95b98c8aa2d3dc057
   .claude/skills/verifying-auth-in-browser/scripts/ui_login.cjs: sha256:12da1e23b9ac546e533e5904d0cb29a9f19b551cc789afb3fd0cf9aa73e67466

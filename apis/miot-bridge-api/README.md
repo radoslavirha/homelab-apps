@@ -64,6 +64,10 @@ MongoDB is the only storage: a config without an enabled `mongodb` block fails a
 JSON file storage was removed; a config file that still sets `cachePath` boots normally and the key
 is ignored.
 
+## Configuration
+
+Every key with its type, default and meaning: [CONFIGURATION.md](./CONFIGURATION.md), generated from the configuration schema.
+
 ## Configuration (externalApis)
 
 `MiotSpecV2Endpoint` resolves its base URL from `externalApis.MIOT_SPEC`.

@@ -25,16 +25,23 @@ export const DEFAULT_HEADER_REDACT_PATHS = [
  * `createRedactionSchema` defaults every field to enabled, which would turn on
  * unredacted payload logging as soon as a `logging` block exists.
  */
-const section = (redactPaths: string[]) => RedactionFieldOptionsSchema.extend({
-    enabled: z.boolean().default(false),
+const section = (redactPaths: string[], description: string) => RedactionFieldOptionsSchema.extend({
+    enabled: z.boolean().default(false).describe('Log this section. Off unless switched on.'),
     redactPaths: z.array(RedactionSelectorSchema).default(() => [...redactPaths])
-}).default(() => ({ enabled: false, redactPaths: [...redactPaths] }));
+        .describe('Paths whose values are censored before logging (`fast-redact` syntax; hyphenated names in bracket notation, e.g. `["x-api-key"]`).')
+}).default(() => ({ enabled: false, redactPaths: [...redactPaths] })).describe(description);
 
 const HttpLogSectionsSchema = z.object({
-    headers: section(DEFAULT_HEADER_REDACT_PATHS),
-    query: section([]),
-    request: section([]),
-    response: section([])
+    headers: section(
+        DEFAULT_HEADER_REDACT_PATHS,
+        'Request headers. The names of the transport headers the auth config sends are always added to `redactPaths`.'
+    ),
+    query: section(
+        [],
+        'Query parameters. The names of the transport query parameters the auth config sends are always added to `redactPaths`.'
+    ),
+    request: section([], 'Request body.'),
+    response: section([], 'Response body.')
 });
 
 /**
@@ -43,9 +50,9 @@ const HttpLogSectionsSchema = z.object({
  */
 export const HttpLogConfigSchema = HttpLogSectionsSchema.extend({
     /** Disable outbound request/response logging entirely. */
-    enabled: z.boolean().default(true),
+    enabled: z.boolean().default(true).describe('Log outbound requests. `false` turns the logging off entirely.'),
     /** Include the error stack on failed requests. */
-    stack: z.boolean().default(false)
+    stack: z.boolean().default(false).describe('Include the error stack when a request fails.')
 }).default(() => ({
     enabled: true,
     headers: { enabled: false, redactPaths: [] },
@@ -53,7 +60,7 @@ export const HttpLogConfigSchema = HttpLogSectionsSchema.extend({
     request: { enabled: false, redactPaths: [] },
     response: { enabled: false, redactPaths: [] },
     stack: false
-}));
+})).describe('Outbound request logging. Metadata only by default; each payload section is opt-in and redacted before it reaches the logger.');
 
 export type HttpLogConfig = z.input<typeof HttpLogConfigSchema>;
 export type ResolvedHttpLogConfig = z.output<typeof HttpLogConfigSchema>;

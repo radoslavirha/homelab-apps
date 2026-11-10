@@ -14,19 +14,22 @@ export const HealthConfigSchema = z.object({
      *
      * Capped at 2^31 - 1: Node turns any longer timer delay into 1 ms.
      */
-    checkTimeoutMs: z.number().int().min(1).max(2_147_483_647).default(2000),
+    checkTimeoutMs: z.number().int().min(1).max(2_147_483_647).default(2000)
+        .describe('Deadline per health check, in ms. A check that takes longer reports `fail` with detail `timeout`. Keep it below the readiness probe timeoutSeconds.'),
     /**
      * Result reuse window. Concurrent and closely-spaced evaluations share one result.
      *
      * Keep below the shortest probe `periodSeconds`: staleness is bounded by one probe
      * period, which is below the resolution any probe can act on. `0` disables reuse.
      */
-    cacheTtlMs: z.number().int().min(0).default(1000),
+    cacheTtlMs: z.number().int().min(0).default(1000)
+        .describe('How long an evaluated result is reused, in ms, so concurrent and closely spaced probes share one evaluation. `0` disables reuse.'),
     /**
      * When `false`, `GET /health` returns the status alone with no per-check breakdown.
      * For deployments where `/health` ends up routable from outside the cluster.
      */
     exposeDetail: z.boolean().default(true)
+        .describe('When `false`, `GET /health` returns the status alone, without the per-check breakdown.')
 }).describe('Health endpoint configuration.');
 
 /**

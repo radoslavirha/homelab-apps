@@ -8,8 +8,8 @@ import { z } from 'zod';
  * credential is produced at request time, so there is nothing to name.
  */
 const StaticEntrySchema = z.strictObject({
-    name: z.string().min(1),
-    value: z.string()
+    name: z.string().min(1).describe('Header or query parameter name.'),
+    value: z.string().describe('Fixed value sent as is.')
 });
 
 /**
@@ -39,10 +39,11 @@ const StaticEntrySchema = z.strictObject({
  * beside this one — additive, and by then its real shape will be known.
  */
 const CredentialEntrySchema = z.strictObject({
-    name: z.string().min(1),
-    credential: z.string().min(1),
-    prefix: z.string().optional(),
-    suffix: z.string().optional()
+    name: z.string().min(1).describe('Header or query parameter name.'),
+    credential: z.string().min(1)
+        .describe('Name of a credential the auth strategy produces: `value`, or for `token-exchange` an `as` name from `tokenExtractor`.'),
+    prefix: z.string().optional().describe('Text put before the credential, e.g. `Bearer `.'),
+    suffix: z.string().optional().describe('Text put after the credential.')
 });
 
 /**
@@ -56,8 +57,10 @@ export const TransportHeaderSchema = TransportEntrySchema;
 export const TransportQueryParamSchema = TransportEntrySchema;
 
 export const TransportSchema = z.object({
-    headers: z.array(TransportHeaderSchema).optional(),
+    headers: z.array(TransportHeaderSchema).optional()
+        .describe('Headers to send. Each entry carries either a fixed `value` or a `credential`.'),
     queryParams: z.array(TransportQueryParamSchema).optional()
+        .describe('Query parameters to send. Each entry carries either a fixed `value` or a `credential`.')
 });
 
 /**
@@ -66,8 +69,8 @@ export const TransportSchema = z.object({
  * is rejected at config load instead of failing on every request.
  */
 export const StaticTransportSchema = z.object({
-    headers: z.array(StaticEntrySchema).optional(),
-    queryParams: z.array(StaticEntrySchema).optional()
+    headers: z.array(StaticEntrySchema).optional().describe('Fixed headers to send.'),
+    queryParams: z.array(StaticEntrySchema).optional().describe('Fixed query parameters to send.')
 });
 
 export type TransportStaticEntry = z.infer<typeof StaticEntrySchema>;

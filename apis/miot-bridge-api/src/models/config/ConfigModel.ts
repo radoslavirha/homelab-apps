@@ -47,7 +47,7 @@ export const ConfigSchema = BaseConfig.extend({
      * intersection pins `enabled: true` — and narrows the type to the branch with a
      * required `url`.
      */
-    mongodb: MongoConfigSchema.and(z.object({ enabled: z.literal(true) })).describe('MongoDB configuration. MongoDB is the only storage; mongodb.enabled must be true.'),
+    mongodb: MongoConfigSchema.and(z.object({ enabled: z.literal(true).describe('Must be `true`: MongoDB is the only storage.') })).describe('MongoDB configuration. MongoDB is the only storage; mongodb.enabled must be true.'),
     polling: PollingConfigSchema.optional().describe('Device property polling configuration. When polling.enabled is true, subscribed properties are polled at the configured interval.'),
     // `http` (the HTTP notification sink) is gone. A ConfigMap still carrying `http.notifications`
     // keeps parsing: `BaseConfig` is a plain `z.object`, which strips unknown keys rather than
@@ -57,7 +57,11 @@ export const ConfigSchema = BaseConfig.extend({
     // Every field is defaulted, so omitting `health` entirely is valid — additive, and
     // safe for a rolling deploy where an old pod reads a new ConfigMap or vice versa.
     health: HealthConfigSchema.optional().describe('Health endpoint configuration.'),
-    logger: z.preprocess(withDeviceSecretRedaction, LoggerOptionsSchema).prefault({}).describe('Logger configuration. Request/response body redactPaths default to the device secret (token).'),
+    logger: z.preprocess(withDeviceSecretRedaction, LoggerOptionsSchema).prefault({}).describe(
+        'Logger configuration. `logger.requests.request.redactPaths` and `logger.requests.response.redactPaths` default to '
+        + `\`${JSON.stringify(DEVICE_SECRET_REDACT_PATHS)}\` (the device secret), not the \`[]\` listed in the table; `
+        + 'a configured list replaces that default and an explicit `[]` opts out.'
+    ),
     otel: OtelConfigSchema.optional().describe('OpenTelemetry configuration.'),
     /**
      * Required, and tied to the methods this API's routes actually ask for.

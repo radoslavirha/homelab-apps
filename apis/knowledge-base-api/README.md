@@ -110,6 +110,8 @@ Git documents get `metadata` from their frontmatter plus `area` (first path segm
 
 ## Configuration
 
+Every key with its type, default and meaning: [CONFIGURATION.md](./CONFIGURATION.md), generated from the configuration schema.
+
 | Key | Description |
 |-----|-------------|
 | `database` | `host`, `port`, `database`, `user`, `password`, `sslMode` (`DISABLE`\|`REQUIRE`\|`VERIFY_FULL` + `caFile`), `pool`, `statementTimeoutMs` |

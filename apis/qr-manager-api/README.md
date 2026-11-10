@@ -30,6 +30,10 @@ Use case: print a QR code once; change the target URL at any time without reprin
 | DELETE | `/qr-codes/:id` | **Yes** | Delete record |
 | GET | `/qr-codes/:id/image` | — | Render QR image. Query: `format=svg\|png`, `size` (px, PNG only, default 512), `ecLevel=L\|M\|Q\|H`, `download=1` (send `Content-Disposition: attachment` named `<slug>.<format>`) |
 
+## Configuration
+
+Every key with its type, default and meaning: [CONFIGURATION.md](./CONFIGURATION.md), generated from the configuration schema.
+
 ## Authentication
 
 Guarded routes answer `401` without a valid bearer token, and `503` when the token could not be
