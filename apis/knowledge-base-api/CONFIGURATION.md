@@ -112,6 +112,9 @@ External APIs this service calls — base URL, auth, resilience and logging per 
 
 Required.
 
+<details>
+<summary><code>externalApis.OLLAMA</code> — One external API: base URL, auth, resilience and outbound logging.</summary>
+
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `externalApis.OLLAMA` | object | yes |  | One external API: base URL, auth, resilience and outbound logging. |
@@ -144,6 +147,184 @@ Required.
 | `externalApis.OLLAMA.logging.response.redactPaths` | array of string (non-empty) |  | `[]` | Paths whose values are censored before logging (`fast-redact` syntax; hyphenated names in bracket notation, e.g. `["x-api-key"]`). |
 | `externalApis.OLLAMA.logging.enabled` | boolean |  | `true` | Log outbound requests. `false` turns the logging off entirely. |
 | `externalApis.OLLAMA.logging.stack` | boolean |  | `false` | Include the error stack when a request fails. |
+
+### `externalApis.OLLAMA.auth`: one of 4
+
+Pick the variant with `strategy`.
+
+<details>
+<summary><code>externalApis.OLLAMA.auth</code> — <code>strategy: "kubernetes-service-account"</code></summary>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `externalApis.OLLAMA.auth.strategy` | `"kubernetes-service-account"` | yes |  | Send the pod's Kubernetes service account token. The file is read on every request, so kubelet rotation is picked up. |
+| `externalApis.OLLAMA.auth.tokenPath` | string |  | `"/var/run/secrets/kubernetes.io/serviceaccount/token"` | Path of the projected service account token file. |
+| `externalApis.OLLAMA.auth.transport` | object |  | `{"headers":[{"name":"Authorization","credential":"value","prefix":"Bearer "}]}` | Where the token goes. The credential is named `value`. Default: `Authorization: Bearer <token>`. |
+| `externalApis.OLLAMA.auth.transport.headers` | array of one of (see below) |  |  | Headers to send. Each entry carries either a fixed `value` or a `credential`. |
+| `externalApis.OLLAMA.auth.transport.queryParams` | array of one of (see below) |  |  | Query parameters to send. Each entry carries either a fixed `value` or a `credential`. |
+
+#### `externalApis.OLLAMA.auth.transport.headers[]`: one of 2
+
+Give exactly one of the shapes below.
+
+<details>
+<summary><code>externalApis.OLLAMA.auth.transport.headers[]</code> — with <code>credential</code></summary>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `externalApis.OLLAMA.auth.transport.headers[].name` | string (non-empty) | yes |  | Header or query parameter name. |
+| `externalApis.OLLAMA.auth.transport.headers[].credential` | string (non-empty) | yes |  | Name of a credential the auth strategy produces: `value`, or for `token-exchange` an `as` name from `tokenExtractor`. |
+| `externalApis.OLLAMA.auth.transport.headers[].prefix` | string |  |  | Text put before the credential, e.g. `Bearer `. |
+| `externalApis.OLLAMA.auth.transport.headers[].suffix` | string |  |  | Text put after the credential. |
+
+</details>
+
+<details>
+<summary><code>externalApis.OLLAMA.auth.transport.headers[]</code> — with <code>value</code></summary>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `externalApis.OLLAMA.auth.transport.headers[].name` | string (non-empty) | yes |  | Header or query parameter name. |
+| `externalApis.OLLAMA.auth.transport.headers[].value` | string | yes |  | Fixed value sent as is. |
+
+</details>
+
+#### `externalApis.OLLAMA.auth.transport.queryParams[]`: one of 2
+
+Give exactly one of the shapes below.
+
+<details>
+<summary><code>externalApis.OLLAMA.auth.transport.queryParams[]</code> — with <code>credential</code></summary>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `externalApis.OLLAMA.auth.transport.queryParams[].name` | string (non-empty) | yes |  | Header or query parameter name. |
+| `externalApis.OLLAMA.auth.transport.queryParams[].credential` | string (non-empty) | yes |  | Name of a credential the auth strategy produces: `value`, or for `token-exchange` an `as` name from `tokenExtractor`. |
+| `externalApis.OLLAMA.auth.transport.queryParams[].prefix` | string |  |  | Text put before the credential, e.g. `Bearer `. |
+| `externalApis.OLLAMA.auth.transport.queryParams[].suffix` | string |  |  | Text put after the credential. |
+
+</details>
+
+<details>
+<summary><code>externalApis.OLLAMA.auth.transport.queryParams[]</code> — with <code>value</code></summary>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `externalApis.OLLAMA.auth.transport.queryParams[].name` | string (non-empty) | yes |  | Header or query parameter name. |
+| `externalApis.OLLAMA.auth.transport.queryParams[].value` | string | yes |  | Fixed value sent as is. |
+
+</details>
+
+</details>
+
+<details>
+<summary><code>externalApis.OLLAMA.auth</code> — <code>strategy: "token-exchange"</code></summary>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `externalApis.OLLAMA.auth.strategy` | `"token-exchange"` | yes |  | Fetch a token from a token endpoint and cache it; a 401 from the upstream drops the cache and the next request fetches a new one. |
+| `externalApis.OLLAMA.auth.request` | object | yes |  | The token request. |
+| `externalApis.OLLAMA.auth.request.method` | `"GET"` \| `"POST"` \| `"PUT"` \| `"PATCH"` |  | `"POST"` | HTTP method of the token request. |
+| `externalApis.OLLAMA.auth.request.url` | string (uri) | yes |  | URL of the token endpoint. |
+| `externalApis.OLLAMA.auth.request.headers` | array of object |  |  | Fixed headers sent with the token request. |
+| `externalApis.OLLAMA.auth.request.headers[].name` | string | yes |  | Header or query parameter name. |
+| `externalApis.OLLAMA.auth.request.headers[].value` | string | yes |  | Fixed value sent as is. |
+| `externalApis.OLLAMA.auth.request.queryParams` | array of object |  |  | Fixed query parameters sent with the token request. |
+| `externalApis.OLLAMA.auth.request.queryParams[].name` | string | yes |  | Header or query parameter name. |
+| `externalApis.OLLAMA.auth.request.queryParams[].value` | string | yes |  | Fixed value sent as is. |
+| `externalApis.OLLAMA.auth.request.body` | object |  |  | Request body of the token request, sent as given. |
+| `externalApis.OLLAMA.auth.tokenExtractor` | one of (see below) | yes |  | Which fields of the token response become credentials. A string is shorthand for one field stored as `value`; a list names each field and the credential name it is stored as. |
+| `externalApis.OLLAMA.auth.expiresIn` | string |  |  | Dot-notation path of the token lifetime in seconds in the token response (e.g. `expires_in`). Unset: the token is cached until the upstream answers 401. |
+| `externalApis.OLLAMA.auth.expiryMargin` | number (≥ 0) |  |  | Seconds before expiry at which a new token is fetched. Default 30. Used only with `expiresIn`. |
+| `externalApis.OLLAMA.auth.transport` | object | yes |  | Where the extracted credentials go. |
+| `externalApis.OLLAMA.auth.transport.headers` | array of one of (see below) |  |  | Headers to send. Each entry carries either a fixed `value` or a `credential`. |
+| `externalApis.OLLAMA.auth.transport.queryParams` | array of one of (see below) |  |  | Query parameters to send. Each entry carries either a fixed `value` or a `credential`. |
+
+#### `externalApis.OLLAMA.auth.transport.headers[]`
+
+Same shapes as described above, first listed under `externalApis.OLLAMA.auth — strategy: "kubernetes-service-account"`.
+
+#### `externalApis.OLLAMA.auth.transport.queryParams[]`
+
+Same shapes as described above, first listed under `externalApis.OLLAMA.auth — strategy: "kubernetes-service-account"`.
+
+</details>
+
+<details>
+<summary><code>externalApis.OLLAMA.auth</code> — <code>strategy: "jwt-self-signed"</code></summary>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `externalApis.OLLAMA.auth.strategy` | `"jwt-self-signed"` | yes |  | Sign a JWT locally and send it. The token is reused until shortly before it expires. |
+| `externalApis.OLLAMA.auth.key` | one of (see below) | yes |  | Signing key. |
+| `externalApis.OLLAMA.auth.algorithm` | `"RS256"` \| `"ES256"` \| `"HS256"` |  | `"RS256"` | Signing algorithm. |
+| `externalApis.OLLAMA.auth.claims` | object |  |  | Claims of the signed token. |
+| `externalApis.OLLAMA.auth.claims.iss` | string |  |  | `iss` claim. Omitted from the token when unset. |
+| `externalApis.OLLAMA.auth.claims.sub` | string |  |  | `sub` claim. Omitted from the token when unset. |
+| `externalApis.OLLAMA.auth.claims.aud` | one of (see below) |  |  | `aud` claim, one audience or a list. Omitted from the token when unset. |
+| `externalApis.OLLAMA.auth.claims.exp` | integer (> 0) |  | `3600` | Token lifetime in seconds. `iat` is always set. |
+| `externalApis.OLLAMA.auth.claims.additionalClaims` | object |  |  | Further claims added to the payload as given. |
+| `externalApis.OLLAMA.auth.transport` | object |  | `{"headers":[{"name":"Authorization","credential":"value","prefix":"Bearer "}]}` | Where the token goes. The credential is named `value`. Default: `Authorization: Bearer <token>`. |
+| `externalApis.OLLAMA.auth.transport.headers` | array of one of (see below) |  |  | Headers to send. Each entry carries either a fixed `value` or a `credential`. |
+| `externalApis.OLLAMA.auth.transport.queryParams` | array of one of (see below) |  |  | Query parameters to send. Each entry carries either a fixed `value` or a `credential`. |
+
+#### `externalApis.OLLAMA.auth.key`: one of 2
+
+Pick the variant with `source`.
+
+<details>
+<summary><code>externalApis.OLLAMA.auth.key</code> — <code>source: "file"</code></summary>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `externalApis.OLLAMA.auth.key.source` | `"file"` | yes |  | Key read from a file when a token is signed. |
+| `externalApis.OLLAMA.auth.key.path` | string | yes |  | Path of the key file. |
+
+</details>
+
+<details>
+<summary><code>externalApis.OLLAMA.auth.key</code> — <code>source: "value"</code></summary>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `externalApis.OLLAMA.auth.key.source` | `"value"` | yes |  | Key carried in the configuration itself. |
+| `externalApis.OLLAMA.auth.key.value` | string | yes |  | The key: an HMAC secret for HS256, otherwise a PEM-encoded PKCS#8 private key. |
+
+</details>
+
+#### `externalApis.OLLAMA.auth.transport.headers[]`
+
+Same shapes as described above, first listed under `externalApis.OLLAMA.auth — strategy: "kubernetes-service-account"`.
+
+#### `externalApis.OLLAMA.auth.transport.queryParams[]`
+
+Same shapes as described above, first listed under `externalApis.OLLAMA.auth — strategy: "kubernetes-service-account"`.
+
+</details>
+
+<details>
+<summary><code>externalApis.OLLAMA.auth</code> — <code>strategy: "none"</code></summary>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `externalApis.OLLAMA.auth.strategy` | `"none"` |  |  | No credential is produced. Fixed headers or query parameters may still be sent through `transport`. |
+| `externalApis.OLLAMA.auth.transport` | object |  |  | Fixed headers and query parameters, e.g. an API key. |
+| `externalApis.OLLAMA.auth.transport.headers` | array of object |  |  | Fixed headers to send. |
+| `externalApis.OLLAMA.auth.transport.headers[].name` | string (non-empty) | yes |  | Header or query parameter name. |
+| `externalApis.OLLAMA.auth.transport.headers[].value` | string | yes |  | Fixed value sent as is. |
+| `externalApis.OLLAMA.auth.transport.queryParams` | array of object |  |  | Fixed query parameters to send. |
+| `externalApis.OLLAMA.auth.transport.queryParams[].name` | string (non-empty) | yes |  | Header or query parameter name. |
+| `externalApis.OLLAMA.auth.transport.queryParams[].value` | string | yes |  | Fixed value sent as is. |
+
+</details>
+
+</details>
+
+<details>
+<summary><code>externalApis.OLLAMA_SEARCH</code> — One external API: base URL, auth, resilience and outbound logging.</summary>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
 | `externalApis.OLLAMA_SEARCH` | object | yes |  | One external API: base URL, auth, resilience and outbound logging. |
 | `externalApis.OLLAMA_SEARCH.baseURL` | string (uri) | yes |  | Base URL every request path is resolved against. |
 | `externalApis.OLLAMA_SEARCH.auth` | one of (see below) |  |  | How requests to this API are authenticated. Pick the variant with `strategy`; without `strategy` no credential is produced. |
@@ -175,151 +356,12 @@ Required.
 | `externalApis.OLLAMA_SEARCH.logging.enabled` | boolean |  | `true` | Log outbound requests. `false` turns the logging off entirely. |
 | `externalApis.OLLAMA_SEARCH.logging.stack` | boolean |  | `false` | Include the error stack when a request fails. |
 
-### `externalApis.OLLAMA.auth`: one of 4
-
-Pick the variant with `strategy`.
-
-#### `externalApis.OLLAMA.auth` — `strategy: "kubernetes-service-account"`
-
-| Key | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `externalApis.OLLAMA.auth.strategy` | `"kubernetes-service-account"` | yes |  | Send the pod's Kubernetes service account token. The file is read on every request, so kubelet rotation is picked up. |
-| `externalApis.OLLAMA.auth.tokenPath` | string |  | `"/var/run/secrets/kubernetes.io/serviceaccount/token"` | Path of the projected service account token file. |
-| `externalApis.OLLAMA.auth.transport` | object |  | `{"headers":[{"name":"Authorization","credential":"value","prefix":"Bearer "}]}` | Where the token goes. The credential is named `value`. Default: `Authorization: Bearer <token>`. |
-| `externalApis.OLLAMA.auth.transport.headers` | array of one of (see below) |  |  | Headers to send. Each entry carries either a fixed `value` or a `credential`. |
-| `externalApis.OLLAMA.auth.transport.queryParams` | array of one of (see below) |  |  | Query parameters to send. Each entry carries either a fixed `value` or a `credential`. |
-
-##### `externalApis.OLLAMA.auth.transport.headers[]`: one of 2
-
-Give exactly one of the shapes below.
-
-###### `externalApis.OLLAMA.auth.transport.headers[]` — with `credential`
-
-| Key | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `externalApis.OLLAMA.auth.transport.headers[].name` | string (non-empty) | yes |  | Header or query parameter name. |
-| `externalApis.OLLAMA.auth.transport.headers[].credential` | string (non-empty) | yes |  | Name of a credential the auth strategy produces: `value`, or for `token-exchange` an `as` name from `tokenExtractor`. |
-| `externalApis.OLLAMA.auth.transport.headers[].prefix` | string |  |  | Text put before the credential, e.g. `Bearer `. |
-| `externalApis.OLLAMA.auth.transport.headers[].suffix` | string |  |  | Text put after the credential. |
-
-###### `externalApis.OLLAMA.auth.transport.headers[]` — with `value`
-
-| Key | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `externalApis.OLLAMA.auth.transport.headers[].name` | string (non-empty) | yes |  | Header or query parameter name. |
-| `externalApis.OLLAMA.auth.transport.headers[].value` | string | yes |  | Fixed value sent as is. |
-
-##### `externalApis.OLLAMA.auth.transport.queryParams[]`: one of 2
-
-Give exactly one of the shapes below.
-
-###### `externalApis.OLLAMA.auth.transport.queryParams[]` — with `credential`
-
-| Key | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `externalApis.OLLAMA.auth.transport.queryParams[].name` | string (non-empty) | yes |  | Header or query parameter name. |
-| `externalApis.OLLAMA.auth.transport.queryParams[].credential` | string (non-empty) | yes |  | Name of a credential the auth strategy produces: `value`, or for `token-exchange` an `as` name from `tokenExtractor`. |
-| `externalApis.OLLAMA.auth.transport.queryParams[].prefix` | string |  |  | Text put before the credential, e.g. `Bearer `. |
-| `externalApis.OLLAMA.auth.transport.queryParams[].suffix` | string |  |  | Text put after the credential. |
-
-###### `externalApis.OLLAMA.auth.transport.queryParams[]` — with `value`
-
-| Key | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `externalApis.OLLAMA.auth.transport.queryParams[].name` | string (non-empty) | yes |  | Header or query parameter name. |
-| `externalApis.OLLAMA.auth.transport.queryParams[].value` | string | yes |  | Fixed value sent as is. |
-
-#### `externalApis.OLLAMA.auth` — `strategy: "token-exchange"`
-
-| Key | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `externalApis.OLLAMA.auth.strategy` | `"token-exchange"` | yes |  | Fetch a token from a token endpoint and cache it; a 401 from the upstream drops the cache and the next request fetches a new one. |
-| `externalApis.OLLAMA.auth.request` | object | yes |  | The token request. |
-| `externalApis.OLLAMA.auth.request.method` | `"GET"` \| `"POST"` \| `"PUT"` \| `"PATCH"` |  | `"POST"` | HTTP method of the token request. |
-| `externalApis.OLLAMA.auth.request.url` | string (uri) | yes |  | URL of the token endpoint. |
-| `externalApis.OLLAMA.auth.request.headers` | array of object |  |  | Fixed headers sent with the token request. |
-| `externalApis.OLLAMA.auth.request.headers[].name` | string | yes |  | Header or query parameter name. |
-| `externalApis.OLLAMA.auth.request.headers[].value` | string | yes |  | Fixed value sent as is. |
-| `externalApis.OLLAMA.auth.request.queryParams` | array of object |  |  | Fixed query parameters sent with the token request. |
-| `externalApis.OLLAMA.auth.request.queryParams[].name` | string | yes |  | Header or query parameter name. |
-| `externalApis.OLLAMA.auth.request.queryParams[].value` | string | yes |  | Fixed value sent as is. |
-| `externalApis.OLLAMA.auth.request.body` | object |  |  | Request body of the token request, sent as given. |
-| `externalApis.OLLAMA.auth.tokenExtractor` | one of (see below) | yes |  | Which fields of the token response become credentials. A string is shorthand for one field stored as `value`; a list names each field and the credential name it is stored as. |
-| `externalApis.OLLAMA.auth.expiresIn` | string |  |  | Dot-notation path of the token lifetime in seconds in the token response (e.g. `expires_in`). Unset: the token is cached until the upstream answers 401. |
-| `externalApis.OLLAMA.auth.expiryMargin` | number (≥ 0) |  |  | Seconds before expiry at which a new token is fetched. Default 30. Used only with `expiresIn`. |
-| `externalApis.OLLAMA.auth.transport` | object | yes |  | Where the extracted credentials go. |
-| `externalApis.OLLAMA.auth.transport.headers` | array of one of (see below) |  |  | Headers to send. Each entry carries either a fixed `value` or a `credential`. |
-| `externalApis.OLLAMA.auth.transport.queryParams` | array of one of (see below) |  |  | Query parameters to send. Each entry carries either a fixed `value` or a `credential`. |
-
-##### `externalApis.OLLAMA.auth.transport.headers[]`
-
-Same shapes as described above, first listed under `externalApis.OLLAMA.auth — strategy: "kubernetes-service-account"`.
-
-##### `externalApis.OLLAMA.auth.transport.queryParams[]`
-
-Same shapes as described above, first listed under `externalApis.OLLAMA.auth — strategy: "kubernetes-service-account"`.
-
-#### `externalApis.OLLAMA.auth` — `strategy: "jwt-self-signed"`
-
-| Key | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `externalApis.OLLAMA.auth.strategy` | `"jwt-self-signed"` | yes |  | Sign a JWT locally and send it. The token is reused until shortly before it expires. |
-| `externalApis.OLLAMA.auth.key` | one of (see below) | yes |  | Signing key. |
-| `externalApis.OLLAMA.auth.algorithm` | `"RS256"` \| `"ES256"` \| `"HS256"` |  | `"RS256"` | Signing algorithm. |
-| `externalApis.OLLAMA.auth.claims` | object |  |  | Claims of the signed token. |
-| `externalApis.OLLAMA.auth.claims.iss` | string |  |  | `iss` claim. Omitted from the token when unset. |
-| `externalApis.OLLAMA.auth.claims.sub` | string |  |  | `sub` claim. Omitted from the token when unset. |
-| `externalApis.OLLAMA.auth.claims.aud` | one of (see below) |  |  | `aud` claim, one audience or a list. Omitted from the token when unset. |
-| `externalApis.OLLAMA.auth.claims.exp` | integer (> 0) |  | `3600` | Token lifetime in seconds. `iat` is always set. |
-| `externalApis.OLLAMA.auth.claims.additionalClaims` | object |  |  | Further claims added to the payload as given. |
-| `externalApis.OLLAMA.auth.transport` | object |  | `{"headers":[{"name":"Authorization","credential":"value","prefix":"Bearer "}]}` | Where the token goes. The credential is named `value`. Default: `Authorization: Bearer <token>`. |
-| `externalApis.OLLAMA.auth.transport.headers` | array of one of (see below) |  |  | Headers to send. Each entry carries either a fixed `value` or a `credential`. |
-| `externalApis.OLLAMA.auth.transport.queryParams` | array of one of (see below) |  |  | Query parameters to send. Each entry carries either a fixed `value` or a `credential`. |
-
-##### `externalApis.OLLAMA.auth.key`: one of 2
-
-Pick the variant with `source`.
-
-###### `externalApis.OLLAMA.auth.key` — `source: "file"`
-
-| Key | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `externalApis.OLLAMA.auth.key.source` | `"file"` | yes |  | Key read from a file when a token is signed. |
-| `externalApis.OLLAMA.auth.key.path` | string | yes |  | Path of the key file. |
-
-###### `externalApis.OLLAMA.auth.key` — `source: "value"`
-
-| Key | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `externalApis.OLLAMA.auth.key.source` | `"value"` | yes |  | Key carried in the configuration itself. |
-| `externalApis.OLLAMA.auth.key.value` | string | yes |  | The key: an HMAC secret for HS256, otherwise a PEM-encoded PKCS#8 private key. |
-
-##### `externalApis.OLLAMA.auth.transport.headers[]`
-
-Same shapes as described above, first listed under `externalApis.OLLAMA.auth — strategy: "kubernetes-service-account"`.
-
-##### `externalApis.OLLAMA.auth.transport.queryParams[]`
-
-Same shapes as described above, first listed under `externalApis.OLLAMA.auth — strategy: "kubernetes-service-account"`.
-
-#### `externalApis.OLLAMA.auth` — `strategy: "none"`
-
-| Key | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `externalApis.OLLAMA.auth.strategy` | `"none"` |  |  | No credential is produced. Fixed headers or query parameters may still be sent through `transport`. |
-| `externalApis.OLLAMA.auth.transport` | object |  |  | Fixed headers and query parameters, e.g. an API key. |
-| `externalApis.OLLAMA.auth.transport.headers` | array of object |  |  | Fixed headers to send. |
-| `externalApis.OLLAMA.auth.transport.headers[].name` | string (non-empty) | yes |  | Header or query parameter name. |
-| `externalApis.OLLAMA.auth.transport.headers[].value` | string | yes |  | Fixed value sent as is. |
-| `externalApis.OLLAMA.auth.transport.queryParams` | array of object |  |  | Fixed query parameters to send. |
-| `externalApis.OLLAMA.auth.transport.queryParams[].name` | string (non-empty) | yes |  | Header or query parameter name. |
-| `externalApis.OLLAMA.auth.transport.queryParams[].value` | string | yes |  | Fixed value sent as is. |
-
 ### `externalApis.OLLAMA_SEARCH.auth`: one of 4
 
 Pick the variant with `strategy`.
 
-#### `externalApis.OLLAMA_SEARCH.auth` — `strategy: "kubernetes-service-account"`
+<details>
+<summary><code>externalApis.OLLAMA_SEARCH.auth</code> — <code>strategy: "kubernetes-service-account"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -329,11 +371,12 @@ Pick the variant with `strategy`.
 | `externalApis.OLLAMA_SEARCH.auth.transport.headers` | array of one of (see below) |  |  | Headers to send. Each entry carries either a fixed `value` or a `credential`. |
 | `externalApis.OLLAMA_SEARCH.auth.transport.queryParams` | array of one of (see below) |  |  | Query parameters to send. Each entry carries either a fixed `value` or a `credential`. |
 
-##### `externalApis.OLLAMA_SEARCH.auth.transport.headers[]`: one of 2
+#### `externalApis.OLLAMA_SEARCH.auth.transport.headers[]`: one of 2
 
 Give exactly one of the shapes below.
 
-###### `externalApis.OLLAMA_SEARCH.auth.transport.headers[]` — with `credential`
+<details>
+<summary><code>externalApis.OLLAMA_SEARCH.auth.transport.headers[]</code> — with <code>credential</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -342,18 +385,24 @@ Give exactly one of the shapes below.
 | `externalApis.OLLAMA_SEARCH.auth.transport.headers[].prefix` | string |  |  | Text put before the credential, e.g. `Bearer `. |
 | `externalApis.OLLAMA_SEARCH.auth.transport.headers[].suffix` | string |  |  | Text put after the credential. |
 
-###### `externalApis.OLLAMA_SEARCH.auth.transport.headers[]` — with `value`
+</details>
+
+<details>
+<summary><code>externalApis.OLLAMA_SEARCH.auth.transport.headers[]</code> — with <code>value</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `externalApis.OLLAMA_SEARCH.auth.transport.headers[].name` | string (non-empty) | yes |  | Header or query parameter name. |
 | `externalApis.OLLAMA_SEARCH.auth.transport.headers[].value` | string | yes |  | Fixed value sent as is. |
 
-##### `externalApis.OLLAMA_SEARCH.auth.transport.queryParams[]`: one of 2
+</details>
+
+#### `externalApis.OLLAMA_SEARCH.auth.transport.queryParams[]`: one of 2
 
 Give exactly one of the shapes below.
 
-###### `externalApis.OLLAMA_SEARCH.auth.transport.queryParams[]` — with `credential`
+<details>
+<summary><code>externalApis.OLLAMA_SEARCH.auth.transport.queryParams[]</code> — with <code>credential</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -362,14 +411,22 @@ Give exactly one of the shapes below.
 | `externalApis.OLLAMA_SEARCH.auth.transport.queryParams[].prefix` | string |  |  | Text put before the credential, e.g. `Bearer `. |
 | `externalApis.OLLAMA_SEARCH.auth.transport.queryParams[].suffix` | string |  |  | Text put after the credential. |
 
-###### `externalApis.OLLAMA_SEARCH.auth.transport.queryParams[]` — with `value`
+</details>
+
+<details>
+<summary><code>externalApis.OLLAMA_SEARCH.auth.transport.queryParams[]</code> — with <code>value</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `externalApis.OLLAMA_SEARCH.auth.transport.queryParams[].name` | string (non-empty) | yes |  | Header or query parameter name. |
 | `externalApis.OLLAMA_SEARCH.auth.transport.queryParams[].value` | string | yes |  | Fixed value sent as is. |
 
-#### `externalApis.OLLAMA_SEARCH.auth` — `strategy: "token-exchange"`
+</details>
+
+</details>
+
+<details>
+<summary><code>externalApis.OLLAMA_SEARCH.auth</code> — <code>strategy: "token-exchange"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -391,15 +448,18 @@ Give exactly one of the shapes below.
 | `externalApis.OLLAMA_SEARCH.auth.transport.headers` | array of one of (see below) |  |  | Headers to send. Each entry carries either a fixed `value` or a `credential`. |
 | `externalApis.OLLAMA_SEARCH.auth.transport.queryParams` | array of one of (see below) |  |  | Query parameters to send. Each entry carries either a fixed `value` or a `credential`. |
 
-##### `externalApis.OLLAMA_SEARCH.auth.transport.headers[]`
+#### `externalApis.OLLAMA_SEARCH.auth.transport.headers[]`
 
 Same shapes as described above, first listed under `externalApis.OLLAMA_SEARCH.auth — strategy: "kubernetes-service-account"`.
 
-##### `externalApis.OLLAMA_SEARCH.auth.transport.queryParams[]`
+#### `externalApis.OLLAMA_SEARCH.auth.transport.queryParams[]`
 
 Same shapes as described above, first listed under `externalApis.OLLAMA_SEARCH.auth — strategy: "kubernetes-service-account"`.
 
-#### `externalApis.OLLAMA_SEARCH.auth` — `strategy: "jwt-self-signed"`
+</details>
+
+<details>
+<summary><code>externalApis.OLLAMA_SEARCH.auth</code> — <code>strategy: "jwt-self-signed"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -416,33 +476,42 @@ Same shapes as described above, first listed under `externalApis.OLLAMA_SEARCH.a
 | `externalApis.OLLAMA_SEARCH.auth.transport.headers` | array of one of (see below) |  |  | Headers to send. Each entry carries either a fixed `value` or a `credential`. |
 | `externalApis.OLLAMA_SEARCH.auth.transport.queryParams` | array of one of (see below) |  |  | Query parameters to send. Each entry carries either a fixed `value` or a `credential`. |
 
-##### `externalApis.OLLAMA_SEARCH.auth.key`: one of 2
+#### `externalApis.OLLAMA_SEARCH.auth.key`: one of 2
 
 Pick the variant with `source`.
 
-###### `externalApis.OLLAMA_SEARCH.auth.key` — `source: "file"`
+<details>
+<summary><code>externalApis.OLLAMA_SEARCH.auth.key</code> — <code>source: "file"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `externalApis.OLLAMA_SEARCH.auth.key.source` | `"file"` | yes |  | Key read from a file when a token is signed. |
 | `externalApis.OLLAMA_SEARCH.auth.key.path` | string | yes |  | Path of the key file. |
 
-###### `externalApis.OLLAMA_SEARCH.auth.key` — `source: "value"`
+</details>
+
+<details>
+<summary><code>externalApis.OLLAMA_SEARCH.auth.key</code> — <code>source: "value"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `externalApis.OLLAMA_SEARCH.auth.key.source` | `"value"` | yes |  | Key carried in the configuration itself. |
 | `externalApis.OLLAMA_SEARCH.auth.key.value` | string | yes |  | The key: an HMAC secret for HS256, otherwise a PEM-encoded PKCS#8 private key. |
 
-##### `externalApis.OLLAMA_SEARCH.auth.transport.headers[]`
+</details>
+
+#### `externalApis.OLLAMA_SEARCH.auth.transport.headers[]`
 
 Same shapes as described above, first listed under `externalApis.OLLAMA_SEARCH.auth — strategy: "kubernetes-service-account"`.
 
-##### `externalApis.OLLAMA_SEARCH.auth.transport.queryParams[]`
+#### `externalApis.OLLAMA_SEARCH.auth.transport.queryParams[]`
 
 Same shapes as described above, first listed under `externalApis.OLLAMA_SEARCH.auth — strategy: "kubernetes-service-account"`.
 
-#### `externalApis.OLLAMA_SEARCH.auth` — `strategy: "none"`
+</details>
+
+<details>
+<summary><code>externalApis.OLLAMA_SEARCH.auth</code> — <code>strategy: "none"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -454,6 +523,10 @@ Same shapes as described above, first listed under `externalApis.OLLAMA_SEARCH.a
 | `externalApis.OLLAMA_SEARCH.auth.transport.queryParams` | array of object |  |  | Fixed query parameters to send. |
 | `externalApis.OLLAMA_SEARCH.auth.transport.queryParams[].name` | string (non-empty) | yes |  | Header or query parameter name. |
 | `externalApis.OLLAMA_SEARCH.auth.transport.queryParams[].value` | string | yes |  | Fixed value sent as is. |
+
+</details>
+
+</details>
 
 ## database
 
@@ -490,7 +563,8 @@ Optional.
 
 Pick the variant with `type`.
 
-#### `github` — `type: "app"`
+<details>
+<summary><code>github</code> — <code>type: "app"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -501,25 +575,34 @@ Pick the variant with `type`.
 | `github.clientId` | string (non-empty) | yes |  | The App's client ID — the JWT issuer GitHub expects. |
 | `github.privateKey` | one of (see below) | yes |  | PEM as GitHub issues it (PKCS#1); PKCS#8 works too. |
 
-##### `github.privateKey`: one of 2
+#### `github.privateKey`: one of 2
 
 Pick the variant with `source`.
 
-###### `github.privateKey` — `source: "value"`
+<details>
+<summary><code>github.privateKey</code> — <code>source: "value"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `github.privateKey.source` | `"value"` | yes |  | `value`: the secret is inline. |
 | `github.privateKey.value` | string (non-empty) | yes |  | The secret itself. |
 
-###### `github.privateKey` — `source: "file"`
+</details>
+
+<details>
+<summary><code>github.privateKey</code> — <code>source: "file"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `github.privateKey.source` | `"file"` | yes |  | `file`: the secret is read from a file, e.g. a mounted Kubernetes secret. |
 | `github.privateKey.path` | string (non-empty) | yes |  | Path of the file holding the secret; surrounding whitespace is trimmed. |
 
-#### `github` — `type: "token"`
+</details>
+
+</details>
+
+<details>
+<summary><code>github</code> — <code>type: "token"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -529,23 +612,31 @@ Pick the variant with `source`.
 | `github.type` | `"token"` | yes |  | `token`: authenticate with a token, e.g. a fine-grained personal access token. A knowledge base using one must set `git.repository`. |
 | `github.token` | one of (see below) | yes |  | Needs Contents: read and write, and Metadata: read, on the repository. |
 
-##### `github.token`: one of 2
+#### `github.token`: one of 2
 
 Pick the variant with `source`.
 
-###### `github.token` — `source: "value"`
+<details>
+<summary><code>github.token</code> — <code>source: "value"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `github.token.source` | `"value"` | yes |  | `value`: the secret is inline. |
 | `github.token.value` | string (non-empty) | yes |  | The secret itself. |
 
-###### `github.token` — `source: "file"`
+</details>
+
+<details>
+<summary><code>github.token</code> — <code>source: "file"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `github.token.source` | `"file"` | yes |  | `file`: the secret is read from a file, e.g. a mounted Kubernetes secret. |
 | `github.token.path` | string (non-empty) | yes |  | Path of the file holding the secret; surrounding whitespace is trimmed. |
+
+</details>
+
+</details>
 
 ## embeddings
 
@@ -593,7 +684,8 @@ Required.
 
 Pick the variant with `type`.
 
-#### `knowledgeBases[].git.github` — `type: "app"`
+<details>
+<summary><code>knowledgeBases[].git.github</code> — <code>type: "app"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -604,25 +696,34 @@ Pick the variant with `type`.
 | `knowledgeBases[].git.github.clientId` | string (non-empty) | yes |  | The App's client ID — the JWT issuer GitHub expects. |
 | `knowledgeBases[].git.github.privateKey` | one of (see below) | yes |  | PEM as GitHub issues it (PKCS#1); PKCS#8 works too. |
 
-##### `knowledgeBases[].git.github.privateKey`: one of 2
+#### `knowledgeBases[].git.github.privateKey`: one of 2
 
 Pick the variant with `source`.
 
-###### `knowledgeBases[].git.github.privateKey` — `source: "value"`
+<details>
+<summary><code>knowledgeBases[].git.github.privateKey</code> — <code>source: "value"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `knowledgeBases[].git.github.privateKey.source` | `"value"` | yes |  | `value`: the secret is inline. |
 | `knowledgeBases[].git.github.privateKey.value` | string (non-empty) | yes |  | The secret itself. |
 
-###### `knowledgeBases[].git.github.privateKey` — `source: "file"`
+</details>
+
+<details>
+<summary><code>knowledgeBases[].git.github.privateKey</code> — <code>source: "file"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `knowledgeBases[].git.github.privateKey.source` | `"file"` | yes |  | `file`: the secret is read from a file, e.g. a mounted Kubernetes secret. |
 | `knowledgeBases[].git.github.privateKey.path` | string (non-empty) | yes |  | Path of the file holding the secret; surrounding whitespace is trimmed. |
 
-#### `knowledgeBases[].git.github` — `type: "token"`
+</details>
+
+</details>
+
+<details>
+<summary><code>knowledgeBases[].git.github</code> — <code>type: "token"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -632,23 +733,31 @@ Pick the variant with `source`.
 | `knowledgeBases[].git.github.type` | `"token"` | yes |  | `token`: authenticate with a token, e.g. a fine-grained personal access token. A knowledge base using one must set `git.repository`. |
 | `knowledgeBases[].git.github.token` | one of (see below) | yes |  | Needs Contents: read and write, and Metadata: read, on the repository. |
 
-##### `knowledgeBases[].git.github.token`: one of 2
+#### `knowledgeBases[].git.github.token`: one of 2
 
 Pick the variant with `source`.
 
-###### `knowledgeBases[].git.github.token` — `source: "value"`
+<details>
+<summary><code>knowledgeBases[].git.github.token</code> — <code>source: "value"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `knowledgeBases[].git.github.token.source` | `"value"` | yes |  | `value`: the secret is inline. |
 | `knowledgeBases[].git.github.token.value` | string (non-empty) | yes |  | The secret itself. |
 
-###### `knowledgeBases[].git.github.token` — `source: "file"`
+</details>
+
+<details>
+<summary><code>knowledgeBases[].git.github.token</code> — <code>source: "file"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `knowledgeBases[].git.github.token.source` | `"file"` | yes |  | `file`: the secret is read from a file, e.g. a mounted Kubernetes secret. |
 | `knowledgeBases[].git.github.token.path` | string (non-empty) | yes |  | Path of the file holding the secret; surrounding whitespace is trimmed. |
+
+</details>
+
+</details>
 
 ## indexer
 
@@ -729,18 +838,42 @@ Optional.
 | --- | --- | --- | --- | --- |
 | `otel.debug` | boolean |  |  | Enable OTEL SDK debug logging via DiagConsoleLogger. |
 | `otel.resourceAttributes` | map of name → string \| number \| boolean |  |  | Extra resource attributes on every span, metric and log record, e.g. `{ "deployment.environment.name": "production" }`. Values are strings, numbers or booleans. `service.name` and `service.version` are not allowed. |
+
+<details>
+<summary><code>otel.traces</code> — Trace export over OTLP/HTTP (batched). Omitted or disabled: no traces are exported.</summary>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
 | `otel.traces` | object |  |  | Trace export over OTLP/HTTP (batched). Omitted or disabled: no traces are exported. |
 | `otel.traces.enabled` | boolean | yes |  | Set to `false` to disable. Keys marked required are required only when this is `true`. |
 | `otel.traces.exporter` | object | yes |  | OTLP/HTTP exporter configuration. Required when traces are enabled. |
 | `otel.traces.exporter.url` | string | yes |  | OTLP/HTTP exporter endpoint URL. |
+
+</details>
+
+<details>
+<summary><code>otel.metrics</code> — Metric export over OTLP/HTTP (periodic). Omitted or disabled: no metrics are exported.</summary>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
 | `otel.metrics` | object |  |  | Metric export over OTLP/HTTP (periodic). Omitted or disabled: no metrics are exported. |
 | `otel.metrics.enabled` | boolean | yes |  | Set to `false` to disable. Keys marked required are required only when this is `true`. |
 | `otel.metrics.exporter` | object | yes |  | OTLP/HTTP exporter configuration. Required when metrics are enabled. |
 | `otel.metrics.exporter.url` | string | yes |  | OTLP/HTTP exporter endpoint URL. |
+
+</details>
+
+<details>
+<summary><code>otel.logs</code> — Log record export over OTLP/HTTP (batched). Omitted or disabled: no log records are exported.</summary>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
 | `otel.logs` | object |  |  | Log record export over OTLP/HTTP (batched). Omitted or disabled: no log records are exported. |
 | `otel.logs.enabled` | boolean | yes |  | Set to `false` to disable. Keys marked required are required only when this is `true`. |
 | `otel.logs.exporter` | object | yes |  | OTLP/HTTP exporter configuration. Required when logs are enabled. |
 | `otel.logs.exporter.url` | string | yes |  | OTLP/HTTP exporter endpoint URL. |
+
+</details>
 
 ## auth
 
@@ -756,7 +889,8 @@ Required.
 
 Pick the variant with `type`.
 
-#### `auth.IDP` — `type: "bearer-jwt"`
+<details>
+<summary><code>auth.IDP</code> — <code>type: "bearer-jwt"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -769,11 +903,12 @@ Pick the variant with `type`.
 | `auth.IDP.trustedIssuers[].subjectKind` | `"human"` \| `"service"` \| `"device"` |  | `"human"` | Caller class that tokens from this issuer represent, stamped onto the principal. |
 | `auth.IDP.trustedIssuers[].rolesClaim` | string |  | `"roles"` | Token claim the roles are read from. A token without it has no roles. |
 
-##### `auth.IDP.trustedIssuers[].key`: one of 2
+#### `auth.IDP.trustedIssuers[].key`: one of 2
 
 Pick the variant with `source`.
 
-###### `auth.IDP.trustedIssuers[].key` — `source: "value"`
+<details>
+<summary><code>auth.IDP.trustedIssuers[].key</code> — <code>source: "value"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -781,7 +916,10 @@ Pick the variant with `source`.
 | `auth.IDP.trustedIssuers[].key.algorithm` | string (non-empty) |  | `"HS256"` | Algorithm this key is for, and the only one accepted from this issuer. The `alg` in the token header is never trusted on its own. |
 | `auth.IDP.trustedIssuers[].key.value` | string (non-empty) | yes |  | For `HS*`: the shared secret. Otherwise: a PEM-encoded public key. |
 
-###### `auth.IDP.trustedIssuers[].key` — `source: "jwks"`
+</details>
+
+<details>
+<summary><code>auth.IDP.trustedIssuers[].key</code> — <code>source: "jwks"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -793,7 +931,12 @@ Pick the variant with `source`.
 | `auth.IDP.trustedIssuers[].key.refreshCooldownMs` | integer (> 0) |  | `30000` | Minimum time between two key set fetches, in ms, so tokens with an unknown `kid` cannot force a fetch per request. |
 | `auth.IDP.trustedIssuers[].key.timeoutMs` | integer (> 0) |  | `3000` | Time limit for one JWKS fetch, in ms. |
 
-#### `auth.IDP` — `type: "unauthenticated"`
+</details>
+
+</details>
+
+<details>
+<summary><code>auth.IDP</code> — <code>type: "unauthenticated"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -802,3 +945,5 @@ Pick the variant with `source`.
 | `auth.IDP.defaultSubject` | string (pattern `^[\w.@+-]{1,150}$`) | yes |  | Subject of the principal when no usable `subjectHeader` value arrives. |
 | `auth.IDP.subjectHeader` | string (non-empty) |  |  | Header whose value, when present and matching the subject pattern, becomes the subject (e.g. `X-User`). Unverified: a label for logs and attribution, never a basis for access. |
 | `auth.IDP.subjectKind` | `"human"` \| `"service"` \| `"device"` |  | `"human"` | Caller class of the principal. |
+
+</details>
