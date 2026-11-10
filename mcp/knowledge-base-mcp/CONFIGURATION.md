@@ -130,7 +130,8 @@ Required.
 
 Pick the variant with `strategy`.
 
-#### `externalApis.KNOWLEDGE_BASE_API.auth` — `strategy: "kubernetes-service-account"`
+<details>
+<summary><code>externalApis.KNOWLEDGE_BASE_API.auth</code> — <code>strategy: "kubernetes-service-account"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -140,11 +141,12 @@ Pick the variant with `strategy`.
 | `externalApis.KNOWLEDGE_BASE_API.auth.transport.headers` | array of one of (see below) |  |  | Headers to send. Each entry carries either a fixed `value` or a `credential`. |
 | `externalApis.KNOWLEDGE_BASE_API.auth.transport.queryParams` | array of one of (see below) |  |  | Query parameters to send. Each entry carries either a fixed `value` or a `credential`. |
 
-##### `externalApis.KNOWLEDGE_BASE_API.auth.transport.headers[]`: one of 2
+#### `externalApis.KNOWLEDGE_BASE_API.auth.transport.headers[]`: one of 2
 
 Give exactly one of the shapes below.
 
-###### `externalApis.KNOWLEDGE_BASE_API.auth.transport.headers[]` — with `credential`
+<details>
+<summary><code>externalApis.KNOWLEDGE_BASE_API.auth.transport.headers[]</code> — with <code>credential</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -153,18 +155,24 @@ Give exactly one of the shapes below.
 | `externalApis.KNOWLEDGE_BASE_API.auth.transport.headers[].prefix` | string |  |  | Text put before the credential, e.g. `Bearer `. |
 | `externalApis.KNOWLEDGE_BASE_API.auth.transport.headers[].suffix` | string |  |  | Text put after the credential. |
 
-###### `externalApis.KNOWLEDGE_BASE_API.auth.transport.headers[]` — with `value`
+</details>
+
+<details>
+<summary><code>externalApis.KNOWLEDGE_BASE_API.auth.transport.headers[]</code> — with <code>value</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `externalApis.KNOWLEDGE_BASE_API.auth.transport.headers[].name` | string (non-empty) | yes |  | Header or query parameter name. |
 | `externalApis.KNOWLEDGE_BASE_API.auth.transport.headers[].value` | string | yes |  | Fixed value sent as is. |
 
-##### `externalApis.KNOWLEDGE_BASE_API.auth.transport.queryParams[]`: one of 2
+</details>
+
+#### `externalApis.KNOWLEDGE_BASE_API.auth.transport.queryParams[]`: one of 2
 
 Give exactly one of the shapes below.
 
-###### `externalApis.KNOWLEDGE_BASE_API.auth.transport.queryParams[]` — with `credential`
+<details>
+<summary><code>externalApis.KNOWLEDGE_BASE_API.auth.transport.queryParams[]</code> — with <code>credential</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -173,14 +181,22 @@ Give exactly one of the shapes below.
 | `externalApis.KNOWLEDGE_BASE_API.auth.transport.queryParams[].prefix` | string |  |  | Text put before the credential, e.g. `Bearer `. |
 | `externalApis.KNOWLEDGE_BASE_API.auth.transport.queryParams[].suffix` | string |  |  | Text put after the credential. |
 
-###### `externalApis.KNOWLEDGE_BASE_API.auth.transport.queryParams[]` — with `value`
+</details>
+
+<details>
+<summary><code>externalApis.KNOWLEDGE_BASE_API.auth.transport.queryParams[]</code> — with <code>value</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `externalApis.KNOWLEDGE_BASE_API.auth.transport.queryParams[].name` | string (non-empty) | yes |  | Header or query parameter name. |
 | `externalApis.KNOWLEDGE_BASE_API.auth.transport.queryParams[].value` | string | yes |  | Fixed value sent as is. |
 
-#### `externalApis.KNOWLEDGE_BASE_API.auth` — `strategy: "token-exchange"`
+</details>
+
+</details>
+
+<details>
+<summary><code>externalApis.KNOWLEDGE_BASE_API.auth</code> — <code>strategy: "token-exchange"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -202,15 +218,18 @@ Give exactly one of the shapes below.
 | `externalApis.KNOWLEDGE_BASE_API.auth.transport.headers` | array of one of (see below) |  |  | Headers to send. Each entry carries either a fixed `value` or a `credential`. |
 | `externalApis.KNOWLEDGE_BASE_API.auth.transport.queryParams` | array of one of (see below) |  |  | Query parameters to send. Each entry carries either a fixed `value` or a `credential`. |
 
-##### `externalApis.KNOWLEDGE_BASE_API.auth.transport.headers[]`
+#### `externalApis.KNOWLEDGE_BASE_API.auth.transport.headers[]`
 
 Same shapes as described above, first listed under `externalApis.KNOWLEDGE_BASE_API.auth — strategy: "kubernetes-service-account"`.
 
-##### `externalApis.KNOWLEDGE_BASE_API.auth.transport.queryParams[]`
+#### `externalApis.KNOWLEDGE_BASE_API.auth.transport.queryParams[]`
 
 Same shapes as described above, first listed under `externalApis.KNOWLEDGE_BASE_API.auth — strategy: "kubernetes-service-account"`.
 
-#### `externalApis.KNOWLEDGE_BASE_API.auth` — `strategy: "jwt-self-signed"`
+</details>
+
+<details>
+<summary><code>externalApis.KNOWLEDGE_BASE_API.auth</code> — <code>strategy: "jwt-self-signed"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -227,33 +246,42 @@ Same shapes as described above, first listed under `externalApis.KNOWLEDGE_BASE_
 | `externalApis.KNOWLEDGE_BASE_API.auth.transport.headers` | array of one of (see below) |  |  | Headers to send. Each entry carries either a fixed `value` or a `credential`. |
 | `externalApis.KNOWLEDGE_BASE_API.auth.transport.queryParams` | array of one of (see below) |  |  | Query parameters to send. Each entry carries either a fixed `value` or a `credential`. |
 
-##### `externalApis.KNOWLEDGE_BASE_API.auth.key`: one of 2
+#### `externalApis.KNOWLEDGE_BASE_API.auth.key`: one of 2
 
 Pick the variant with `source`.
 
-###### `externalApis.KNOWLEDGE_BASE_API.auth.key` — `source: "file"`
+<details>
+<summary><code>externalApis.KNOWLEDGE_BASE_API.auth.key</code> — <code>source: "file"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `externalApis.KNOWLEDGE_BASE_API.auth.key.source` | `"file"` | yes |  | Key read from a file when a token is signed. |
 | `externalApis.KNOWLEDGE_BASE_API.auth.key.path` | string | yes |  | Path of the key file. |
 
-###### `externalApis.KNOWLEDGE_BASE_API.auth.key` — `source: "value"`
+</details>
+
+<details>
+<summary><code>externalApis.KNOWLEDGE_BASE_API.auth.key</code> — <code>source: "value"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `externalApis.KNOWLEDGE_BASE_API.auth.key.source` | `"value"` | yes |  | Key carried in the configuration itself. |
 | `externalApis.KNOWLEDGE_BASE_API.auth.key.value` | string | yes |  | The key: an HMAC secret for HS256, otherwise a PEM-encoded PKCS#8 private key. |
 
-##### `externalApis.KNOWLEDGE_BASE_API.auth.transport.headers[]`
+</details>
+
+#### `externalApis.KNOWLEDGE_BASE_API.auth.transport.headers[]`
 
 Same shapes as described above, first listed under `externalApis.KNOWLEDGE_BASE_API.auth — strategy: "kubernetes-service-account"`.
 
-##### `externalApis.KNOWLEDGE_BASE_API.auth.transport.queryParams[]`
+#### `externalApis.KNOWLEDGE_BASE_API.auth.transport.queryParams[]`
 
 Same shapes as described above, first listed under `externalApis.KNOWLEDGE_BASE_API.auth — strategy: "kubernetes-service-account"`.
 
-#### `externalApis.KNOWLEDGE_BASE_API.auth` — `strategy: "none"`
+</details>
+
+<details>
+<summary><code>externalApis.KNOWLEDGE_BASE_API.auth</code> — <code>strategy: "none"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -265,6 +293,8 @@ Same shapes as described above, first listed under `externalApis.KNOWLEDGE_BASE_
 | `externalApis.KNOWLEDGE_BASE_API.auth.transport.queryParams` | array of object |  |  | Fixed query parameters to send. |
 | `externalApis.KNOWLEDGE_BASE_API.auth.transport.queryParams[].name` | string (non-empty) | yes |  | Header or query parameter name. |
 | `externalApis.KNOWLEDGE_BASE_API.auth.transport.queryParams[].value` | string | yes |  | Fixed value sent as is. |
+
+</details>
 
 ## mcpServers
 
@@ -294,7 +324,8 @@ Required.
 
 Pick the variant with `type`.
 
-#### `mcpServers[].auth` — `type: "oauth"`
+<details>
+<summary><code>mcpServers[].auth</code> — <code>type: "oauth"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -307,11 +338,12 @@ Pick the variant with `type`.
 | `mcpServers[].auth.roles.EDITOR` | string (non-empty) | yes |  | Authentik role that grants the `EDITOR` level: the `create_note`, `write_document` and `delete_document` tools. |
 | `mcpServers[].auth.scopes` | array of string (non-empty) |  | `["openid","profile","email","roles"]` | Scopes advertised in the metadata and in the 401 challenge, which is what a client asks Authentik for. |
 
-##### `mcpServers[].auth.key`: one of 2
+#### `mcpServers[].auth.key`: one of 2
 
 Pick the variant with `source`.
 
-###### `mcpServers[].auth.key` — `source: "value"`
+<details>
+<summary><code>mcpServers[].auth.key</code> — <code>source: "value"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -319,7 +351,10 @@ Pick the variant with `source`.
 | `mcpServers[].auth.key.algorithm` | string (non-empty) |  | `"HS256"` | Algorithm this key is for, and the only one accepted from this issuer. The `alg` in the token header is never trusted on its own. |
 | `mcpServers[].auth.key.value` | string (non-empty) | yes |  | For `HS*`: the shared secret. Otherwise: a PEM-encoded public key. |
 
-###### `mcpServers[].auth.key` — `source: "jwks"`
+</details>
+
+<details>
+<summary><code>mcpServers[].auth.key</code> — <code>source: "jwks"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -331,7 +366,12 @@ Pick the variant with `source`.
 | `mcpServers[].auth.key.refreshCooldownMs` | integer (> 0) |  | `30000` | Minimum time between two key set fetches, in ms, so tokens with an unknown `kid` cannot force a fetch per request. |
 | `mcpServers[].auth.key.timeoutMs` | integer (> 0) |  | `3000` | Time limit for one JWKS fetch, in ms. |
 
-#### `mcpServers[].auth` — `type: "unauthenticated"`
+</details>
+
+</details>
+
+<details>
+<summary><code>mcpServers[].auth</code> — <code>type: "unauthenticated"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -342,6 +382,8 @@ Pick the variant with `source`.
 | `mcpServers[].auth.roles` | object |  | `{"READER":"knowledge-base-mcp.reader","EDITOR":"knowledge-base-mcp.editor"}` | The role each level maps to, as with `oauth`; every request holds all of them, so tools keep their per-level checks. Optional: absent grants every level. Leave out `EDITOR` for a read-only endpoint. |
 | `mcpServers[].auth.roles.READER` | string (non-empty) |  |  | Authentik role that grants the `READER` level: the `search`, `read` and `conventions` tools. |
 | `mcpServers[].auth.roles.EDITOR` | string (non-empty) |  |  | Authentik role that grants the `EDITOR` level: the `create_note`, `write_document` and `delete_document` tools. |
+
+</details>
 
 ## health
 
@@ -392,15 +434,39 @@ Optional.
 | --- | --- | --- | --- | --- |
 | `otel.debug` | boolean |  |  | Enable OTEL SDK debug logging via DiagConsoleLogger. |
 | `otel.resourceAttributes` | map of name → string \| number \| boolean |  |  | Extra resource attributes on every span, metric and log record, e.g. `{ "deployment.environment.name": "production" }`. Values are strings, numbers or booleans. `service.name` and `service.version` are not allowed. |
+
+<details>
+<summary><code>otel.traces</code> — Trace export over OTLP/HTTP (batched). Omitted or disabled: no traces are exported.</summary>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
 | `otel.traces` | object |  |  | Trace export over OTLP/HTTP (batched). Omitted or disabled: no traces are exported. |
 | `otel.traces.enabled` | boolean | yes |  | Set to `false` to disable. Keys marked required are required only when this is `true`. |
 | `otel.traces.exporter` | object | yes |  | OTLP/HTTP exporter configuration. Required when traces are enabled. |
 | `otel.traces.exporter.url` | string | yes |  | OTLP/HTTP exporter endpoint URL. |
+
+</details>
+
+<details>
+<summary><code>otel.metrics</code> — Metric export over OTLP/HTTP (periodic). Omitted or disabled: no metrics are exported.</summary>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
 | `otel.metrics` | object |  |  | Metric export over OTLP/HTTP (periodic). Omitted or disabled: no metrics are exported. |
 | `otel.metrics.enabled` | boolean | yes |  | Set to `false` to disable. Keys marked required are required only when this is `true`. |
 | `otel.metrics.exporter` | object | yes |  | OTLP/HTTP exporter configuration. Required when metrics are enabled. |
 | `otel.metrics.exporter.url` | string | yes |  | OTLP/HTTP exporter endpoint URL. |
+
+</details>
+
+<details>
+<summary><code>otel.logs</code> — Log record export over OTLP/HTTP (batched). Omitted or disabled: no log records are exported.</summary>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
 | `otel.logs` | object |  |  | Log record export over OTLP/HTTP (batched). Omitted or disabled: no log records are exported. |
 | `otel.logs.enabled` | boolean | yes |  | Set to `false` to disable. Keys marked required are required only when this is `true`. |
 | `otel.logs.exporter` | object | yes |  | OTLP/HTTP exporter configuration. Required when logs are enabled. |
 | `otel.logs.exporter.url` | string | yes |  | OTLP/HTTP exporter endpoint URL. |
+
+</details>

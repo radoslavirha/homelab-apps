@@ -158,18 +158,42 @@ Optional.
 | --- | --- | --- | --- | --- |
 | `otel.debug` | boolean |  |  | Enable OTEL SDK debug logging via DiagConsoleLogger. |
 | `otel.resourceAttributes` | map of name → string \| number \| boolean |  |  | Extra resource attributes on every span, metric and log record, e.g. `{ "deployment.environment.name": "production" }`. Values are strings, numbers or booleans. `service.name` and `service.version` are not allowed. |
+
+<details>
+<summary><code>otel.traces</code> — Trace export over OTLP/HTTP (batched). Omitted or disabled: no traces are exported.</summary>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
 | `otel.traces` | object |  |  | Trace export over OTLP/HTTP (batched). Omitted or disabled: no traces are exported. |
 | `otel.traces.enabled` | boolean | yes |  | Set to `false` to disable. Keys marked required are required only when this is `true`. |
 | `otel.traces.exporter` | object | yes |  | OTLP/HTTP exporter configuration. Required when traces are enabled. |
 | `otel.traces.exporter.url` | string | yes |  | OTLP/HTTP exporter endpoint URL. |
+
+</details>
+
+<details>
+<summary><code>otel.metrics</code> — Metric export over OTLP/HTTP (periodic). Omitted or disabled: no metrics are exported.</summary>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
 | `otel.metrics` | object |  |  | Metric export over OTLP/HTTP (periodic). Omitted or disabled: no metrics are exported. |
 | `otel.metrics.enabled` | boolean | yes |  | Set to `false` to disable. Keys marked required are required only when this is `true`. |
 | `otel.metrics.exporter` | object | yes |  | OTLP/HTTP exporter configuration. Required when metrics are enabled. |
 | `otel.metrics.exporter.url` | string | yes |  | OTLP/HTTP exporter endpoint URL. |
+
+</details>
+
+<details>
+<summary><code>otel.logs</code> — Log record export over OTLP/HTTP (batched). Omitted or disabled: no log records are exported.</summary>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
 | `otel.logs` | object |  |  | Log record export over OTLP/HTTP (batched). Omitted or disabled: no log records are exported. |
 | `otel.logs.enabled` | boolean | yes |  | Set to `false` to disable. Keys marked required are required only when this is `true`. |
 | `otel.logs.exporter` | object | yes |  | OTLP/HTTP exporter configuration. Required when logs are enabled. |
 | `otel.logs.exporter.url` | string | yes |  | OTLP/HTTP exporter endpoint URL. |
+
+</details>
 
 ## auth
 
@@ -185,7 +209,8 @@ Required.
 
 Pick the variant with `type`.
 
-#### `auth.IDP` — `type: "bearer-jwt"`
+<details>
+<summary><code>auth.IDP</code> — <code>type: "bearer-jwt"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -198,11 +223,12 @@ Pick the variant with `type`.
 | `auth.IDP.trustedIssuers[].subjectKind` | `"human"` \| `"service"` \| `"device"` |  | `"human"` | Caller class that tokens from this issuer represent, stamped onto the principal. |
 | `auth.IDP.trustedIssuers[].rolesClaim` | string |  | `"roles"` | Token claim the roles are read from. A token without it has no roles. |
 
-##### `auth.IDP.trustedIssuers[].key`: one of 2
+#### `auth.IDP.trustedIssuers[].key`: one of 2
 
 Pick the variant with `source`.
 
-###### `auth.IDP.trustedIssuers[].key` — `source: "value"`
+<details>
+<summary><code>auth.IDP.trustedIssuers[].key</code> — <code>source: "value"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -210,7 +236,10 @@ Pick the variant with `source`.
 | `auth.IDP.trustedIssuers[].key.algorithm` | string (non-empty) |  | `"HS256"` | Algorithm this key is for, and the only one accepted from this issuer. The `alg` in the token header is never trusted on its own. |
 | `auth.IDP.trustedIssuers[].key.value` | string (non-empty) | yes |  | For `HS*`: the shared secret. Otherwise: a PEM-encoded public key. |
 
-###### `auth.IDP.trustedIssuers[].key` — `source: "jwks"`
+</details>
+
+<details>
+<summary><code>auth.IDP.trustedIssuers[].key</code> — <code>source: "jwks"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -222,7 +251,12 @@ Pick the variant with `source`.
 | `auth.IDP.trustedIssuers[].key.refreshCooldownMs` | integer (> 0) |  | `30000` | Minimum time between two key set fetches, in ms, so tokens with an unknown `kid` cannot force a fetch per request. |
 | `auth.IDP.trustedIssuers[].key.timeoutMs` | integer (> 0) |  | `3000` | Time limit for one JWKS fetch, in ms. |
 
-#### `auth.IDP` — `type: "unauthenticated"`
+</details>
+
+</details>
+
+<details>
+<summary><code>auth.IDP</code> — <code>type: "unauthenticated"</code></summary>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -231,3 +265,5 @@ Pick the variant with `source`.
 | `auth.IDP.defaultSubject` | string (pattern `^[\w.@+-]{1,150}$`) | yes |  | Subject of the principal when no usable `subjectHeader` value arrives. |
 | `auth.IDP.subjectHeader` | string (non-empty) |  |  | Header whose value, when present and matching the subject pattern, becomes the subject (e.g. `X-User`). Unverified: a label for logs and attribution, never a basis for access. |
 | `auth.IDP.subjectKind` | `"human"` \| `"service"` \| `"device"` |  | `"human"` | Caller class of the principal. |
+
+</details>
