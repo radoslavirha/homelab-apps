@@ -12,7 +12,7 @@ import { GitHubClientOptionsSchema, GitHubSecretSchema } from './GitHubAppConfig
  * the mounted file is picked up without a restart.
  */
 export const GitHubTokenConfigSchema = GitHubClientOptionsSchema.extend({
-    type: z.literal('token'),
+    type: z.literal('token').describe('`token`: authenticate with a token, e.g. a fine-grained personal access token. A knowledge base using one must set `git.repository`.'),
     token: GitHubSecretSchema.describe('Needs Contents: read and write, and Metadata: read, on the repository.')
 });
 

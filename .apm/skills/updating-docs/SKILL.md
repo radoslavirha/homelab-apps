@@ -1,11 +1,12 @@
 ---
 name: updating-docs
-description: Regenerate agent-consumable README.md for apps and rebuild docs/KNOWLEDGE.md. Use when: new app added, controller/service/config changed, or onboarding-to-homelab completed.
+description: Regenerate agent-consumable README.md for apps, regenerate each backend's CONFIGURATION.md, and rebuild docs/KNOWLEDGE.md. Use when: new app added, controller/service/config changed (a config schema or a shared package's schema), a CONFIGURATION.md snapshot test fails, or onboarding-to-homelab completed.
 ---
 
 # Update Docs
 
-Maintains lean, agent-consumable docs: per-app `README.md` and the central `docs/KNOWLEDGE.md`.
+Maintains lean, agent-consumable docs: per-app `README.md`, per-backend `CONFIGURATION.md` and the
+central `docs/KNOWLEDGE.md`.
 Focus: **what each app does, what it connects to, what it exposes**. No ports, no versions, no docker, no dev setup.
 
 ## Trigger
@@ -81,6 +82,12 @@ Topic table + payload shape.
 
 Payload shape, response behavior.
 
+## Configuration
+
+Every key with its type, default and meaning: [CONFIGURATION.md](./CONFIGURATION.md), generated from the configuration schema.
+
+{optional: only what the generated reference cannot say — rollout order, where a secret comes from}
+
 ## Shared Package
 
 {only if app uses packages/ from this repo}
@@ -106,7 +113,41 @@ Payload shape, response behavior.
 
 ---
 
-## Step 3 — Rebuild docs/KNOWLEDGE.md
+## Step 3 — Regenerate CONFIGURATION.md (APIs and MCP servers)
+
+Every backend (`apis/*`, `mcp/*`) has a `CONFIGURATION.md` at its root, **generated** from its Zod
+`ConfigSchema` by `ConfigDocs.render` (`@radoslavirha/tsed-configuration`) and pinned by a
+`toMatchFileSnapshot` test in `src/models/config/ConfigModel.spec.ts`. Never edit it by hand.
+
+```bash
+pnpm --filter ./packages/<pkg> build        # first, when a shared package's schema changed: apps import its dist/
+pnpm --filter ./<member-path> exec vitest run src/models/config/ConfigModel.spec.ts -u
+```
+
+A schema change in a shared package (`packages/auth`, `http-provider`, `tsed-http-provider`,
+`resilience`, `otel`, `health`) changes every backend's file: regenerate all of them.
+
+A new backend gets the spec too:
+
+```ts
+describe('CONFIGURATION.md', () => {
+    it('Should match the configuration schema', async () => {
+        expect.assertions(1);
+        await expect(ConfigDocs.render(ConfigSchema, { title: '<package name>' }))
+            .toMatchFileSnapshot('../../../CONFIGURATION.md');
+    });
+});
+```
+
+**Descriptions come only from `.describe()`** on the schema field — JSDoc is invisible to the
+generator. A row with an empty Description column is a field missing `.describe()`: add one that
+states what the code does, not a guess. A default filled inside a `z.preprocess` is invisible too
+(the table shows the inner schema's default), so state it in that field's `.describe()`. Rows under
+`logger.*` come from `@radoslavirha/tsed-logger` in toolkit-hub and are fixed there, not here.
+
+---
+
+## Step 4 — Rebuild docs/KNOWLEDGE.md
 
 Overwrite `docs/KNOWLEDGE.md`. Update `Last updated` date. Structure:
 

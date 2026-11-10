@@ -73,6 +73,10 @@ JWKS URI all derive from its `client_id`.
 | ČHMÚ Portal (`intranet.chmi.cz`) | HTTPS GET | Surface map, cities overlay, borders overlay |
 | ČHMÚ OpenData (`opendata.chmi.cz`) | HTTPS GET | Radar PNG |
 
+## Configuration
+
+Every key with its type, default and meaning: [CONFIGURATION.md](./CONFIGURATION.md), generated from the configuration schema.
+
 ## Configuration (externalApis)
 
 The API reads ČHMÚ hosts from `externalApis` (no hardcoded base URLs in services/endpoints).

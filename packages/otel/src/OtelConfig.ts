@@ -39,9 +39,12 @@ const OtelLogsConfigSchema = z.union([
 
 export const OtelConfigSchema = z.object({
     debug: z.boolean().optional().describe('Enable OTEL SDK debug logging via DiagConsoleLogger.'),
-    traces: OtelTracesConfigSchema.optional(),
-    metrics: OtelMetricsConfigSchema.optional(),
+    traces: OtelTracesConfigSchema.optional()
+        .describe('Trace export over OTLP/HTTP (batched). Omitted or disabled: no traces are exported.'),
+    metrics: OtelMetricsConfigSchema.optional()
+        .describe('Metric export over OTLP/HTTP (periodic). Omitted or disabled: no metrics are exported.'),
     logs: OtelLogsConfigSchema.optional()
+        .describe('Log record export over OTLP/HTTP (batched). Omitted or disabled: no log records are exported.')
 });
 
 export type OTELConfig = z.infer<typeof OtelConfigSchema>;

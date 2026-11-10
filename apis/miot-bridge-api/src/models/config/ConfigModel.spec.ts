@@ -1,3 +1,4 @@
+import { ConfigDocs } from '@radoslavirha/tsed-configuration';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -62,5 +63,13 @@ describe('ConfigSchema', () => {
         it('Should let an explicit empty list opt out', () => {
             expect(parse({ requests: { request: { redactPaths: [] } } }).request.redactPaths).toEqual([]);
         });
+    });
+});
+
+describe('CONFIGURATION.md', () => {
+    it('Should match the configuration schema', async () => {
+        expect.assertions(1);
+        await expect(ConfigDocs.render(ConfigSchema, { title: 'miot-bridge-api' }))
+            .toMatchFileSnapshot('../../../CONFIGURATION.md');
     });
 });

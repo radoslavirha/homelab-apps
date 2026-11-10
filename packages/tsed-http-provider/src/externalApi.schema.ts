@@ -20,7 +20,7 @@ function toSelector(name: string): string {
  */
 export const ExternalApiEntrySchema = HttpProviderEntrySchema.extend({
     logging: HttpLogConfigSchema
-}).transform((entry) => {
+}).describe('One external API: base URL, auth, resilience and outbound logging.').transform((entry) => {
     const transport = entry.auth?.transport;
     const headerPaths = (transport?.headers ?? []).map((header) => toSelector(header.name));
     const queryPaths = (transport?.queryParams ?? []).map((param) => toSelector(param.name));
