@@ -62,4 +62,23 @@ describe('McpServersSchema', () => {
         expect(result.success).toBe(false);
         expect(result.error?.issues[0].path).toEqual(['DEVELOPMENT_KB', 'kb']);
     });
+
+    it('leaves `search` out when an endpoint has none: the defaults apply at the call', () => {
+        expect(McpServersSchema.parse({ DEVELOPMENT_KB: TEST_SERVER }).DEVELOPMENT_KB.search).toBeUndefined();
+    });
+
+    it('accepts a second endpoint on the same knowledge base with its own search settings', () => {
+        const experiment = { ...server('/development-qwen'), search: { model: 'qwen3-embedding:0.6b', weights: { fullText: 0.3 } } };
+        const result = McpServersSchema.safeParse({ DEVELOPMENT_KB: TEST_SERVER, DEVELOPMENT_QWEN_KB: experiment });
+
+        expect(result.success).toBe(true);
+        expect(result.data?.DEVELOPMENT_QWEN_KB.search).toEqual({ defaultLimit: 8, maxLimit: 50, model: 'qwen3-embedding:0.6b', weights: { vector: 1, fullText: 0.3 } });
+    });
+
+    it('refuses a default limit above the max at boot, naming the endpoint', () => {
+        const result = McpServersSchema.safeParse({ DEVELOPMENT_KB: { ...TEST_SERVER, search: { defaultLimit: 25, maxLimit: 20 } } });
+
+        expect(result.success).toBe(false);
+        expect(result.error?.issues[0].path).toEqual(['DEVELOPMENT_KB', 'search', 'defaultLimit']);
+    });
 });

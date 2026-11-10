@@ -3,6 +3,7 @@ import { Forbidden, InternalServerError } from '@tsed/exceptions';
 import { PlatformTest } from '@tsed/platform-http/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { KnowledgeBaseRole } from '../models/config/KnowledgeBaseRole.enum.js';
+import { DEFAULT_SEARCH_CONFIG, McpSearchConfigSchema } from '../models/config/McpSearchConfig.js';
 import { TEST_OPEN_SERVER, TEST_ROLES } from '../test/fixtures.js';
 import { ConfigService } from './ConfigService.js';
 import { McpEndpointService } from './McpEndpointService.js';
@@ -53,6 +54,33 @@ describe('McpEndpointService', () => {
 
         await expect(onRequestTo('/home', () => endpoint.knowledgeBase())).rejects.toThrow(new InternalServerError('No MCP endpoint is mounted at /home.'));
         await expect(onRequestTo('/', () => endpoint.knowledgeBase())).rejects.toThrow(new InternalServerError('No MCP endpoint is mounted at /.'));
+    });
+
+    describe('searchConfig', () => {
+        it('gives the defaults to an endpoint without a `search` block', async () => {
+            expect.assertions(1);
+
+            await expect(onRequestTo('/development', () => endpoint.searchConfig())).resolves.toEqual(DEFAULT_SEARCH_CONFIG);
+        });
+
+        it('fills what a partial `search` block leaves out with the defaults, as the config is loaded', async () => {
+            expect.assertions(1);
+
+            // config/test.json: LOXONE_KB sets only `model`.
+            await expect(onRequestTo('/loxone', () => endpoint.searchConfig())).resolves.toEqual({ ...DEFAULT_SEARCH_CONFIG, model: 'test-model' });
+        });
+
+        it('gives each endpoint its own settings, by the path the request came in on', async () => {
+            expect.assertions(2);
+
+            const configService = PlatformTest.get<ConfigService>(ConfigService);
+            const search = McpSearchConfigSchema.parse({ maxLimit: 50, model: 'qwen3-embedding:0.6b', weights: { fullText: 0.3 } });
+
+            vi.spyOn(configService, 'config', 'get').mockReturnValue({ ...configService.config, mcpServers: { ...configService.config.mcpServers, QWEN_KB: { ...configService.config.mcpServers.DEVELOPMENT_KB, path: '/qwen', search } } });
+
+            await expect(onRequestTo('/qwen', () => endpoint.searchConfig())).resolves.toEqual(search);
+            await expect(onRequestTo('/development', () => endpoint.searchConfig())).resolves.toEqual(DEFAULT_SEARCH_CONFIG);
+        });
     });
 
     describe('requireRole', () => {

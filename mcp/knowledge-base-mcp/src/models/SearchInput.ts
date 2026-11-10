@@ -1,4 +1,4 @@
-import { Default, Description, Integer, Max, MaxLength, Min, MinLength, Property, Required } from '@tsed/schema';
+import { Description, Integer, Max, MaxLength, Min, MinLength, Property, Required } from '@tsed/schema';
 
 export class SearchInput {
     @Description('What you want to know, in natural language — a question works better than keywords.')
@@ -11,10 +11,9 @@ export class SearchInput {
     @Property()
     public filter?: string;
 
-    @Description('How many sections to return.')
+    @Description('How many sections to return. Leave it out for the endpoint\'s default; a large value is capped by the endpoint.')
     @Integer()
     @Min(1)
-    @Max(20)
-    @Default(8)
+    @Max(50)
     public limit?: number;
 }

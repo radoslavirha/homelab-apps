@@ -6,6 +6,7 @@ import { getContext, Injectable, ProviderScope, Scope } from '@tsed/di';
 import { Forbidden, InternalServerError } from '@tsed/exceptions';
 import type { PlatformContext } from '@tsed/platform-http';
 import type { KnowledgeBaseRole } from '../models/config/KnowledgeBaseRole.enum.js';
+import { DEFAULT_SEARCH_CONFIG, type McpSearchConfig } from '../models/config/McpSearchConfig.js';
 import type { McpServerConfig } from '../models/config/McpServerConfig.js';
 import { ConfigService } from './ConfigService.js';
 
@@ -32,6 +33,13 @@ export class McpEndpointService {
     /** The `kb` of the endpoint handling this request. */
     public knowledgeBase(): string {
         return this.current().endpoint.kb;
+    }
+
+    /** How the endpoint handling this request searches: its `search` block, or the defaults when it has none. */
+    public searchConfig(): McpSearchConfig {
+        const { search } = this.current().endpoint;
+
+        return CommonUtils.isUndefined(search) ? DEFAULT_SEARCH_CONFIG : search;
     }
 
     /**
