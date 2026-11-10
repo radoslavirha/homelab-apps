@@ -1,5 +1,21 @@
 # knowledge-base-api
 
+## 0.7.1
+
+### Patch Changes
+
+- [#446](https://github.com/radoslavirha/homelab-apps/pull/446) [`3b5d95e`](https://github.com/radoslavirha/homelab-apps/commit/3b5d95e48cb28f2073110a76052932fd42febe84) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Ship `CONFIGURATION.md`, a configuration reference generated from the config schema and pinned by a test, and update dependencies: the latest toolkit-hub packages (`@radoslavirha/tsed-configuration` 0.10.0, `@radoslavirha/utils` 0.11.0, `@radoslavirha/tsed-logger` 0.7.11 and patch releases), Ts.ED 8.46, mongoose 9.12 and other patch/minor releases.
+
+- [#449](https://github.com/radoslavirha/homelab-apps/pull/449) [`3539f97`](https://github.com/radoslavirha/homelab-apps/commit/3539f9729aa84585a240da181eb847619123d9c1) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Upgrade OpenTelemetry JS to 3.x (SDK 3.1, experimental 0.301): `@opentelemetry/sdk-trace` replaces `sdk-trace-node`, and resources now also carry `os.*` and `service.instance.id`.
+
+- [#449](https://github.com/radoslavirha/homelab-apps/pull/449) [`3539f97`](https://github.com/radoslavirha/homelab-apps/commit/3539f9729aa84585a240da181eb847619123d9c1) Thanks [@radoslavirha](https://github.com/radoslavirha)! - New `otel.resourceAttributes` config key: extra resource attributes (string, number or boolean) on every span, metric and log record. `service.name` and `service.version` stay app-owned and are rejected.
+- Updated dependencies [[`3b5d95e`](https://github.com/radoslavirha/homelab-apps/commit/3b5d95e48cb28f2073110a76052932fd42febe84), [`3539f97`](https://github.com/radoslavirha/homelab-apps/commit/3539f9729aa84585a240da181eb847619123d9c1), [`3539f97`](https://github.com/radoslavirha/homelab-apps/commit/3539f9729aa84585a240da181eb847619123d9c1)]:
+  - @radoslavirha/auth@0.4.1
+  - @radoslavirha/tsed-http-provider@0.2.15
+  - @radoslavirha/otel@0.7.0
+  - @radoslavirha/tsed-auth@0.4.1
+  - @radoslavirha/tsed-health@0.3.7
+
 ## 0.7.0
 
 ### Minor Changes
