@@ -3,8 +3,8 @@
         "httpPort": 4004
     },
     "publicURL": "http://localhost:4004",
-    "mcpServers": {
-        "DEVELOPMENT_KB": {
+    "mcpServers": [
+        {
             "path": "/development",
             "kb": "development",
             "name": "development-knowledge-base",
@@ -24,7 +24,7 @@
                 }
             }
         },
-        "LOXONE_KB": {
+        {
             "path": "/loxone",
             "kb": "loxone",
             "name": "loxone-knowledge-base",
@@ -47,7 +47,7 @@
                 }
             }
         }
-    },
+    ],
     "externalApis": {
         "KNOWLEDGE_BASE_API": {
             "baseURL": "http://kb-api.test",

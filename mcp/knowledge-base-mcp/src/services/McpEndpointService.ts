@@ -1,7 +1,7 @@
 import type { IncomingMessage } from 'node:http';
 import type { AuthInfo } from '@modelcontextprotocol/server';
 import type { Principal } from '@radoslavirha/auth';
-import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
+import { CommonUtils } from '@radoslavirha/utils';
 import { getContext, Injectable, ProviderScope, Scope } from '@tsed/di';
 import { Forbidden, InternalServerError } from '@tsed/exceptions';
 import type { PlatformContext } from '@tsed/platform-http';
@@ -21,7 +21,7 @@ const pathOf = (url: string): string => {
  * The MCP endpoint a tool call came in on, and who made it.
  *
  * An endpoint is its knowledge base: `/development` serves `development` and nothing else, as configured
- * in `mcpServers.<key>.kb`. A caller never names one. platform-mcp registers tool names globally,
+ * in `mcpServers[].kb`. A caller never names one. platform-mcp registers tool names globally,
  * so every endpoint shares the same tool instances; a tool asks this service, which matches the
  * path of the request being handled against the mounted endpoints.
  */
@@ -100,7 +100,7 @@ export class McpEndpointService {
         }
 
         const path = pathOf(ctx.request.url);
-        const endpoint = ObjectUtils.values(this.configService.config.mcpServers).find((entry) => entry.path.toLowerCase() === path.toLowerCase());
+        const endpoint = this.configService.config.mcpServers.find((entry) => entry.path.toLowerCase() === path.toLowerCase());
 
         if (CommonUtils.isUndefined(endpoint)) {
             throw new InternalServerError(`No MCP endpoint is mounted at ${path}.`);

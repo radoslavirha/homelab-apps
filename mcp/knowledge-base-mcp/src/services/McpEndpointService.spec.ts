@@ -66,7 +66,7 @@ describe('McpEndpointService', () => {
         it('fills what a partial `search` block leaves out with the defaults, as the config is loaded', async () => {
             expect.assertions(1);
 
-            // config/test.json: LOXONE_KB sets only `model`.
+            // config/test.json: the `/loxone` endpoint sets only `model`.
             await expect(onRequestTo('/loxone', () => endpoint.searchConfig())).resolves.toEqual({ ...DEFAULT_SEARCH_CONFIG, model: 'test-model' });
         });
 
@@ -76,7 +76,7 @@ describe('McpEndpointService', () => {
             const configService = PlatformTest.get<ConfigService>(ConfigService);
             const search = McpSearchConfigSchema.parse({ maxLimit: 50, model: 'qwen3-embedding:0.6b', weights: { fullText: 0.3 } });
 
-            vi.spyOn(configService, 'config', 'get').mockReturnValue({ ...configService.config, mcpServers: { ...configService.config.mcpServers, QWEN_KB: { ...configService.config.mcpServers.DEVELOPMENT_KB, path: '/qwen', search } } });
+            vi.spyOn(configService, 'config', 'get').mockReturnValue({ ...configService.config, mcpServers: [...configService.config.mcpServers, { ...configService.config.mcpServers[0], name: 'qwen-server', path: '/qwen', search }] });
 
             await expect(onRequestTo('/qwen', () => endpoint.searchConfig())).resolves.toEqual(search);
             await expect(onRequestTo('/development', () => endpoint.searchConfig())).resolves.toEqual(DEFAULT_SEARCH_CONFIG);
@@ -104,7 +104,7 @@ describe('McpEndpointService', () => {
             const configService = PlatformTest.get<ConfigService>(ConfigService);
             const readOnly = { ...TEST_OPEN_SERVER, auth: { ...TEST_OPEN_SERVER.auth, roles: { READER: TEST_OPEN_SERVER.auth.roles.READER } } };
 
-            vi.spyOn(configService, 'config', 'get').mockReturnValue({ ...configService.config, mcpServers: { OPEN_KB: readOnly } });
+            vi.spyOn(configService, 'config', 'get').mockReturnValue({ ...configService.config, mcpServers: [readOnly] });
             const roles = [TEST_OPEN_SERVER.auth.roles.READER!, TEST_OPEN_SERVER.auth.roles.EDITOR!];
 
             await expect(onRequestTo('/open', () => endpoint.requireRole(KnowledgeBaseRole.Reader), roles)).resolves.toBeUndefined();

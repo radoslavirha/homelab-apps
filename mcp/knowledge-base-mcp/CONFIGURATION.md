@@ -14,7 +14,7 @@ The service reads one JSON document (the `config` library: `config/<NODE_ENV>.js
 | [`serviceName`](#servicename) |  | Service name. Defaults to the name in package.json. |
 | [`publicURL`](#publicurl) | yes | Public base URL of the app: scheme, host and the route prefix, no endpoint path — `https://mcp.irha.cz/kb` deployed, `http://localhost:4004` locally. An endpoint's resource identifier is this plus its `path`. |
 | [`externalApis`](#externalapis) | yes | APIs this server calls — base URL, auth, resilience and logging per API. |
-| [`mcpServers`](#mcpservers) | yes | The MCP endpoints this app mounts, one per entry, each serving one knowledge base. Keys are UPPER_SNAKE_CASE; at least one entry. |
+| [`mcpServers`](#mcpservers) | yes | The MCP endpoints this app mounts, one per entry, each serving one knowledge base. At least one entry; `name` and `path` unique. |
 | [`health`](#health) |  | Health endpoint configuration. |
 | [`logger`](#logger) |  | Logger configuration. |
 | [`otel`](#otel) |  | OpenTelemetry configuration. |
@@ -34,7 +34,26 @@ Only the required keys, with placeholder values. Everything else falls back to i
       "baseURL": "https://example.com"
     }
   },
-  "mcpServers": {}
+  "mcpServers": [
+    {
+      "path": "<string>",
+      "kb": "<string>",
+      "name": "<string>",
+      "title": "<string>",
+      "auth": {
+        "issuer": "https://example.com",
+        "audience": "<string>",
+        "key": {
+          "source": "value",
+          "value": "<string>"
+        },
+        "roles": {
+          "READER": "<string>",
+          "EDITOR": "<string>"
+        }
+      }
+    }
+  ]
 }
 ```
 
@@ -249,80 +268,80 @@ Same shapes as described above, first listed under `externalApis.KNOWLEDGE_BASE_
 
 ## mcpServers
 
-The MCP endpoints this app mounts, one per entry, each serving one knowledge base. Keys are UPPER_SNAKE_CASE; at least one entry.
+The MCP endpoints this app mounts, one per entry, each serving one knowledge base. At least one entry; `name` and `path` unique.
 
 Required.
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `mcpServers` | map of name → object | yes |  | The MCP endpoints this app mounts, one per entry, each serving one knowledge base. Keys are UPPER_SNAKE_CASE; at least one entry. |
-| `mcpServers.<name>.path` | string (starts_with, pattern `^\/.*`) | yes |  | Mount path of the endpoint in the app, e.g. `/development`. The public URL adds the route prefix (`/kb`), which Traefik strips before the request arrives. |
-| `mcpServers.<name>.kb` | string (non-empty) | yes |  | The knowledge base this endpoint serves: its id in knowledge-base-api, e.g. `development`. The endpoint is its knowledge base; a caller never chooses one. |
-| `mcpServers.<name>.name` | string (non-empty) | yes |  | Machine name clients see in `serverInfo.name`. |
-| `mcpServers.<name>.title` | string (non-empty) | yes |  | Human-readable name clients show. |
-| `mcpServers.<name>.description` | string (non-empty) |  |  | What the server is for. Defaults to the package description. |
-| `mcpServers.<name>.instructions` | string (non-empty) |  |  | The MCP server `instructions` clients hand their agent: how to use this knowledge base. Defaults to `DEFAULT_INSTRUCTIONS` — search first, call `conventions` before writing or preparing files, approve writes. |
-| `mcpServers.<name>.auth` | one of (see below) | yes |  | Who may call the endpoint, by `type`: `oauth` (the default when `type` is absent) or `unauthenticated`. Required: an endpoint is never open by omission. |
-| `mcpServers.<name>.search` | object |  |  | How the endpoint searches: limits, embedding model and RRF weights. Absent: `DEFAULT_SEARCH_CONFIG`. A second endpoint on the same `kb` with other settings is how an alternative is tried side by side. |
-| `mcpServers.<name>.search.defaultLimit` | integer (≥ 1, ≤ 50) |  | `8` | Hits returned when the agent gives no `limit`. |
-| `mcpServers.<name>.search.maxLimit` | integer (≥ 1, ≤ 50) |  | `50` | The most hits an agent gets: a larger `limit` is lowered to this. At most 50, the API's own cap. |
-| `mcpServers.<name>.search.model` | string (non-empty) |  |  | Embedding model that answers the vector leg. Unset: the knowledge base's first configured model. |
-| `mcpServers.<name>.search.weights` | object |  | `{}` | RRF weights, always sent: they override the API's configured weights. |
-| `mcpServers.<name>.search.weights.vector` | number (≥ 0, ≤ 10) |  | `1` | RRF weight of the vector leg (0–10). |
-| `mcpServers.<name>.search.weights.fullText` | number (≥ 0, ≤ 10) |  | `0` | RRF weight of the full-text leg (0–10). |
+| `mcpServers` | array of object (at least 1 item) | yes |  | The MCP endpoints this app mounts, one per entry, each serving one knowledge base. At least one entry; `name` and `path` unique. |
+| `mcpServers[].path` | string (starts_with, pattern `^\/.*`) | yes |  | Mount path of the endpoint in the app, e.g. `/development`. The public URL adds the route prefix (`/kb`), which Traefik strips before the request arrives. |
+| `mcpServers[].kb` | string (non-empty) | yes |  | The knowledge base this endpoint serves: its id in knowledge-base-api, e.g. `development`. The endpoint is its knowledge base; a caller never chooses one. |
+| `mcpServers[].name` | string (non-empty) | yes |  | Machine name clients see in `serverInfo.name`. Also identifies the endpoint in logs, refusals and auth, so it is unique across `mcpServers`. |
+| `mcpServers[].title` | string (non-empty) | yes |  | Human-readable name clients show. |
+| `mcpServers[].description` | string (non-empty) |  |  | What the server is for. Defaults to the package description. |
+| `mcpServers[].instructions` | string (non-empty) |  |  | The MCP server `instructions` clients hand their agent: how to use this knowledge base. Defaults to `DEFAULT_INSTRUCTIONS` — search first, call `conventions` before writing or preparing files, approve writes. |
+| `mcpServers[].auth` | one of (see below) | yes |  | Who may call the endpoint, by `type`: `oauth` (the default when `type` is absent) or `unauthenticated`. Required: an endpoint is never open by omission. |
+| `mcpServers[].search` | object |  |  | How the endpoint searches: limits, embedding model and RRF weights. Absent: `DEFAULT_SEARCH_CONFIG`. A second endpoint on the same `kb` with other settings is how an alternative is tried side by side. |
+| `mcpServers[].search.defaultLimit` | integer (≥ 1, ≤ 50) |  | `8` | Hits returned when the agent gives no `limit`. |
+| `mcpServers[].search.maxLimit` | integer (≥ 1, ≤ 50) |  | `50` | The most hits an agent gets: a larger `limit` is lowered to this. At most 50, the API's own cap. |
+| `mcpServers[].search.model` | string (non-empty) |  |  | Embedding model that answers the vector leg. Unset: the knowledge base's first configured model. |
+| `mcpServers[].search.weights` | object |  | `{}` | RRF weights, always sent: they override the API's configured weights. |
+| `mcpServers[].search.weights.vector` | number (≥ 0, ≤ 10) |  | `1` | RRF weight of the vector leg (0–10). |
+| `mcpServers[].search.weights.fullText` | number (≥ 0, ≤ 10) |  | `0` | RRF weight of the full-text leg (0–10). |
 
-### `mcpServers.<name>.auth`: one of 2
+### `mcpServers[].auth`: one of 2
 
 Pick the variant with `type`.
 
-#### `mcpServers.<name>.auth` — `type: "oauth"`
+#### `mcpServers[].auth` — `type: "oauth"`
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `mcpServers.<name>.auth.type` | `"oauth"` |  | `"oauth"` | `oauth`, the default. |
-| `mcpServers.<name>.auth.issuer` | string (uri) | yes |  | The authorization server clients log in at: the shared client registration's Authentik issuer, e.g. `https://auth.irha.cz/application/o/knowledge-base-mcp-clients/`. Advertised in the Protected Resource Metadata, and the only `iss` a token may carry — compared exactly, trailing slash included. |
-| `mcpServers.<name>.auth.audience` | string (non-empty) | yes |  | The `aud` a token must carry: the endpoint's Authentik application for this environment, e.g. `knowledge-base-mcp-development-server1-production`. |
-| `mcpServers.<name>.auth.key` | one of (see below) | yes |  | Where the signing keys come from: the issuer's JWKS (`source: jwks`), or an inline key in tests. |
-| `mcpServers.<name>.auth.roles` | object | yes |  | The endpoint's Authentik role for each level, e.g. `{ READER: knowledge-base-mcp-development.reader, EDITOR: knowledge-base-mcp-development.editor }`. A token holding none of them is refused with 403; each tool then requires its own level. |
-| `mcpServers.<name>.auth.roles.READER` | string (non-empty) | yes |  | Authentik role that grants the `READER` level: the `search`, `read` and `conventions` tools. |
-| `mcpServers.<name>.auth.roles.EDITOR` | string (non-empty) | yes |  | Authentik role that grants the `EDITOR` level: the `create_note`, `write_document` and `delete_document` tools. |
-| `mcpServers.<name>.auth.scopes` | array of string (non-empty) |  | `["openid","profile","email","roles"]` | Scopes advertised in the metadata and in the 401 challenge, which is what a client asks Authentik for. |
+| `mcpServers[].auth.type` | `"oauth"` |  | `"oauth"` | `oauth`, the default. |
+| `mcpServers[].auth.issuer` | string (uri) | yes |  | The authorization server clients log in at: the shared client registration's Authentik issuer, e.g. `https://auth.irha.cz/application/o/knowledge-base-mcp-clients/`. Advertised in the Protected Resource Metadata, and the only `iss` a token may carry — compared exactly, trailing slash included. |
+| `mcpServers[].auth.audience` | string (non-empty) | yes |  | The `aud` a token must carry: the endpoint's Authentik application for this environment, e.g. `knowledge-base-mcp-development-server1-production`. |
+| `mcpServers[].auth.key` | one of (see below) | yes |  | Where the signing keys come from: the issuer's JWKS (`source: jwks`), or an inline key in tests. |
+| `mcpServers[].auth.roles` | object | yes |  | The endpoint's Authentik role for each level, e.g. `{ READER: knowledge-base-mcp-development.reader, EDITOR: knowledge-base-mcp-development.editor }`. A token holding none of them is refused with 403; each tool then requires its own level. |
+| `mcpServers[].auth.roles.READER` | string (non-empty) | yes |  | Authentik role that grants the `READER` level: the `search`, `read` and `conventions` tools. |
+| `mcpServers[].auth.roles.EDITOR` | string (non-empty) | yes |  | Authentik role that grants the `EDITOR` level: the `create_note`, `write_document` and `delete_document` tools. |
+| `mcpServers[].auth.scopes` | array of string (non-empty) |  | `["openid","profile","email","roles"]` | Scopes advertised in the metadata and in the 401 challenge, which is what a client asks Authentik for. |
 
-##### `mcpServers.<name>.auth.key`: one of 2
+##### `mcpServers[].auth.key`: one of 2
 
 Pick the variant with `source`.
 
-###### `mcpServers.<name>.auth.key` — `source: "value"`
+###### `mcpServers[].auth.key` — `source: "value"`
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `mcpServers.<name>.auth.key.source` | `"value"` | yes |  | Inline key, carried in the configuration itself. |
-| `mcpServers.<name>.auth.key.algorithm` | string (non-empty) |  | `"HS256"` | Algorithm this key is for, and the only one accepted from this issuer. The `alg` in the token header is never trusted on its own. |
-| `mcpServers.<name>.auth.key.value` | string (non-empty) | yes |  | For `HS*`: the shared secret. Otherwise: a PEM-encoded public key. |
+| `mcpServers[].auth.key.source` | `"value"` | yes |  | Inline key, carried in the configuration itself. |
+| `mcpServers[].auth.key.algorithm` | string (non-empty) |  | `"HS256"` | Algorithm this key is for, and the only one accepted from this issuer. The `alg` in the token header is never trusted on its own. |
+| `mcpServers[].auth.key.value` | string (non-empty) | yes |  | For `HS*`: the shared secret. Otherwise: a PEM-encoded public key. |
 
-###### `mcpServers.<name>.auth.key` — `source: "jwks"`
-
-| Key | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `mcpServers.<name>.auth.key.source` | `"jwks"` | yes |  | Keys fetched from a remote JWKS endpoint. |
-| `mcpServers.<name>.auth.key.uri` | string (uri) | yes |  | URL of the JWKS endpoint. |
-| `mcpServers.<name>.auth.key.auth` | `"none"` \| `"serviceAccountToken"` |  | `"none"` | Credential for the JWKS fetch itself. `serviceAccountToken` sends the pod's Kubernetes service account token, for the apiserver JWKS, which is not anonymously readable. |
-| `mcpServers.<name>.auth.key.algorithms` | array of string (non-empty) |  | `["RS256"]` | Signature algorithms accepted from this issuer (an allowlist). |
-| `mcpServers.<name>.auth.key.cacheTtlSeconds` | integer (> 0) |  | `300` | How long a fetched key set is reused, in seconds. |
-| `mcpServers.<name>.auth.key.refreshCooldownMs` | integer (> 0) |  | `30000` | Minimum time between two key set fetches, in ms, so tokens with an unknown `kid` cannot force a fetch per request. |
-| `mcpServers.<name>.auth.key.timeoutMs` | integer (> 0) |  | `3000` | Time limit for one JWKS fetch, in ms. |
-
-#### `mcpServers.<name>.auth` — `type: "unauthenticated"`
+###### `mcpServers[].auth.key` — `source: "jwks"`
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `mcpServers.<name>.auth.defaultSubject` | string (pattern `^[\w.@+-]{1,150}$`) | yes |  | Subject of the principal when no usable `subjectHeader` value arrives. |
-| `mcpServers.<name>.auth.subjectHeader` | string (non-empty) |  |  | Header whose value, when present and matching the subject pattern, becomes the subject (e.g. `X-User`). Unverified: a label for logs and attribution, never a basis for access. |
-| `mcpServers.<name>.auth.subjectKind` | `"human"` \| `"service"` \| `"device"` |  | `"human"` | Caller class of the principal. |
-| `mcpServers.<name>.auth.type` | `"unauthenticated"` | yes |  | `unauthenticated`: no sign-in. Trusted networks only. |
-| `mcpServers.<name>.auth.roles` | object |  | `{"READER":"knowledge-base-mcp.reader","EDITOR":"knowledge-base-mcp.editor"}` | The role each level maps to, as with `oauth`; every request holds all of them, so tools keep their per-level checks. Optional: absent grants every level. Leave out `EDITOR` for a read-only endpoint. |
-| `mcpServers.<name>.auth.roles.READER` | string (non-empty) |  |  | Authentik role that grants the `READER` level: the `search`, `read` and `conventions` tools. |
-| `mcpServers.<name>.auth.roles.EDITOR` | string (non-empty) |  |  | Authentik role that grants the `EDITOR` level: the `create_note`, `write_document` and `delete_document` tools. |
+| `mcpServers[].auth.key.source` | `"jwks"` | yes |  | Keys fetched from a remote JWKS endpoint. |
+| `mcpServers[].auth.key.uri` | string (uri) | yes |  | URL of the JWKS endpoint. |
+| `mcpServers[].auth.key.auth` | `"none"` \| `"serviceAccountToken"` |  | `"none"` | Credential for the JWKS fetch itself. `serviceAccountToken` sends the pod's Kubernetes service account token, for the apiserver JWKS, which is not anonymously readable. |
+| `mcpServers[].auth.key.algorithms` | array of string (non-empty) |  | `["RS256"]` | Signature algorithms accepted from this issuer (an allowlist). |
+| `mcpServers[].auth.key.cacheTtlSeconds` | integer (> 0) |  | `300` | How long a fetched key set is reused, in seconds. |
+| `mcpServers[].auth.key.refreshCooldownMs` | integer (> 0) |  | `30000` | Minimum time between two key set fetches, in ms, so tokens with an unknown `kid` cannot force a fetch per request. |
+| `mcpServers[].auth.key.timeoutMs` | integer (> 0) |  | `3000` | Time limit for one JWKS fetch, in ms. |
+
+#### `mcpServers[].auth` — `type: "unauthenticated"`
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `mcpServers[].auth.defaultSubject` | string (pattern `^[\w.@+-]{1,150}$`) | yes |  | Subject of the principal when no usable `subjectHeader` value arrives. |
+| `mcpServers[].auth.subjectHeader` | string (non-empty) |  |  | Header whose value, when present and matching the subject pattern, becomes the subject (e.g. `X-User`). Unverified: a label for logs and attribution, never a basis for access. |
+| `mcpServers[].auth.subjectKind` | `"human"` \| `"service"` \| `"device"` |  | `"human"` | Caller class of the principal. |
+| `mcpServers[].auth.type` | `"unauthenticated"` | yes |  | `unauthenticated`: no sign-in. Trusted networks only. |
+| `mcpServers[].auth.roles` | object |  | `{"READER":"knowledge-base-mcp.reader","EDITOR":"knowledge-base-mcp.editor"}` | The role each level maps to, as with `oauth`; every request holds all of them, so tools keep their per-level checks. Optional: absent grants every level. Leave out `EDITOR` for a read-only endpoint. |
+| `mcpServers[].auth.roles.READER` | string (non-empty) |  |  | Authentik role that grants the `READER` level: the `search`, `read` and `conventions` tools. |
+| `mcpServers[].auth.roles.EDITOR` | string (non-empty) |  |  | Authentik role that grants the `EDITOR` level: the `create_note`, `write_document` and `delete_document` tools. |
 
 ## health
 

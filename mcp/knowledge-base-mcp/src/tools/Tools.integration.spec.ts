@@ -20,7 +20,7 @@ import { Server } from '../Server.js';
 import { ConfigService } from '../services/ConfigService.js';
 import { KnowledgeBaseRole } from '../models/config/KnowledgeBaseRole.enum.js';
 import { McpSearchConfigSchema } from '../models/config/McpSearchConfig.js';
-import { TEST_PUBLIC_URL, TEST_ROLES, TEST_SERVERS, userToken } from '../test/fixtures.js';
+import { TEST_PUBLIC_URL, TEST_ROLES, TEST_SERVER, TEST_SERVERS, userToken } from '../test/fixtures.js';
 import * as tools from './index.js';
 
 const MCP_HEADERS = { Accept: 'application/json, text/event-stream', 'Content-Type': 'application/json' };
@@ -318,14 +318,14 @@ describe('Tools (integration, through MCP)', () => {
     });
 
     describe('search settings of the endpoint', () => {
-        /** Gives DEVELOPMENT_KB a `search` block for the rest of the test. */
+        /** Gives the `/development` endpoint a `search` block for the rest of the test. */
         const configure = (search: object): void => {
             const configService = PlatformTest.get<ConfigService>(ConfigService);
             const servers = configService.config.mcpServers;
 
             vi.spyOn(configService, 'config', 'get').mockReturnValue({
                 ...configService.config,
-                mcpServers: { ...servers, DEVELOPMENT_KB: { ...servers.DEVELOPMENT_KB, search: McpSearchConfigSchema.parse(search) } }
+                mcpServers: servers.map((server) => server.path === TEST_SERVER.path ? { ...server, search: McpSearchConfigSchema.parse(search) } : server)
             });
         };
         const empty = (): void => {
