@@ -1,5 +1,24 @@
 # knowledge-base
 
+## 0.10.0
+
+### Minor Changes
+
+- [#448](https://github.com/radoslavirha/homelab-apps/pull/448) [`96471fd`](https://github.com/radoslavirha/homelab-apps/commit/96471fde91d5ba77f14a63e91929d062cd3cc3a4) Thanks [@radoslavirha](https://github.com/radoslavirha)! - **Breaking config change:** `mcpServers` is now a list of endpoints instead of a map keyed by `UPPER_SNAKE_CASE` names. Each entry's `name` identifies the endpoint in logs, refusals and auth, and must be unique, like `path`. The old map shape is refused at boot, so the homelab values must switch to the list in the same deploy.
+
+### Patch Changes
+
+- [#446](https://github.com/radoslavirha/homelab-apps/pull/446) [`3b5d95e`](https://github.com/radoslavirha/homelab-apps/commit/3b5d95e48cb28f2073110a76052932fd42febe84) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Ship `CONFIGURATION.md`, a configuration reference generated from the config schema and pinned by a test, and update dependencies: the latest toolkit-hub packages (`@radoslavirha/tsed-configuration` 0.10.0, `@radoslavirha/utils` 0.11.0, `@radoslavirha/tsed-logger` 0.7.11 and patch releases), Ts.ED 8.46, mongoose 9.12 and other patch/minor releases.
+
+- [#449](https://github.com/radoslavirha/homelab-apps/pull/449) [`3539f97`](https://github.com/radoslavirha/homelab-apps/commit/3539f9729aa84585a240da181eb847619123d9c1) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Upgrade OpenTelemetry JS to 3.x (SDK 3.1, experimental 0.301): `@opentelemetry/sdk-trace` replaces `sdk-trace-node`, and resources now also carry `os.*` and `service.instance.id`.
+
+- [#449](https://github.com/radoslavirha/homelab-apps/pull/449) [`3539f97`](https://github.com/radoslavirha/homelab-apps/commit/3539f9729aa84585a240da181eb847619123d9c1) Thanks [@radoslavirha](https://github.com/radoslavirha)! - New `otel.resourceAttributes` config key: extra resource attributes (string, number or boolean) on every span, metric and log record. `service.name` and `service.version` stay app-owned and are rejected.
+- Updated dependencies [[`3b5d95e`](https://github.com/radoslavirha/homelab-apps/commit/3b5d95e48cb28f2073110a76052932fd42febe84), [`3539f97`](https://github.com/radoslavirha/homelab-apps/commit/3539f9729aa84585a240da181eb847619123d9c1), [`3539f97`](https://github.com/radoslavirha/homelab-apps/commit/3539f9729aa84585a240da181eb847619123d9c1)]:
+  - @radoslavirha/auth@0.4.1
+  - @radoslavirha/tsed-http-provider@0.2.15
+  - @radoslavirha/otel@0.7.0
+  - @radoslavirha/tsed-health@0.3.7
+
 ## 0.9.0
 
 ### Minor Changes

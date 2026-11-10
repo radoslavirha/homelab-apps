@@ -1,5 +1,11 @@
 # @radoslavirha/auth
 
+## 0.4.1
+
+### Patch Changes
+
+- [#446](https://github.com/radoslavirha/homelab-apps/pull/446) [`3b5d95e`](https://github.com/radoslavirha/homelab-apps/commit/3b5d95e48cb28f2073110a76052932fd42febe84) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Describe every configuration field with `.describe()`, so generated configuration references (`ConfigDocs.render`) explain them.
+
 ## 0.4.0
 
 ### Minor Changes

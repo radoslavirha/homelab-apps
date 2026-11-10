@@ -1,5 +1,11 @@
 # homelab-dashboard-ui
 
+## 0.8.8
+
+### Patch Changes
+
+- [#446](https://github.com/radoslavirha/homelab-apps/pull/446) [`3b5d95e`](https://github.com/radoslavirha/homelab-apps/commit/3b5d95e48cb28f2073110a76052932fd42febe84) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update dependencies (vite, react-router-dom, vitest and other patch/minor releases).
+
 ## 0.8.7
 
 ### Patch Changes
