@@ -1,12 +1,11 @@
 import { context, propagation, ROOT_CONTEXT, SpanKind, SpanStatusCode, trace, type Span } from '@opentelemetry/api';
 import {
     InMemorySpanExporter,
-    NodeTracerProvider,
-    SimpleSpanProcessor,
     type ReadableSpan
-} from '@opentelemetry/sdk-trace-node';
+} from '@opentelemetry/sdk-trace';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { recordSpanError, withClientSpan, withEntryPointSpan, withSpan } from './spanTracing.js';
+import { registerTracerProvider } from './test/registerTracerProvider.js';
 
 const exporter = new InMemorySpanExporter();
 
@@ -30,7 +29,7 @@ describe('spanTracing', () => {
     // these assertions cover that wiring — including the SDK's own suppression check, which is
     // what makes `suppress` drop a whole subtree rather than only the wrapper span.
     beforeAll(() => {
-        new NodeTracerProvider({ spanProcessors: [new SimpleSpanProcessor(exporter)] }).register();
+        registerTracerProvider(exporter);
     });
 
     afterAll(() => {

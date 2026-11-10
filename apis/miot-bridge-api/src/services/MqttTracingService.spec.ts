@@ -2,13 +2,12 @@ import { PlatformTest } from '@tsed/platform-http/testing';
 import { SpanKind, trace } from '@opentelemetry/api';
 import {
     InMemorySpanExporter,
-    NodeTracerProvider,
-    SimpleSpanProcessor,
     type ReadableSpan
-} from '@opentelemetry/sdk-trace-node';
+} from '@opentelemetry/sdk-trace';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConfigService } from './ConfigService.js';
 import { MqttTracingService } from './MqttTracingService.js';
+import { registerTracerProvider } from '../test/registerTracerProvider.js';
 
 const TOPIC = 'miot-bridge/device/442/command';
 const TOPIC_TEMPLATE = 'miot-bridge/device/{deviceId}/command';
@@ -24,7 +23,7 @@ describe('MqttTracingService', () => {
     let configService: ConfigService;
 
     beforeAll(() => {
-        new NodeTracerProvider({ spanProcessors: [new SimpleSpanProcessor(exporter)] }).register();
+        registerTracerProvider(exporter);
     });
 
     afterAll(() => {

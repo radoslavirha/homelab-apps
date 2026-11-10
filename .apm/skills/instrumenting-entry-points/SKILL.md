@@ -354,10 +354,12 @@ await runJob({ …, suppressTrace: !this.shouldTrace(due, Date.now()) }, async (
 ## Verifying it
 
 Follow `packages/otel/src/jobTelemetry.spec.ts` and
-`apis/miot-bridge-api/src/services/DevicePropertyPollerService.spec.ts`. Register a real
-`NodeTracerProvider` with an `InMemorySpanExporter` *and* a real `MeterProvider` with a
-collect-on-demand `MetricReader` — the helpers read the **global** providers, so hand-built ones
-would not prove the wiring. Then assert:
+`apis/miot-bridge-api/src/services/DevicePropertyPollerService.spec.ts`. Register a real tracer
+provider with an `InMemorySpanExporter` through the package's `src/test/registerTracerProvider.ts`
+*and* a real `MeterProvider` with a collect-on-demand `MetricReader` — the helpers read the
+**global** providers, so hand-built ones would not prove the wiring. OpenTelemetry JS 3 dropped
+`NodeTracerProvider#register()`; the helper sets the provider, an `AsyncLocalStorageContextManager`
+and the W3C propagator itself. Without the context manager, nothing nests. Then assert:
 
 ```ts
 // 1. the entry point is a root

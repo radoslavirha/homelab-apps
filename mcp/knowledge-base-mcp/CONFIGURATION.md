@@ -391,6 +391,7 @@ Optional.
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `otel.debug` | boolean |  |  | Enable OTEL SDK debug logging via DiagConsoleLogger. |
+| `otel.resourceAttributes` | map of name → string \| number \| boolean |  |  | Extra resource attributes on every span, metric and log record, e.g. `{ "deployment.environment.name": "production" }`. Values are strings, numbers or booleans. `service.name` and `service.version` are not allowed. |
 | `otel.traces` | object |  |  | Trace export over OTLP/HTTP (batched). Omitted or disabled: no traces are exported. |
 | `otel.traces.enabled` | boolean | yes |  | Set to `false` to disable. Keys marked required are required only when this is `true`. |
 | `otel.traces.exporter` | object | yes |  | OTLP/HTTP exporter configuration. Required when traces are enabled. |

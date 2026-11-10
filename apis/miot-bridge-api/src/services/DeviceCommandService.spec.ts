@@ -8,10 +8,8 @@ import {
 } from '@opentelemetry/sdk-metrics';
 import {
     InMemorySpanExporter,
-    NodeTracerProvider,
-    SimpleSpanProcessor,
     type ReadableSpan
-} from '@opentelemetry/sdk-trace-node';
+} from '@opentelemetry/sdk-trace';
 import {
     MiotError,
     MIOT_DEFAULT_PORT,
@@ -47,6 +45,7 @@ import { DeviceCommandService } from './DeviceCommandService.js';
 import { DeviceStorageService } from './DeviceStorageService.js';
 import { MiotDeviceRegistry } from './MiotDeviceRegistry.js';
 import { ModelPropertyOverrideService } from './ModelPropertyOverrideService.js';
+import { registerTracerProvider } from '../test/registerTracerProvider.js';
 
 const STORAGE_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
 const DEVICE_ID = 442;
@@ -139,7 +138,7 @@ describe('DeviceCommandService', () => {
     let miotDevice: FakeMiotDevice;
 
     beforeAll(() => {
-        new NodeTracerProvider({ spanProcessors: [new SimpleSpanProcessor(exporter)] }).register();
+        registerTracerProvider(exporter);
     });
 
     afterAll(() => {
