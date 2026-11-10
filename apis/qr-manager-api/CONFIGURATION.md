@@ -96,8 +96,19 @@ Required.
 | `mongodb.enabled` | boolean | yes |  | Set to `false` to disable. Keys marked required are required only when this is `true`. |
 | `mongodb.url` | string | yes |  | MongoDB connection URL. |
 | `mongodb.connectionOptions` | object |  |  | Additional MongoDB connection options. |
+
+<details>
+<summary><code>mongodb.connectionOptions</code> — Additional MongoDB connection options.</summary>
+<blockquote>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `mongodb.connectionOptions` | object |  |  | Additional MongoDB connection options. |
 | `mongodb.connectionOptions.user` | string |  |  | Username for auth. |
 | `mongodb.connectionOptions.pass` | string |  |  | Password for auth. |
+
+</blockquote>
+</details>
 
 ## redirect
 
@@ -132,21 +143,76 @@ Optional.
 | `logger.enabled` | boolean |  | `true` | Write logs at all. `false` silences every log call, application and HTTP request logs alike. |
 | `logger.level` | `"fatal"` \| `"error"` \| `"warn"` \| `"info"` \| `"debug"` \| `"trace"` |  | `"info"` | Logging level. |
 | `logger.requests` | object |  | `{}` | HTTP request logging: one entry per handled request under scope `HTTP_REQUEST`, written when the response finishes, with `reqId`, `method`, `url`, `status` and `duration` (ms). Status below 400 logs `info` "Request completed"; 400 and above logs `error` "Request failed" with the error fields. |
+
+<details>
+<summary><code>logger.requests</code> — HTTP request logging: one entry per handled request under scope <code>HTTP_REQUEST</code>, written when the response finishes, with <code>reqId</code>, <code>method</code>, <code>url</code>, <code>status</code> and <code>duration</code> (ms). Status below 400 logs <code>info</code> "Request completed"; 400 and above logs <code>error</code> "Request failed" with the error fields.</summary>
+<blockquote>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `logger.requests` | object |  | `{}` | HTTP request logging: one entry per handled request under scope `HTTP_REQUEST`, written when the response finishes, with `reqId`, `method`, `url`, `status` and `duration` (ms). Status below 400 logs `info` "Request completed"; 400 and above logs `error` "Request failed" with the error fields. |
 | `logger.requests.enabled` | boolean |  | `true` | Write one log entry per handled HTTP request. `false` stops request logging only; application log calls are unaffected. |
+| `logger.requests.headers` | object |  |  | Request headers, logged as `headers`. Credential headers (`authorization`, `cookie`, `set-cookie`, `proxy-authorization`, `x-api-key`) are redacted by default; a configured `redactPaths` replaces that list, so `[]` logs them raw. |
+| `logger.requests.query` | object |  |  | Parsed query-string parameters, logged as `query`. The logged `url` never carries the query string. |
+| `logger.requests.request` | object |  |  | Request body, logged as `request`. Bodies with a text content type (none, `text/*`, JSON, XML, GraphQL, JavaScript, form-urlencoded, `+json`, `+xml`) are logged; any other body is logged as `[[ BINARY ]]`. |
+| `logger.requests.response` | object |  |  | Response body, logged as `response`, after the same Ts.ED serialisation the client receives, so `redactPaths` match wire names. A non-text content type is logged as `[[ BINARY ]]`; a body that cannot be serialised, as `[[ UNSERIALIZABLE ]]`. |
+| `logger.requests.stack` | boolean |  | `true` | Add `error_stack` to the entry of a failed request (status 400 or above) when the thrown value is an `Error` or has a string `message`. |
+| `logger.requests.ignorePaths` | array of string |  | `["/health","/healthz"]` | Request paths that get no log entry. Each is a case-sensitive prefix matched on whole path segments against the path without its query string: `/health` matches `/health` and `/health/live`, not `/healthcheck`. A trailing slash is ignored, so `/` matches every path. |
+
+<details>
+<summary><code>logger.requests.headers</code> — Request headers, logged as <code>headers</code>. Credential headers (<code>authorization</code>, <code>cookie</code>, <code>set-cookie</code>, <code>proxy-authorization</code>, <code>x-api-key</code>) are redacted by default; a configured <code>redactPaths</code> replaces that list, so <code>[]</code> logs them raw.</summary>
+<blockquote>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
 | `logger.requests.headers` | object |  |  | Request headers, logged as `headers`. Credential headers (`authorization`, `cookie`, `set-cookie`, `proxy-authorization`, `x-api-key`) are redacted by default; a configured `redactPaths` replaces that list, so `[]` logs them raw. |
 | `logger.requests.headers.enabled` | boolean |  | `true` | Include this field in the output. `false` omits the field entirely; it never means logging it unredacted. |
 | `logger.requests.headers.redactPaths` | array of string (non-empty) |  | `["authorization","cookie","[\"set-cookie\"]","[\"proxy-authorization\"]","[\"x-api-key\"]"]` | Path selectors whose values are replaced with `***` before the field is written: `token` (root key), `user.password` (nested path), `items.*.token` (wildcard), `["set-cookie"]` (bracket form, required for names that are not identifiers, such as ones with a hyphen). A configured list replaces the default; it is never merged with it, and `[]` redacts nothing. |
+
+</blockquote>
+</details>
+
+<details>
+<summary><code>logger.requests.query</code> — Parsed query-string parameters, logged as <code>query</code>. The logged <code>url</code> never carries the query string.</summary>
+<blockquote>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
 | `logger.requests.query` | object |  |  | Parsed query-string parameters, logged as `query`. The logged `url` never carries the query string. |
 | `logger.requests.query.enabled` | boolean |  | `true` | Include this field in the output. `false` omits the field entirely; it never means logging it unredacted. |
 | `logger.requests.query.redactPaths` | array of string (non-empty) |  | `[]` | Path selectors whose values are replaced with `***` before the field is written: `token` (root key), `user.password` (nested path), `items.*.token` (wildcard), `["set-cookie"]` (bracket form, required for names that are not identifiers, such as ones with a hyphen). A configured list replaces the default; it is never merged with it, and `[]` redacts nothing. |
+
+</blockquote>
+</details>
+
+<details>
+<summary><code>logger.requests.request</code> — Request body, logged as <code>request</code>. Bodies with a text content type (none, <code>text/*</code>, JSON, XML, GraphQL, JavaScript, form-urlencoded, <code>+json</code>, <code>+xml</code>) are logged; any other body is logged as <code>[[ BINARY ]]</code>.</summary>
+<blockquote>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
 | `logger.requests.request` | object |  |  | Request body, logged as `request`. Bodies with a text content type (none, `text/*`, JSON, XML, GraphQL, JavaScript, form-urlencoded, `+json`, `+xml`) are logged; any other body is logged as `[[ BINARY ]]`. |
 | `logger.requests.request.enabled` | boolean |  | `true` | Include this field in the output. `false` omits the field entirely; it never means logging it unredacted. |
 | `logger.requests.request.redactPaths` | array of string (non-empty) |  | `[]` | Path selectors whose values are replaced with `***` before the field is written: `token` (root key), `user.password` (nested path), `items.*.token` (wildcard), `["set-cookie"]` (bracket form, required for names that are not identifiers, such as ones with a hyphen). A configured list replaces the default; it is never merged with it, and `[]` redacts nothing. |
+
+</blockquote>
+</details>
+
+<details>
+<summary><code>logger.requests.response</code> — Response body, logged as <code>response</code>, after the same Ts.ED serialisation the client receives, so <code>redactPaths</code> match wire names. A non-text content type is logged as <code>[[ BINARY ]]</code>; a body that cannot be serialised, as <code>[[ UNSERIALIZABLE ]]</code>.</summary>
+<blockquote>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
 | `logger.requests.response` | object |  |  | Response body, logged as `response`, after the same Ts.ED serialisation the client receives, so `redactPaths` match wire names. A non-text content type is logged as `[[ BINARY ]]`; a body that cannot be serialised, as `[[ UNSERIALIZABLE ]]`. |
 | `logger.requests.response.enabled` | boolean |  | `true` | Include this field in the output. `false` omits the field entirely; it never means logging it unredacted. |
 | `logger.requests.response.redactPaths` | array of string (non-empty) |  | `[]` | Path selectors whose values are replaced with `***` before the field is written: `token` (root key), `user.password` (nested path), `items.*.token` (wildcard), `["set-cookie"]` (bracket form, required for names that are not identifiers, such as ones with a hyphen). A configured list replaces the default; it is never merged with it, and `[]` redacts nothing. |
-| `logger.requests.stack` | boolean |  | `true` | Add `error_stack` to the entry of a failed request (status 400 or above) when the thrown value is an `Error` or has a string `message`. |
-| `logger.requests.ignorePaths` | array of string |  | `["/health","/healthz"]` | Request paths that get no log entry. Each is a case-sensitive prefix matched on whole path segments against the path without its query string: `/health` matches `/health` and `/health/live`, not `/healthcheck`. A trailing slash is ignored, so `/` matches every path. |
+
+</blockquote>
+</details>
+
+</blockquote>
+</details>
 
 ## otel
 
@@ -158,41 +224,83 @@ Optional.
 | --- | --- | --- | --- | --- |
 | `otel.debug` | boolean |  |  | Enable OTEL SDK debug logging via DiagConsoleLogger. |
 | `otel.resourceAttributes` | map of name → string \| number \| boolean |  |  | Extra resource attributes on every span, metric and log record, e.g. `{ "deployment.environment.name": "production" }`. Values are strings, numbers or booleans. `service.name` and `service.version` are not allowed. |
+| `otel.traces` | object |  |  | Trace export over OTLP/HTTP (batched). Omitted or disabled: no traces are exported. |
+| `otel.metrics` | object |  |  | Metric export over OTLP/HTTP (periodic). Omitted or disabled: no metrics are exported. |
+| `otel.logs` | object |  |  | Log record export over OTLP/HTTP (batched). Omitted or disabled: no log records are exported. |
 
 <details>
 <summary><code>otel.traces</code> — Trace export over OTLP/HTTP (batched). Omitted or disabled: no traces are exported.</summary>
+<blockquote>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `otel.traces` | object |  |  | Trace export over OTLP/HTTP (batched). Omitted or disabled: no traces are exported. |
 | `otel.traces.enabled` | boolean | yes |  | Set to `false` to disable. Keys marked required are required only when this is `true`. |
 | `otel.traces.exporter` | object | yes |  | OTLP/HTTP exporter configuration. Required when traces are enabled. |
+
+<details>
+<summary><code>otel.traces.exporter</code> — OTLP/HTTP exporter configuration. Required when traces are enabled.</summary>
+<blockquote>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `otel.traces.exporter` | object | yes |  | OTLP/HTTP exporter configuration. Required when traces are enabled. |
 | `otel.traces.exporter.url` | string | yes |  | OTLP/HTTP exporter endpoint URL. |
 
+</blockquote>
+</details>
+
+</blockquote>
 </details>
 
 <details>
 <summary><code>otel.metrics</code> — Metric export over OTLP/HTTP (periodic). Omitted or disabled: no metrics are exported.</summary>
+<blockquote>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `otel.metrics` | object |  |  | Metric export over OTLP/HTTP (periodic). Omitted or disabled: no metrics are exported. |
 | `otel.metrics.enabled` | boolean | yes |  | Set to `false` to disable. Keys marked required are required only when this is `true`. |
 | `otel.metrics.exporter` | object | yes |  | OTLP/HTTP exporter configuration. Required when metrics are enabled. |
+
+<details>
+<summary><code>otel.metrics.exporter</code> — OTLP/HTTP exporter configuration. Required when metrics are enabled.</summary>
+<blockquote>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `otel.metrics.exporter` | object | yes |  | OTLP/HTTP exporter configuration. Required when metrics are enabled. |
 | `otel.metrics.exporter.url` | string | yes |  | OTLP/HTTP exporter endpoint URL. |
 
+</blockquote>
+</details>
+
+</blockquote>
 </details>
 
 <details>
 <summary><code>otel.logs</code> — Log record export over OTLP/HTTP (batched). Omitted or disabled: no log records are exported.</summary>
+<blockquote>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `otel.logs` | object |  |  | Log record export over OTLP/HTTP (batched). Omitted or disabled: no log records are exported. |
 | `otel.logs.enabled` | boolean | yes |  | Set to `false` to disable. Keys marked required are required only when this is `true`. |
 | `otel.logs.exporter` | object | yes |  | OTLP/HTTP exporter configuration. Required when logs are enabled. |
+
+<details>
+<summary><code>otel.logs.exporter</code> — OTLP/HTTP exporter configuration. Required when logs are enabled.</summary>
+<blockquote>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `otel.logs.exporter` | object | yes |  | OTLP/HTTP exporter configuration. Required when logs are enabled. |
 | `otel.logs.exporter.url` | string | yes |  | OTLP/HTTP exporter endpoint URL. |
 
+</blockquote>
+</details>
+
+</blockquote>
 </details>
 
 ## auth
@@ -205,16 +313,27 @@ Required.
 | --- | --- | --- | --- | --- |
 | `auth.IDP` | one of (see below) | yes |  | How callers of the routes guarded by this method are verified. |
 
-### `auth.IDP`: one of 2
+<details>
+<summary><code>auth.IDP</code>: one of 2</summary>
+<blockquote>
 
 Pick the variant with `type`.
 
 <details>
 <summary><code>auth.IDP</code> — <code>type: "bearer-jwt"</code></summary>
+<blockquote>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `auth.IDP.type` | `"bearer-jwt"` | yes |  | Verify a bearer JWT from the `Authorization` header. |
+| `auth.IDP.trustedIssuers` | array of object (at least 1 item) | yes |  | Issuers whose tokens are accepted. At least one; each `issuer` at most once. A token is matched to a row by its `iss`. |
+
+<details>
+<summary><code>auth.IDP.trustedIssuers[]</code> — Issuers whose tokens are accepted. At least one; each <code>issuer</code> at most once. A token is matched to a row by its <code>iss</code>.</summary>
+<blockquote>
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
 | `auth.IDP.trustedIssuers` | array of object (at least 1 item) | yes |  | Issuers whose tokens are accepted. At least one; each `issuer` at most once. A token is matched to a row by its `iss`. |
 | `auth.IDP.trustedIssuers[].name` | string (non-empty) | yes |  | Label for this issuer in the boot log. Not matched against anything. |
 | `auth.IDP.trustedIssuers[].issuer` | string (non-empty) | yes |  | Exact `iss` value to match, compared as a string. Never normalised: a trailing slash matters. |
@@ -223,12 +342,15 @@ Pick the variant with `type`.
 | `auth.IDP.trustedIssuers[].subjectKind` | `"human"` \| `"service"` \| `"device"` |  | `"human"` | Caller class that tokens from this issuer represent, stamped onto the principal. |
 | `auth.IDP.trustedIssuers[].rolesClaim` | string |  | `"roles"` | Token claim the roles are read from. A token without it has no roles. |
 
-#### `auth.IDP.trustedIssuers[].key`: one of 2
+<details>
+<summary><code>auth.IDP.trustedIssuers[].key</code>: one of 2</summary>
+<blockquote>
 
 Pick the variant with `source`.
 
 <details>
 <summary><code>auth.IDP.trustedIssuers[].key</code> — <code>source: "value"</code></summary>
+<blockquote>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -236,10 +358,12 @@ Pick the variant with `source`.
 | `auth.IDP.trustedIssuers[].key.algorithm` | string (non-empty) |  | `"HS256"` | Algorithm this key is for, and the only one accepted from this issuer. The `alg` in the token header is never trusted on its own. |
 | `auth.IDP.trustedIssuers[].key.value` | string (non-empty) | yes |  | For `HS*`: the shared secret. Otherwise: a PEM-encoded public key. |
 
+</blockquote>
 </details>
 
 <details>
 <summary><code>auth.IDP.trustedIssuers[].key</code> — <code>source: "jwks"</code></summary>
+<blockquote>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -251,12 +375,21 @@ Pick the variant with `source`.
 | `auth.IDP.trustedIssuers[].key.refreshCooldownMs` | integer (> 0) |  | `30000` | Minimum time between two key set fetches, in ms, so tokens with an unknown `kid` cannot force a fetch per request. |
 | `auth.IDP.trustedIssuers[].key.timeoutMs` | integer (> 0) |  | `3000` | Time limit for one JWKS fetch, in ms. |
 
+</blockquote>
 </details>
 
+</blockquote>
+</details>
+
+</blockquote>
+</details>
+
+</blockquote>
 </details>
 
 <details>
 <summary><code>auth.IDP</code> — <code>type: "unauthenticated"</code></summary>
+<blockquote>
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -266,4 +399,8 @@ Pick the variant with `source`.
 | `auth.IDP.subjectHeader` | string (non-empty) |  |  | Header whose value, when present and matching the subject pattern, becomes the subject (e.g. `X-User`). Unverified: a label for logs and attribution, never a basis for access. |
 | `auth.IDP.subjectKind` | `"human"` \| `"service"` \| `"device"` |  | `"human"` | Caller class of the principal. |
 
+</blockquote>
+</details>
+
+</blockquote>
 </details>
