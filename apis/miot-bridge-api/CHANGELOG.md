@@ -1,5 +1,13 @@
 # miot-bridge
 
+## 0.30.11
+
+### Patch Changes
+
+- [#452](https://github.com/radoslavirha/homelab-apps/pull/452) [`2c01cef`](https://github.com/radoslavirha/homelab-apps/commit/2c01cef22a41cb1d4ef47374510d15ec2e2a9fa2) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update `@radoslavirha/tsed-configuration` to 0.11.1, `@radoslavirha/tsed-platform` to 6.0.6 and `@radoslavirha/tsed-swagger` to 9.1.21. In `CONFIGURATION.md`, every nested object, union and union variant is now its own closed `<details>` block, indented under its parent, and a union is printed in full wherever it occurs instead of pointing back to an earlier copy.
+- Updated dependencies [[`2c01cef`](https://github.com/radoslavirha/homelab-apps/commit/2c01cef22a41cb1d4ef47374510d15ec2e2a9fa2)]:
+  - @radoslavirha/tsed-auth@0.4.3
+
 ## 0.30.10
 
 ### Patch Changes
