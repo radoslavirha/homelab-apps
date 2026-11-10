@@ -1,5 +1,11 @@
 # knowledge-base
 
+## 0.9.0
+
+### Minor Changes
+
+- [#444](https://github.com/radoslavirha/homelab-apps/pull/444) [`72e2860`](https://github.com/radoslavirha/homelab-apps/commit/72e2860b51938592d2fc4321de6ada646531f36a) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Search settings per endpoint: an optional `mcpServers.<KEY>.search` block sets the default and maximum `limit`, the embedding model and the RRF weights sent to knowledge-base-api, so a model or a blend can be tried through config and a restart. The `search` tool's `limit` now accepts up to 50, lowered to the endpoint's `maxLimit` (default 50).
+
 ## 0.8.0
 
 ### Minor Changes
