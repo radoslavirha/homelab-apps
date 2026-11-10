@@ -13,8 +13,13 @@ export const DEFAULT_SCOPES = ['openid', 'profile', 'email', 'roles'];
 const REQUIRED_SCOPES = ['profile', 'roles'];
 
 /** One Authentik role per `KnowledgeBaseRole`, every level required: a tool may ask for any of them. */
+const ROLE_DESCRIPTIONS: Record<KnowledgeBaseRole, string> = {
+    [KnowledgeBaseRole.Reader]: 'Authentik role that grants the `READER` level: the `search`, `read` and `conventions` tools.',
+    [KnowledgeBaseRole.Editor]: 'Authentik role that grants the `EDITOR` level: the `create_note`, `write_document` and `delete_document` tools.'
+};
+
 const RolesSchema = z.object(
-    Object.fromEntries(Object.values(KnowledgeBaseRole).map((level) => [level, z.string().min(1)])) as Record<KnowledgeBaseRole, z.ZodString>
+    Object.fromEntries(Object.values(KnowledgeBaseRole).map((level) => [level, z.string().min(1).describe(ROLE_DESCRIPTIONS[level])])) as Record<KnowledgeBaseRole, z.ZodString>
 );
 
 /**

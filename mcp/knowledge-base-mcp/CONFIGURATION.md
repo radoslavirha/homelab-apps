@@ -284,8 +284,8 @@ Pick the variant with `type`.
 | `mcpServers.<name>.auth.audience` | string (non-empty) | yes |  | The `aud` a token must carry: the endpoint's Authentik application for this environment, e.g. `knowledge-base-mcp-development-server1-production`. |
 | `mcpServers.<name>.auth.key` | one of (see below) | yes |  | Where the signing keys come from: the issuer's JWKS (`source: jwks`), or an inline key in tests. |
 | `mcpServers.<name>.auth.roles` | object | yes |  | The endpoint's Authentik role for each level, e.g. `{ READER: knowledge-base-mcp-development.reader, EDITOR: knowledge-base-mcp-development.editor }`. A token holding none of them is refused with 403; each tool then requires its own level. |
-| `mcpServers.<name>.auth.roles.READER` | string (non-empty) | yes |  |  |
-| `mcpServers.<name>.auth.roles.EDITOR` | string (non-empty) | yes |  |  |
+| `mcpServers.<name>.auth.roles.READER` | string (non-empty) | yes |  | Authentik role that grants the `READER` level: the `search`, `read` and `conventions` tools. |
+| `mcpServers.<name>.auth.roles.EDITOR` | string (non-empty) | yes |  | Authentik role that grants the `EDITOR` level: the `create_note`, `write_document` and `delete_document` tools. |
 | `mcpServers.<name>.auth.scopes` | array of string (non-empty) |  | `["openid","profile","email","roles"]` | Scopes advertised in the metadata and in the 401 challenge, which is what a client asks Authentik for. |
 
 ##### `mcpServers.<name>.auth.key`: one of 2
@@ -321,8 +321,8 @@ Pick the variant with `source`.
 | `mcpServers.<name>.auth.subjectKind` | `"human"` \| `"service"` \| `"device"` |  | `"human"` | Caller class of the principal. |
 | `mcpServers.<name>.auth.type` | `"unauthenticated"` | yes |  | `unauthenticated`: no sign-in. Trusted networks only. |
 | `mcpServers.<name>.auth.roles` | object |  | `{"READER":"knowledge-base-mcp.reader","EDITOR":"knowledge-base-mcp.editor"}` | The role each level maps to, as with `oauth`; every request holds all of them, so tools keep their per-level checks. Optional: absent grants every level. Leave out `EDITOR` for a read-only endpoint. |
-| `mcpServers.<name>.auth.roles.READER` | string (non-empty) |  |  |  |
-| `mcpServers.<name>.auth.roles.EDITOR` | string (non-empty) |  |  |  |
+| `mcpServers.<name>.auth.roles.READER` | string (non-empty) |  |  | Authentik role that grants the `READER` level: the `search`, `read` and `conventions` tools. |
+| `mcpServers.<name>.auth.roles.EDITOR` | string (non-empty) |  |  | Authentik role that grants the `EDITOR` level: the `create_note`, `write_document` and `delete_document` tools. |
 
 ## health
 
