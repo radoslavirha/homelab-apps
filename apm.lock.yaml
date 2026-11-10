@@ -1,11 +1,11 @@
 lockfile_version: '1'
-generated_at: '2026-11-10T10:37:40.075605+00:00'
+generated_at: '2026-11-10T11:37:06.784825+00:00'
 apm_version: 0.31.0
 dependencies:
 - repo_url: radoslavirha/toolkit-hub
   name: toolkit-adoption
   host: github.com
-  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
+  resolved_commit: efd57d55157c2394204b5e7eeb0f85d81e920fe3
   version: 0.1.1
   virtual_path: apm-plugins/adoption
   is_virtual: true
@@ -20,7 +20,7 @@ dependencies:
 - repo_url: radoslavirha/toolkit-hub
   name: tsed-service
   host: github.com
-  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
+  resolved_commit: efd57d55157c2394204b5e7eeb0f85d81e920fe3
   version: 0.2.2
   virtual_path: apm-plugins/tsed-service
   is_virtual: true
@@ -35,8 +35,8 @@ dependencies:
 - repo_url: radoslavirha/toolkit-hub
   name: config-eslint
   host: github.com
-  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
-  version: 0.5.1
+  resolved_commit: efd57d55157c2394204b5e7eeb0f85d81e920fe3
+  version: 0.5.2
   virtual_path: config/config-eslint
   is_virtual: true
   package_type: apm_package
@@ -45,13 +45,13 @@ dependencies:
   - .claude/skills/using-config-eslint/SKILL.md
   deployed_file_hashes:
     .claude/skills/using-config-eslint/SKILL.md: sha256:75397d11da7d0693e8e541126bf08f4e1caace0a542abe5d1011f917638fc13e
-  content_hash: sha256:a0945208ed37a91a7679074e25cbda6a1a0e9e4d38211c8bacf4449fe1bcd04a
+  content_hash: sha256:ea94511338d35ffc832cd31ccc94234f95364602b6f607972fd989eee9812d9a
   declared_license: MIT
 - repo_url: radoslavirha/toolkit-hub
   name: config-tsdown
   host: github.com
-  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
-  version: 0.2.7
+  resolved_commit: efd57d55157c2394204b5e7eeb0f85d81e920fe3
+  version: 0.2.8
   virtual_path: config/config-tsdown
   is_virtual: true
   package_type: apm_package
@@ -60,13 +60,13 @@ dependencies:
   - .claude/skills/using-config-tsdown/SKILL.md
   deployed_file_hashes:
     .claude/skills/using-config-tsdown/SKILL.md: sha256:0e253ff7ae7dba25c2968d016c43f79e0644709d30c71e2a232cc28c4b32c5f0
-  content_hash: sha256:1ccc184e2bb89469e9115a0ed217084f2a1e87dd72416812c086cb55ee0b8fc0
+  content_hash: sha256:7dd44968bbc21c4cdff4524f5e7b2f5d90fac47523bc7f8020578bf40217051b
   declared_license: MIT
 - repo_url: radoslavirha/toolkit-hub
   name: config-typescript
   host: github.com
-  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
-  version: 1.1.8
+  resolved_commit: efd57d55157c2394204b5e7eeb0f85d81e920fe3
+  version: 1.1.9
   virtual_path: config/config-typescript
   is_virtual: true
   package_type: apm_package
@@ -75,13 +75,13 @@ dependencies:
   - .claude/skills/using-config-typescript/SKILL.md
   deployed_file_hashes:
     .claude/skills/using-config-typescript/SKILL.md: sha256:d2c95454a5c7beafba15acde0fa673c0e79741c714d102e24b6159b9323bf4cc
-  content_hash: sha256:eaa3ad8a2840ee6749a00f1d5fa6b5cfdfbef82f36f1ad220ae68cd1a9f35e5e
+  content_hash: sha256:651ad860b8b3eb00c45fee9a2e35a074e488b142ec79b35f90ceee492a469132
   declared_license: MIT
 - repo_url: radoslavirha/toolkit-hub
   name: config-vitest
   host: github.com
-  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
-  version: 0.4.10
+  resolved_commit: efd57d55157c2394204b5e7eeb0f85d81e920fe3
+  version: 0.4.11
   virtual_path: config/config-vitest
   is_virtual: true
   package_type: apm_package
@@ -90,13 +90,13 @@ dependencies:
   - .claude/skills/using-config-vitest/SKILL.md
   deployed_file_hashes:
     .claude/skills/using-config-vitest/SKILL.md: sha256:8fccf14fe3696e6fab3de3c6b397e1b108440ebfbeb9116c3cfccf54ca2b1dac
-  content_hash: sha256:210a566e4f68e07d40a7be9b0750b595c6a8ac8618e56112bc0cf26f24b8f968
+  content_hash: sha256:9b1faac8e71085bea2ae88e9b5fffae75120c88500e84667e7285b4b846427e2
   declared_license: MIT
 - repo_url: radoslavirha/toolkit-hub
   name: redaction
   host: github.com
-  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
-  version: 0.3.9
+  resolved_commit: efd57d55157c2394204b5e7eeb0f85d81e920fe3
+  version: 0.3.10
   virtual_path: packages/redaction
   is_virtual: true
   package_type: apm_package
@@ -105,12 +105,12 @@ dependencies:
   - .claude/skills/using-redaction/SKILL.md
   deployed_file_hashes:
     .claude/skills/using-redaction/SKILL.md: sha256:25db3e2d8503c09f984df520cde019f31a2d64b4c4513ce86a7361a93faeaf00
-  content_hash: sha256:515a88927389a168b9a68f5ecfdf322408954126cf7b94107ebcb756b128aa83
+  content_hash: sha256:e2d9eec48df1619ad9fc0f52da5e28654e802b61fd9f4464845a67247ada73c8
   declared_license: MIT
 - repo_url: radoslavirha/toolkit-hub
   name: utils
   host: github.com
-  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
+  resolved_commit: efd57d55157c2394204b5e7eeb0f85d81e920fe3
   version: 0.11.0
   virtual_path: packages/utils
   is_virtual: true
@@ -120,13 +120,13 @@ dependencies:
   - .claude/skills/using-utils/SKILL.md
   deployed_file_hashes:
     .claude/skills/using-utils/SKILL.md: sha256:6a3fbeb9a83ba5c3f33ed08010a16e7c000366de290c803934d70720577c980a
-  content_hash: sha256:b3842e08bf0a9b886bbb532ed5b1ac28d543aeb5b5b93baee6ec0a0e3dabf211
+  content_hash: sha256:dbcf0ce9068f001d09701b5ded84f267fb1d5f6f5c55e9dba7816da975d1b753
   declared_license: MIT
 - repo_url: radoslavirha/toolkit-hub
   name: tsed-common
   host: github.com
-  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
-  version: 0.7.2
+  resolved_commit: efd57d55157c2394204b5e7eeb0f85d81e920fe3
+  version: 0.7.3
   virtual_path: tsed/common
   is_virtual: true
   package_type: apm_package
@@ -135,13 +135,13 @@ dependencies:
   - .claude/skills/using-tsed-common/SKILL.md
   deployed_file_hashes:
     .claude/skills/using-tsed-common/SKILL.md: sha256:30ea8bf5b4db217a69ccd52e1d381c1d5151c3e287cf7000a8f5983000f97fe3
-  content_hash: sha256:93f3c428cdf5977506e657c9320739855eeaf34d7b6561a79962d573f1eecd0b
+  content_hash: sha256:48e618c929ef04225fc769257b0274d83e216d2b80c1c42e049118c6d17c96f9
   declared_license: MIT
 - repo_url: radoslavirha/toolkit-hub
   name: tsed-configuration
   host: github.com
-  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
-  version: 0.10.0
+  resolved_commit: efd57d55157c2394204b5e7eeb0f85d81e920fe3
+  version: 0.10.1
   virtual_path: tsed/configuration
   is_virtual: true
   package_type: apm_package
@@ -150,13 +150,13 @@ dependencies:
   - .claude/skills/using-tsed-configuration/SKILL.md
   deployed_file_hashes:
     .claude/skills/using-tsed-configuration/SKILL.md: sha256:be2cf12bef61b28d0c5254be558897fbdb8c184995d4588c3c05f1b88d7bf3df
-  content_hash: sha256:87f6a638f1de14927fb0f0cb6591ef8ae01232978848521c80e0161b47665402
+  content_hash: sha256:5fe8fc4666e79d808d021b5f1b1f0b9e01ae0d437cd372ca42b60ee8a77b5e96
   declared_license: MIT
 - repo_url: radoslavirha/toolkit-hub
   name: tsed-logger
   host: github.com
-  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
-  version: 0.7.10
+  resolved_commit: efd57d55157c2394204b5e7eeb0f85d81e920fe3
+  version: 0.7.12
   virtual_path: tsed/logger
   is_virtual: true
   package_type: apm_package
@@ -165,13 +165,13 @@ dependencies:
   - .claude/skills/using-tsed-logger/SKILL.md
   deployed_file_hashes:
     .claude/skills/using-tsed-logger/SKILL.md: sha256:e0d6ac3bc76bd677f4bdffba62e10fd5bc92c01eaa17ba6e5dac5a6fbc1951f7
-  content_hash: sha256:cc9e6afe38221459c974a1f7751db2a27a4712c1b3d0e2d2fa45d82d3141cc90
+  content_hash: sha256:8023b4f5b05e4034f9db777ccfa2619b2097a115266b4c03c227c4feb8d021d7
   declared_license: MIT
 - repo_url: radoslavirha/toolkit-hub
   name: tsed-mongoose
   host: github.com
-  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
-  version: 5.1.3
+  resolved_commit: efd57d55157c2394204b5e7eeb0f85d81e920fe3
+  version: 5.1.4
   virtual_path: tsed/mongoose
   is_virtual: true
   package_type: apm_package
@@ -180,13 +180,13 @@ dependencies:
   - .claude/skills/using-tsed-mongoose/SKILL.md
   deployed_file_hashes:
     .claude/skills/using-tsed-mongoose/SKILL.md: sha256:3c43672a82d17216ec3cb0e223283df63878644e85fc4ea3bef80d8db47c5d33
-  content_hash: sha256:d690b65651cb23f4ae1f0db52a2d35bf40cc79eef9ce93ed2715d69dbf2a61d3
+  content_hash: sha256:45d4ffa635a4e038d42b370335309619fdd286b2db1fc7133468da8ca8f93147
   declared_license: MIT
 - repo_url: radoslavirha/toolkit-hub
   name: tsed-platform
   host: github.com
-  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
-  version: 6.0.2
+  resolved_commit: efd57d55157c2394204b5e7eeb0f85d81e920fe3
+  version: 6.0.4
   virtual_path: tsed/platform
   is_virtual: true
   package_type: apm_package
@@ -195,13 +195,13 @@ dependencies:
   - .claude/skills/using-tsed-platform/SKILL.md
   deployed_file_hashes:
     .claude/skills/using-tsed-platform/SKILL.md: sha256:8d5a0c2a27de870b667a4c57cdfc024b381c445b00db2e0a355dbec541b12a9b
-  content_hash: sha256:dbb29e796ae309505557a2ee9f2a1e872eadb51804b9e185cba36375a957d328
+  content_hash: sha256:ed4791cced77e9f8d152b302ca6e7ccf432a7321e6f791d0b0c29b81c5893e25
   declared_license: MIT
 - repo_url: radoslavirha/toolkit-hub
   name: tsed-swagger
   host: github.com
-  resolved_commit: 9689152817d8d811e1efee2bd6137517ec02c98a
-  version: 9.1.17
+  resolved_commit: efd57d55157c2394204b5e7eeb0f85d81e920fe3
+  version: 9.1.19
   virtual_path: tsed/swagger
   is_virtual: true
   package_type: apm_package
@@ -210,7 +210,7 @@ dependencies:
   - .claude/skills/using-tsed-swagger/SKILL.md
   deployed_file_hashes:
     .claude/skills/using-tsed-swagger/SKILL.md: sha256:cc2057a96be42f4e619b73b5ea5dae48170284ea35c5a3c49421ac5e9ec44389
-  content_hash: sha256:596c5b9da4fdcb319dfd17bbaf74a455503d8b846cbcb75ee4db970d204631ed
+  content_hash: sha256:dc46491acd7a09e622018eab7facdfd73688ee896377c6316412b3c365f37415
   declared_license: MIT
 deployments:
 - kind: project-relative
