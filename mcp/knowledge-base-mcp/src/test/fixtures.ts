@@ -62,8 +62,8 @@ export const TEST_OPEN_SERVER: ServerWith<McpServerUnauthenticatedConfig> = {
     }
 };
 
-/** config/test.json's `mcpServers`: the two endpoints, under the keys production uses. */
-export const TEST_SERVERS = { DEVELOPMENT_KB: TEST_SERVER, LOXONE_KB: TEST_LOXONE_SERVER };
+/** config/test.json's `mcpServers`: the two endpoints, in its order. */
+export const TEST_SERVERS = [TEST_SERVER, TEST_LOXONE_SERVER];
 
 /** A token the test endpoint accepts — a reader — unless `options` say otherwise. */
 export const userToken = (options: MintTestTokenOptions = {}): Promise<string> =>

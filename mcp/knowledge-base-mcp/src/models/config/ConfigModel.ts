@@ -17,7 +17,7 @@ export const ConfigSchema = BaseConfig.extend({
     externalApis: createExternalApisSchema(Object.values(ExternalApi))
         .describe('APIs this server calls — base URL, auth, resilience and logging per API.'),
     mcpServers: McpServersSchema
-        .describe('The MCP endpoints this app mounts, one per entry, each serving one knowledge base. Keys are UPPER_SNAKE_CASE; at least one entry.'),
+        .describe('The MCP endpoints this app mounts, one per entry, each serving one knowledge base. At least one entry; `name` and `path` unique.'),
     // Every field is defaulted, so omitting `health` entirely is valid — additive, and
     // safe for a rolling deploy where an old pod reads a new ConfigMap or vice versa.
     health: HealthConfigSchema.optional().describe('Health endpoint configuration.'),

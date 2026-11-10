@@ -1,7 +1,7 @@
 import { VerifierType } from '@radoslavirha/auth';
 
 /**
- * How one MCP endpoint admits its callers: the `type` of `mcpServers.<key>.auth`.
+ * How one MCP endpoint admits its callers: the `type` of `mcpServers[].auth`.
  *
  * Values are lowercase, against the repository's enum rule, because they are config values
  * shared with `@radoslavirha/auth`'s `VerifierType` (`unauthenticated` is the same word in the

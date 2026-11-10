@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { McpTokenVerifier } from '../auth/McpTokenVerifier.js';
-import { TEST_OPEN_SERVER, TEST_SERVER, TEST_SERVERS } from '../test/fixtures.js';
+import { TEST_LOXONE_SERVER, TEST_OPEN_SERVER, TEST_SERVER, TEST_SERVERS } from '../test/fixtures.js';
 import { DEFAULT_INSTRUCTIONS, resourceOf, toMcpSettings } from './toMcpSettings.js';
 
 class SomeTool {}
@@ -26,15 +26,15 @@ describe('toMcpSettings', () => {
         })]);
     });
 
-    it('mounts every configured entry, whatever its key, in config order', () => {
-        const mcpServers = { A_KB: { ...TEST_SERVER, path: '/a' }, B_KB: { ...TEST_SERVER, path: '/b' }, C_KB: { ...TEST_SERVER, path: '/c' } };
+    it('mounts every configured entry, in config order', () => {
+        const mcpServers = [{ ...TEST_SERVER, name: 'a', path: '/a' }, { ...TEST_SERVER, name: 'b', path: '/b' }, { ...TEST_SERVER, name: 'c', path: '/c' }];
 
         expect(toMcpSettings({ ...CONFIG, mcpServers }, { version: '1.2.3' }, []).map(({ path }) => path)).toEqual(['/a', '/b', '/c']);
     });
 
     it('prefers the server\'s own description over the package one', () => {
         const [settings] = toMcpSettings(
-            { ...CONFIG, mcpServers: { ...TEST_SERVERS, DEVELOPMENT_KB: { ...TEST_SERVER, description: 'Its own' } } },
+            { ...CONFIG, mcpServers: [{ ...TEST_SERVER, description: 'Its own' }, TEST_LOXONE_SERVER] },
             { description: 'From package.json', version: '1.2.3' },
             []
         );
@@ -44,7 +44,7 @@ describe('toMcpSettings', () => {
 
     it('gives every endpoint the default instructions, unless it sets its own', () => {
         const [own, fallback] = toMcpSettings(
-            { ...CONFIG, mcpServers: { ...TEST_SERVERS, DEVELOPMENT_KB: { ...TEST_SERVER, instructions: 'Its own' } } },
+            { ...CONFIG, mcpServers: [{ ...TEST_SERVER, instructions: 'Its own' }, TEST_LOXONE_SERVER] },
             { version: '1.2.3' },
             []
         );
@@ -66,7 +66,7 @@ describe('toMcpSettings', () => {
     });
 
     it('gives an unauthenticated endpoint only a pre-auth check: no issuer, so no metadata and no 401 challenge', () => {
-        const [settings] = toMcpSettings({ ...CONFIG, mcpServers: { OPEN_KB: TEST_OPEN_SERVER } }, { version: '1.2.3' }, []);
+        const [settings] = toMcpSettings({ ...CONFIG, mcpServers: [TEST_OPEN_SERVER] }, { version: '1.2.3' }, []);
 
         expect(settings.auth).toEqual({ preAuth: expect.any(Function) });
     });

@@ -40,7 +40,7 @@ export const toMcpSettings = (
     config: Pick<ConfigModel, 'mcpServers' | 'publicURL'>,
     api: Pick<APIInformation, 'description' | 'version'>,
     tools: PlatformMcpSettings['tools']
-): PlatformMcpSettings[] => Object.entries(config.mcpServers).map(([key, server]) => ({
+): PlatformMcpSettings[] => config.mcpServers.map((server) => ({
     path: server.path,
     name: server.name,
     title: server.title,
@@ -49,13 +49,13 @@ export const toMcpSettings = (
     tools,
     // Sent in the `initialize` result; clients that support it hand it to their agent.
     serverOptions: { instructions: DefaultsUtil.string(server.instructions, DEFAULT_INSTRUCTIONS) },
-    auth: authOf(config.publicURL, key, server)
+    auth: authOf(config.publicURL, server)
 }));
 
 /** platform-mcp's `auth` for one endpoint, by its `auth.type`. */
-const authOf = (publicURL: string, key: string, server: McpServerConfig): NonNullable<PlatformMcpSettings['auth']> => {
+const authOf = (publicURL: string, server: McpServerConfig): NonNullable<PlatformMcpSettings['auth']> => {
     if (server.auth.type === McpAuthType.Unauthenticated) {
-        const check = new McpUnauthenticatedPreAuth(key, server.auth);
+        const check = new McpUnauthenticatedPreAuth(server.name, server.auth);
 
         return { preAuth: ($ctx) => check.preAuth($ctx) };
     }
@@ -65,6 +65,6 @@ const authOf = (publicURL: string, key: string, server: McpServerConfig): NonNul
         resource: resourceOf(publicURL, server.path),
         scopesSupported: server.auth.scopes,
         resourceName: server.title,
-        verifier: new McpTokenVerifier(key, server.auth)
+        verifier: new McpTokenVerifier(server.name, server.auth)
     };
 };

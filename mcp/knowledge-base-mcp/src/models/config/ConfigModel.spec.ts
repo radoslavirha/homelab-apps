@@ -49,12 +49,12 @@ describe('ConfigSchema', () => {
         expect(result.error?.issues[0].path).toEqual(['mcpServers']);
     });
 
-    it('accepts a deployment with one endpoint, under its own key', () => {
-        expect(ConfigSchema.safeParse({ ...MINIMAL, mcpServers: { WORK_KB: TEST_SERVER } }).success).toBe(true);
+    it('accepts a deployment with one endpoint', () => {
+        expect(ConfigSchema.safeParse({ ...MINIMAL, mcpServers: [TEST_SERVER] }).success).toBe(true);
     });
 
     it('refuses an empty `mcpServers`', () => {
-        const result = ConfigSchema.safeParse({ ...MINIMAL, mcpServers: {} });
+        const result = ConfigSchema.safeParse({ ...MINIMAL, mcpServers: [] });
 
         expect(result.success).toBe(false);
         expect(result.error?.issues[0].path).toEqual(['mcpServers']);
@@ -76,17 +76,17 @@ describe('ConfigSchema', () => {
 
     it('refuses an endpoint without auth: none is open by omission', () => {
         const { path, kb, name, title } = TEST_SERVER;
-        const result = ConfigSchema.safeParse({ ...MINIMAL, mcpServers: { ...TEST_SERVERS, DEVELOPMENT_KB: { path, kb, name, title } } });
+        const result = ConfigSchema.safeParse({ ...MINIMAL, mcpServers: [{ path, kb, name, title }] });
 
         expect(result.success).toBe(false);
-        expect(result.error?.issues[0].path).toEqual(['mcpServers', 'DEVELOPMENT_KB', 'auth']);
+        expect(result.error?.issues[0].path).toEqual(['mcpServers', 0, 'auth']);
     });
 
     it('refuses scopes without profile or roles, which would leave every token refused', () => {
-        const result = ConfigSchema.safeParse({ ...MINIMAL, mcpServers: { ...TEST_SERVERS, DEVELOPMENT_KB: { ...TEST_SERVER, auth: { ...TEST_SERVER.auth, scopes: ['openid', 'roles'] } } } });
+        const result = ConfigSchema.safeParse({ ...MINIMAL, mcpServers: [{ ...TEST_SERVER, auth: { ...TEST_SERVER.auth, scopes: ['openid', 'roles'] } }] });
 
         expect(result.success).toBe(false);
-        expect(result.error?.issues[0].path).toEqual(['mcpServers', 'DEVELOPMENT_KB', 'auth', 'scopes']);
+        expect(result.error?.issues[0].path).toEqual(['mcpServers', 0, 'auth', 'scopes']);
     });
 
     it('refuses a port that is not a number, naming the field', () => {

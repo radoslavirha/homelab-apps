@@ -16,8 +16,8 @@ const MCP_HEADERS = { Accept: 'application/json, text/event-stream', 'Content-Ty
 const NOTE = { title: 'A gotcha', type: 'GOTCHA', context: 'c', decisionOrFact: 'd' };
 
 /** The same endpoint granting `READER` only, at its own path. */
-const READ_ONLY_SERVER = { ...TEST_OPEN_SERVER, path: '/open-read', kb: 'open-read', auth: { ...TEST_OPEN_SERVER.auth, roles: { READER: TEST_OPEN_SERVER.auth.roles.READER } } };
-const MCP_SERVERS = { OPEN_KB: TEST_OPEN_SERVER, OPEN_READ_KB: READ_ONLY_SERVER };
+const READ_ONLY_SERVER = { ...TEST_OPEN_SERVER, name: 'open-read-server', path: '/open-read', kb: 'open-read', auth: { ...TEST_OPEN_SERVER.auth, roles: { READER: TEST_OPEN_SERVER.auth.roles.READER } } };
+const MCP_SERVERS = [TEST_OPEN_SERVER, READ_ONLY_SERVER];
 
 /**
  * The pairing for a trusted network with no IdP: MCP endpoints of type `unauthenticated`, the
