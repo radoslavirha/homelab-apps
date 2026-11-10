@@ -9,9 +9,6 @@ import type { SearchOutput } from '../models/SearchOutput.js';
 import { McpEndpointService } from '../services/McpEndpointService.js';
 import { UpstreamErrorService } from '../services/UpstreamErrorService.js';
 
-/** Sections a search returns when the caller does not say: enough to choose what to `read`. */
-export const DEFAULT_SEARCH_LIMIT = 8;
-
 @Injectable()
 @Scope(ProviderScope.SINGLETON)
 export class SearchHandler {
@@ -22,14 +19,24 @@ export class SearchHandler {
         private readonly errors: UpstreamErrorService
     ) {}
 
-    /** Searches the endpoint's own knowledge base only; without `kb` the API would search every one the client may read. */
+    /**
+     * Searches the endpoint's own knowledge base only; without `kb` the API would search every one
+     * the client may read. How it searches is the endpoint's `search` config: the agent's `limit`
+     * (else `defaultLimit`) is lowered to `maxLimit`, and the model and weights are always the
+     * endpoint's — the weights are sent even at their defaults, so the API's own config never decides.
+     */
     public async execute(input: SearchInput): Promise<SearchOutput> {
+        const search = this.endpoint.searchConfig();
+
         try {
             const response = await this.api.search(CommonUtils.buildModelStrict(SearchQueryDTO, {
                 q: input.query,
                 kb: this.endpoint.knowledgeBase(),
                 filter: input.filter,
-                limit: DefaultsUtil.number(input.limit, DEFAULT_SEARCH_LIMIT)
+                limit: Math.min(DefaultsUtil.number(input.limit, search.defaultLimit), search.maxLimit),
+                model: search.model,
+                fullTextWeight: search.weights.fullText,
+                vectorWeight: search.weights.vector
             }));
 
             return this.mapper.toSearch(response);

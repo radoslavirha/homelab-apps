@@ -19,6 +19,7 @@ import { toMcpSettings } from '../mcp/toMcpSettings.js';
 import { Server } from '../Server.js';
 import { ConfigService } from '../services/ConfigService.js';
 import { KnowledgeBaseRole } from '../models/config/KnowledgeBaseRole.enum.js';
+import { McpSearchConfigSchema } from '../models/config/McpSearchConfig.js';
 import { TEST_PUBLIC_URL, TEST_ROLES, TEST_SERVERS, userToken } from '../test/fixtures.js';
 import * as tools from './index.js';
 
@@ -271,7 +272,8 @@ describe('Tools (integration, through MCP)', () => {
         const result = await callTool('search', { query: 'what is the note about?', filter: 'area:raw' });
 
         expect(result.isError).toBeUndefined();
-        expect(search).toHaveBeenCalledWith(expect.objectContaining({ q: 'what is the note about?', kb: 'development', filter: 'area:raw', limit: 8 }));
+        // No `search` block in config/test.json: the defaults, the weights sent all the same.
+        expect(search).toHaveBeenCalledWith(expect.objectContaining({ q: 'what is the note about?', kb: 'development', filter: 'area:raw', limit: 8, fullTextWeight: 0, vectorWeight: 1 }));
         expect(result.structuredContent).toEqual({
             hits: [{ id: DOCUMENT.externalId, anchor: `${DOCUMENT.externalId}#body`, title: 'A note', heading: 'Body', snippet: 'Body.', date: '2026-01-01' }]
         });
@@ -304,15 +306,79 @@ describe('Tools (integration, through MCP)', () => {
         expect({ isError: result.isError, kbs: search.mock.calls.map(([query]) => query.kb) }).toEqual({ isError: undefined, kbs: ['development'] });
     });
 
-    it('search: refuses a limit above 20 before calling the API', async () => {
+    it('search: refuses a limit above 50, the API\'s cap, before calling the API', async () => {
         expect.assertions(2);
 
         const search = vi.spyOn(api, 'search');
 
-        const result = await callTool('search', { query: 'q', limit: 50 });
+        const result = await callTool('search', { query: 'q', limit: 51 });
 
         expect(result.isError).toBe(true);
         expect(search).not.toHaveBeenCalled();
+    });
+
+    describe('search settings of the endpoint', () => {
+        /** Gives DEVELOPMENT_KB a `search` block for the rest of the test. */
+        const configure = (search: object): void => {
+            const configService = PlatformTest.get<ConfigService>(ConfigService);
+            const servers = configService.config.mcpServers;
+
+            vi.spyOn(configService, 'config', 'get').mockReturnValue({
+                ...configService.config,
+                mcpServers: { ...servers, DEVELOPMENT_KB: { ...servers.DEVELOPMENT_KB, search: McpSearchConfigSchema.parse(search) } }
+            });
+        };
+        const empty = (): void => {
+            vi.spyOn(api, 'search').mockResolvedValue(Serializer.deserialize({ mode: 'VECTOR', models: [], results: [] }, SearchResponseDTO));
+        };
+
+        it('passes the largest limit the tool accepts unchanged under the default max of 50', async () => {
+            expect.assertions(1);
+
+            empty();
+            await callTool('search', { query: 'q', limit: 50 });
+
+            expect(api.search).toHaveBeenCalledWith(expect.objectContaining({ limit: 50 }));
+        });
+
+        it('passes a limit within the max unchanged', async () => {
+            expect.assertions(1);
+
+            empty();
+            await callTool('search', { query: 'q', limit: 3 });
+
+            expect(api.search).toHaveBeenCalledWith(expect.objectContaining({ limit: 3 }));
+        });
+
+        it('uses the endpoint\'s default and max limit, model and weights', async () => {
+            expect.assertions(2);
+
+            configure({ defaultLimit: 12, maxLimit: 30, model: 'qwen3-embedding:0.6b', weights: { vector: 0.7, fullText: 0.3 } });
+            empty();
+            await callTool('search', { query: 'q' });
+            await callTool('search', { query: 'q', limit: 45 });
+
+            expect(api.search).toHaveBeenNthCalledWith(1, expect.objectContaining({ limit: 12, model: 'qwen3-embedding:0.6b', vectorWeight: 0.7, fullTextWeight: 0.3 }));
+            expect(api.search).toHaveBeenNthCalledWith(2, expect.objectContaining({ limit: 30 }));
+        });
+
+        it('leaves the model out when the endpoint names none, so the API uses the knowledge base\'s first', async () => {
+            expect.assertions(1);
+
+            empty();
+            await callTool('search', { query: 'q' });
+
+            expect(vi.mocked(api.search).mock.calls[0][0].model).toBeUndefined();
+        });
+
+        it('ignores a model or weights the agent sends: they are config, never tool arguments', async () => {
+            expect.assertions(1);
+
+            empty();
+            await callTool('search', { query: 'q', model: 'other', vectorWeight: 0, fullTextWeight: 5 });
+
+            expect(api.search).toHaveBeenCalledWith(expect.objectContaining({ model: undefined, vectorWeight: 1, fullTextWeight: 0 }));
+        });
     });
 
     it('conventions: the endpoint\'s knowledge base\'s conventions, with structured content its output schema accepts', async () => {

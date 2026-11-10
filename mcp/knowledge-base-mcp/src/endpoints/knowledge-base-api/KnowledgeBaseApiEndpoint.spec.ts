@@ -65,6 +65,26 @@ describe('KnowledgeBaseApiEndpoint', () => {
         expect(response.results[0]).toEqual(expect.objectContaining({ anchor: RESULT.anchor, snippet: RESULT.snippet, metadata: RESULT.metadata }));
     });
 
+    it('sends the endpoint\'s model and weights as query-string parameters', async () => {
+        expect.assertions(1);
+
+        get.mockResolvedValue({ mode: 'HYBRID', models: ['qwen3-embedding:0.6b'], results: [] });
+
+        await endpoint.search(CommonUtils.buildModelStrict(SearchQueryDTO, { q: 'q', kb: 'development', limit: 20, model: 'qwen3-embedding:0.6b', fullTextWeight: 0.3, vectorWeight: 1 }));
+
+        expect(get).toHaveBeenCalledWith('/search', { params: { q: 'q', kb: 'development', limit: 20, model: 'qwen3-embedding:0.6b', fullTextWeight: 0.3, vectorWeight: 1 } });
+    });
+
+    it('sends a weight of 0, which drops a leg, rather than leaving it out', async () => {
+        expect.assertions(1);
+
+        get.mockResolvedValue({ mode: 'VECTOR', models: [], results: [] });
+
+        await endpoint.search(CommonUtils.buildModelStrict(SearchQueryDTO, { q: 'q', fullTextWeight: 0, vectorWeight: 1 }));
+
+        expect(get).toHaveBeenCalledWith('/search', { params: { q: 'q', fullTextWeight: 0, vectorWeight: 1 } });
+    });
+
     it('reads a whole document by id and knowledge base', async () => {
         expect.assertions(3);
 

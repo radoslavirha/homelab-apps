@@ -30,6 +30,9 @@
             "name": "loxone-knowledge-base",
             "title": "Loxone knowledge base",
             "description": "Knowledge base for Loxone home automation notes.",
+            "search": {
+                "model": "test-model"
+            },
             "auth": {
                 "issuer": "https://issuer.test/",
                 "audience": "test-loxone-audience",

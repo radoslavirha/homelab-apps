@@ -1,5 +1,6 @@
 import { CommonUtils } from '@radoslavirha/utils';
 import z from 'zod';
+import { McpSearchConfigSchema } from './McpSearchConfig.js';
 import { McpServerAuthConfigSchema } from './McpServerAuthConfig.js';
 
 /** One MCP endpoint: where it is mounted, the knowledge base it serves, who may call it, and what it tells clients about itself. */
@@ -10,7 +11,8 @@ export const McpServerConfigSchema = z.object({
     title: z.string().min(1).describe('Human-readable name clients show.'),
     description: z.string().min(1).optional().describe('What the server is for. Defaults to the package description.'),
     instructions: z.string().min(1).optional().describe('The MCP server `instructions` clients hand their agent: how to use this knowledge base. Defaults to `DEFAULT_INSTRUCTIONS` — search first, call `conventions` before writing or preparing files, approve writes.'),
-    auth: McpServerAuthConfigSchema.describe('Who may call the endpoint, by `type`: `oauth` (the default when `type` is absent) or `unauthenticated`. Required: an endpoint is never open by omission.')
+    auth: McpServerAuthConfigSchema.describe('Who may call the endpoint, by `type`: `oauth` (the default when `type` is absent) or `unauthenticated`. Required: an endpoint is never open by omission.'),
+    search: McpSearchConfigSchema.optional().describe('How the endpoint searches: limits, embedding model and RRF weights. Absent: `DEFAULT_SEARCH_CONFIG`. A second endpoint on the same `kb` with other settings is how an alternative is tried side by side.')
 });
 
 export type McpServerConfig = z.infer<typeof McpServerConfigSchema>;

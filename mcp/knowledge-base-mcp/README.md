@@ -50,7 +50,7 @@ All work on the endpoint's own knowledge base; none takes a `kb` (an extra `kb` 
 
 | Tool | Level | Input | Returns |
 |------|-------|-------|---------|
-| `search` | `READER` | `query`; optional `filter` (`key:value,…` on metadata), `limit` (1–20, default 8) | `hits[]`, best first: `id`, `anchor`, `title`, `heading`, `snippet`, `date` |
+| `search` | `READER` | `query`; optional `filter` (`key:value,…` on metadata), `limit` (1–50; the endpoint's `search.defaultLimit` when absent, lowered to its `search.maxLimit` — by default 8 and 50) | `hits[]`, best first: `id`, `anchor`, `title`, `heading`, `snippet`, `date` |
 | `read` | `READER` | `id` (from a hit) | `id`, `title`, `date`, `metadata`, `version`, `markdown` — the whole document. An unknown id says to search first |
 | `conventions` | `READER` | none | `path` (e.g. `README.md`; `null` when none), `markdown` — the knowledge base's own house rules (areas, naming, frontmatter), read live from its source by knowledge-base-api. Empty `markdown` when the knowledge base publishes none |
 | `create_note` | `EDITOR` | `title`, `type` (`DECISION`, `CONTRACT`, `GOTCHA`, `NOTE`), `context`, `decisionOrFact`; optional `alternativesRejected[]` (required for a `DECISION`), `howToApply`, `links[]`, `repos[]`, `date`, `supersedes` | `id` (`raw/<date>-<slug>.md`), `version`, `commit` |
@@ -78,6 +78,7 @@ All work on the endpoint's own knowledge base; none takes a `kb` (an extra `kb` 
 | `publicURL` | Required. Public base URL: scheme, host and route prefix, no endpoint path — `http://localhost:4004` locally, `https://mcp.irha.cz/kb` deployed. An endpoint's resource identifier (and the audience clients ask Authentik for) is this plus its `path` |
 | `mcpServers.<KEY>` | One entry per MCP endpoint the app mounts, as many as configured (production: `DEVELOPMENT_KB`, `LOXONE_KB`). The key is `UPPER_SNAKE_CASE` and names the endpoint in logs; no code refers to it. Each entry: `path` (in the app; the public route adds its prefix, `/kb`, and Traefik strips it), `kb` (the knowledge base it serves, its id in knowledge-base-api, e.g. `development`, `loxone`), `name`, `title`, optional `description` (what clients are told the endpoint holds; defaults to the package's), optional `instructions` (the MCP server instructions clients hand their agent; defaults to the generic `DEFAULT_INSTRUCTIONS` in `src/mcp/toMcpSettings.ts`), and `auth`. At least one entry is required. Paths must differ, ignoring case |
 | `mcpServers.<KEY>.auth` | Required. `type` (default `oauth`), then for `oauth`: `issuer` (the shared client registration's Authentik issuer, advertised as the authorization server and the only `iss` accepted), `audience` (the endpoint's Authentik application for this environment), `key` (`{ source: jwks, uri: <issuer>jwks/ }`; an inline HS256 key in tests), `roles` (the endpoint's Authentik role per level: `READER` → `knowledge-base-mcp-<endpoint>.reader`, `EDITOR` → `knowledge-base-mcp-<endpoint>.editor`), `scopes` (default `openid profile email roles`; must include `profile` and `roles`) |
+| `mcpServers.<KEY>.search` | Optional. How the endpoint searches; never a `search` tool argument. `defaultLimit` (default `8`): hits when the agent gives no `limit`. `maxLimit` (default and at most `50`, the API's cap): a larger `limit` is lowered to it. `defaultLimit` above `maxLimit` fails at boot. `model`: the embedding model for the vector leg (unset: the knowledge base's first configured model; it must be one of that knowledge base's models in knowledge-base-api). `weights.vector` (default `1`) and `weights.fullText` (default `0`), 0–10, at least one above 0: the RRF weights, sent on every search, so they override knowledge-base-api's configured `search.weights`. The defaults are this server's own constants, matching the API's |
 | `externalApis.KNOWLEDGE_BASE_API` | knowledge-base-api: `baseURL` (from a laptop, the LAN route `https://api.server1.homelab.irha.cz/kb/knowledge-base`), resilience, and `auth` — `token-exchange` with a `client_credentials` request for `knowledge-base-mcp` (which holds `knowledge-base-api.editor`) to Authentik's token endpoint, form-encoded, scope `openid profile email roles` (without `profile`, `aud` is the bare client id and the API refuses the token) |
 | `health` | Health endpoint configuration (optional) |
 | `logger` | Log level and options (optional). `requests.request` and `requests.response` are forced off in code — a value here is ignored: a tool call's arguments are whole documents and may hold a secret |
@@ -91,6 +92,10 @@ One endpoint per knowledge base, sharing the tools. Config only — no code chan
 2. Give it an Authentik application with `reader` and `editor` roles, and add that application to the `accesses` of the shared client registration.
 
 The route and the metadata rewrite cover every path under `/kb`. Removing an endpoint is removing its entry.
+
+### Trying search settings
+
+The `search` block makes a search experiment config only. To compare an embedding model or a full-text blend against the current endpoint, add a second entry on the same `kb` under its own `path` (e.g. `/development-qwen`) with a different `search`, point a client at it, and compare the answers; then copy the winner into the main entry, or remove the experiment. A changed `search` takes effect on restart. A second endpoint also needs its own Authentik application and roles (step 2 above).
 
 ## Upstream token
 
