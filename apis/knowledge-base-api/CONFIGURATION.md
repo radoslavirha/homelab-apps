@@ -463,18 +463,18 @@ Required.
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `database.host` | string (non-empty) | yes |  |  |
-| `database.port` | integer (> 0) |  | `5432` |  |
-| `database.database` | string (non-empty) | yes |  |  |
-| `database.user` | string (non-empty) | yes |  |  |
-| `database.password` | string (non-empty) | yes |  |  |
+| `database.host` | string (non-empty) | yes |  | Postgres host. |
+| `database.port` | integer (> 0) |  | `5432` | Postgres port. |
+| `database.database` | string (non-empty) | yes |  | Database name. One database per environment: migrations run on it at boot. |
+| `database.user` | string (non-empty) | yes |  | Role the service connects as. |
+| `database.password` | string (non-empty) | yes |  | Password of `user`. |
 | `database.sslMode` | `"DISABLE"` \| `"REQUIRE"` \| `"VERIFY_FULL"` |  | `"DISABLE"` | TLS towards Postgres. CloudNativePG serves TLS with its own CA: REQUIRE encrypts without verifying it. |
 | `database.caFile` | string |  |  | PEM bundle to verify the server against. Required for VERIFY_FULL. |
-| `database.pool` | object |  | `{}` |  |
+| `database.pool` | object |  | `{}` | Connection pool (`pg.Pool`). |
 | `database.pool.max` | integer (> 0) |  | `5` | One connection is held for the whole indexing run (the advisory lock lives on it). |
-| `database.pool.idleTimeoutMs` | integer (≥ 0) |  | `30000` |  |
-| `database.pool.connectionTimeoutMs` | integer (> 0) |  | `5000` |  |
-| `database.statementTimeoutMs` | integer (> 0) |  | `30000` |  |
+| `database.pool.idleTimeoutMs` | integer (≥ 0) |  | `30000` | How long an idle connection stays open before the pool closes it (pg `idleTimeoutMillis`). |
+| `database.pool.connectionTimeoutMs` | integer (> 0) |  | `5000` | How long acquiring a new connection may take before it fails (pg `connectionTimeoutMillis`). |
+| `database.statementTimeoutMs` | integer (> 0) |  | `30000` | Postgres `statement_timeout` set on every connection: a longer statement is cancelled. |
 
 ## github
 
@@ -494,10 +494,10 @@ Pick the variant with `type`.
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `github.baseUrl` | string (uri) |  | `"https://api.github.com"` |  |
+| `github.baseUrl` | string (uri) |  | `"https://api.github.com"` | GitHub REST API base URL, passed to Octokit. |
 | `github.timeoutMs` | integer (> 0) |  | `15000` | Per attempt: each retry gets its own. A rate-limit wait between attempts is not counted. |
 | `github.retries` | integer (≥ 0, ≤ 10) |  | `3` | Octokit retries server errors with backoff; rate limits are waited out separately. |
-| `github.type` | `"app"` | yes |  |  |
+| `github.type` | `"app"` | yes |  | `app`: authenticate as a GitHub App. The default when `type` is left out. |
 | `github.clientId` | string (non-empty) | yes |  | The App's client ID — the JWT issuer GitHub expects. |
 | `github.privateKey` | one of (see below) | yes |  | PEM as GitHub issues it (PKCS#1); PKCS#8 works too. |
 
@@ -509,24 +509,24 @@ Pick the variant with `source`.
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `github.privateKey.source` | `"value"` | yes |  |  |
-| `github.privateKey.value` | string (non-empty) | yes |  |  |
+| `github.privateKey.source` | `"value"` | yes |  | `value`: the secret is inline. |
+| `github.privateKey.value` | string (non-empty) | yes |  | The secret itself. |
 
 ###### `github.privateKey` — `source: "file"`
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `github.privateKey.source` | `"file"` | yes |  |  |
-| `github.privateKey.path` | string (non-empty) | yes |  |  |
+| `github.privateKey.source` | `"file"` | yes |  | `file`: the secret is read from a file, e.g. a mounted Kubernetes secret. |
+| `github.privateKey.path` | string (non-empty) | yes |  | Path of the file holding the secret; surrounding whitespace is trimmed. |
 
 #### `github` — `type: "token"`
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `github.baseUrl` | string (uri) |  | `"https://api.github.com"` |  |
+| `github.baseUrl` | string (uri) |  | `"https://api.github.com"` | GitHub REST API base URL, passed to Octokit. |
 | `github.timeoutMs` | integer (> 0) |  | `15000` | Per attempt: each retry gets its own. A rate-limit wait between attempts is not counted. |
 | `github.retries` | integer (≥ 0, ≤ 10) |  | `3` | Octokit retries server errors with backoff; rate limits are waited out separately. |
-| `github.type` | `"token"` | yes |  |  |
+| `github.type` | `"token"` | yes |  | `token`: authenticate with a token, e.g. a fine-grained personal access token. A knowledge base using one must set `git.repository`. |
 | `github.token` | one of (see below) | yes |  | Needs Contents: read and write, and Metadata: read, on the repository. |
 
 ##### `github.token`: one of 2
@@ -537,15 +537,15 @@ Pick the variant with `source`.
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `github.token.source` | `"value"` | yes |  |  |
-| `github.token.value` | string (non-empty) | yes |  |  |
+| `github.token.source` | `"value"` | yes |  | `value`: the secret is inline. |
+| `github.token.value` | string (non-empty) | yes |  | The secret itself. |
 
 ###### `github.token` — `source: "file"`
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `github.token.source` | `"file"` | yes |  |  |
-| `github.token.path` | string (non-empty) | yes |  |  |
+| `github.token.source` | `"file"` | yes |  | `file`: the secret is read from a file, e.g. a mounted Kubernetes secret. |
+| `github.token.path` | string (non-empty) | yes |  | Path of the file holding the secret; surrounding whitespace is trimmed. |
 
 ## embeddings
 
@@ -555,11 +555,11 @@ Optional. Default `{}`.
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `embeddings.models` | array of object |  | `[]` |  |
+| `embeddings.models` | array of object |  | `[]` | Embedding models a knowledge base may name in its `models`. Names must be unique. Empty: every knowledge base is full-text only. |
 | `embeddings.models[].name` | string (non-empty) | yes |  | Ollama model tag, e.g. `embeddinggemma:300m`. Stored in `embeddings.model`. |
-| `embeddings.models[].dimensions` | integer (> 0, ≤ 2000) | yes |  |  |
-| `embeddings.models[].documentTemplate` | string (includes, pattern `\{text\}`) |  | `"{text}"` |  |
-| `embeddings.models[].queryTemplate` | string (includes, pattern `\{query\}`) |  | `"{query}"` |  |
+| `embeddings.models[].dimensions` | integer (> 0, ≤ 2000) | yes |  | Vector length the model returns. It becomes the cast in this model's HNSW index, so a mismatch fails the first insert instead of silently mixing lengths. pgvector indexes `vector` up to 2000 dimensions. |
+| `embeddings.models[].documentTemplate` | string (includes, pattern `\{text\}`) |  | `"{text}"` | What a chunk is sent as; must contain `{text}`. `{title}` is the document title (`none` when it has none, as the embeddinggemma model card prescribes); `{text}` is the heading path, a blank line and the body. Task prefixes are part of the model contract — embeddinggemma scores worse without them. Changing a template changes every vector: give the model a new entry instead. |
+| `embeddings.models[].queryTemplate` | string (includes, pattern `\{query\}`) |  | `"{query}"` | What a question is sent as; must contain `{query}`, the question. See `documentTemplate`. |
 | `embeddings.batchSize` | integer (> 0, ≤ 256) |  | `16` | Chunks per Ollama embed call. |
 | `embeddings.keepAlive` | string |  | `"1m"` | Ollama keep_alive: long enough that a run does not reload the model per batch, short enough that a chat model on the same node gets its memory back. |
 
@@ -573,19 +573,19 @@ Required.
 | --- | --- | --- | --- | --- |
 | `knowledgeBases` | array of object (at least 1 item) | yes |  | Every knowledge base this service indexes and serves. |
 | `knowledgeBases[].id` | string (pattern `^[a-z][a-z0-9-]{0,31}$`) | yes |  | Stored in `documents.kb`; what callers pass as `kb`. |
-| `knowledgeBases[].contentType` | `"MARKDOWN"` |  | `"MARKDOWN"` |  |
+| `knowledgeBases[].contentType` | `"MARKDOWN"` |  | `"MARKDOWN"` | Picks the chunker. `MARKDOWN`: Markdown with optional YAML frontmatter, chunked at H2/H3. |
 | `knowledgeBases[].tsConfig` | string (pattern `^[a-z_]+$`) |  | `"english"` | Postgres text search configuration for this KB's full-text index, e.g. `english`, `simple`. |
-| `knowledgeBases[].models` | array of string (non-empty) |  | `[]` |  |
-| `knowledgeBases[].readers` | array of string (non-empty) (at least 1 item) | yes |  |  |
-| `knowledgeBases[].conventionsPath` | string (non-empty, pattern `^[^/]`) |  |  |  |
-| `knowledgeBases[].chunking` | object |  | `{}` |  |
-| `knowledgeBases[].chunking.maxChars` | integer (≥ 200) |  | `3000` |  |
-| `knowledgeBases[].chunking.overlapChars` | integer (≥ 0) |  | `0` |  |
-| `knowledgeBases[].source` | `"GIT"` | yes |  |  |
-| `knowledgeBases[].git` | object |  | `{}` |  |
+| `knowledgeBases[].models` | array of string (non-empty) |  | `[]` | Embedding models this KB is embedded with, by `embeddings.models[].name`; each must be declared there. The **first** answers questions; the others are built alongside for comparison. Empty means full-text only. |
+| `knowledgeBases[].readers` | array of string (non-empty) (at least 1 item) | yes |  | Authentik roles allowed to read this KB. A caller holding none of them never sees it. |
+| `knowledgeBases[].conventionsPath` | string (non-empty, pattern `^[^/]`) |  |  | The file in the source that holds this KB's house rules — formats, frontmatter, areas, naming — e.g. `README.md`, without a leading `/`. `GET /conventions` serves it, read from the source as it is now, so it need not be under `git.include`. Unset: the KB publishes none. |
+| `knowledgeBases[].chunking` | object |  | `{}` | How documents are cut into chunks. |
+| `knowledgeBases[].chunking.maxChars` | integer (≥ 200) |  | `3000` | A section longer than this is split at paragraph boundaries, the heading kept on every part. 3000 is what the model measurement ran with: chunks p50 721, p95 2719, max 3226 characters on the development KB — inside embeddinggemma's 2k-token context. |
+| `knowledgeBases[].chunking.overlapChars` | integer (≥ 0) |  | `0` | Trailing paragraphs of one part repeated at the start of the next, up to this length. |
+| `knowledgeBases[].source` | `"GIT"` | yes |  | `GIT`: documents are read from a GitHub repository. |
+| `knowledgeBases[].git` | object |  | `{}` | The GitHub repository this knowledge base is read from. |
 | `knowledgeBases[].git.branch` | string (non-empty) |  |  | Branch to index. Defaults to the repository's default branch. |
 | `knowledgeBases[].git.include` | array of string |  | `["raw/","work/","mirror/"]` | Path prefixes to index. The first path segment becomes `metadata.area`. |
-| `knowledgeBases[].git.extensions` | array of string (starts_with, pattern `^\..*`) |  | `[".md"]` |  |
+| `knowledgeBases[].git.extensions` | array of string (starts_with, pattern `^\..*`) |  | `[".md"]` | File extensions to index, each starting with `.`. A file is indexed when its path matches both `include` and one of these. |
 | `knowledgeBases[].git.repository` | string (pattern `^[A-Za-z0-9_-]+\/[A-Za-z0-9._-]+$`) |  |  | `owner/name` of the repository to read, from those the App covers, compared case-insensitively. Required when the App covers several, and always with a token. Comes from a secret, never from values. |
 | `knowledgeBases[].git.github` | one of (see below) |  |  | The GitHub App or token of this knowledge base. Defaults to the root `github`. |
 
@@ -597,10 +597,10 @@ Pick the variant with `type`.
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `knowledgeBases[].git.github.baseUrl` | string (uri) |  | `"https://api.github.com"` |  |
+| `knowledgeBases[].git.github.baseUrl` | string (uri) |  | `"https://api.github.com"` | GitHub REST API base URL, passed to Octokit. |
 | `knowledgeBases[].git.github.timeoutMs` | integer (> 0) |  | `15000` | Per attempt: each retry gets its own. A rate-limit wait between attempts is not counted. |
 | `knowledgeBases[].git.github.retries` | integer (≥ 0, ≤ 10) |  | `3` | Octokit retries server errors with backoff; rate limits are waited out separately. |
-| `knowledgeBases[].git.github.type` | `"app"` | yes |  |  |
+| `knowledgeBases[].git.github.type` | `"app"` | yes |  | `app`: authenticate as a GitHub App. The default when `type` is left out. |
 | `knowledgeBases[].git.github.clientId` | string (non-empty) | yes |  | The App's client ID — the JWT issuer GitHub expects. |
 | `knowledgeBases[].git.github.privateKey` | one of (see below) | yes |  | PEM as GitHub issues it (PKCS#1); PKCS#8 works too. |
 
@@ -612,24 +612,24 @@ Pick the variant with `source`.
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `knowledgeBases[].git.github.privateKey.source` | `"value"` | yes |  |  |
-| `knowledgeBases[].git.github.privateKey.value` | string (non-empty) | yes |  |  |
+| `knowledgeBases[].git.github.privateKey.source` | `"value"` | yes |  | `value`: the secret is inline. |
+| `knowledgeBases[].git.github.privateKey.value` | string (non-empty) | yes |  | The secret itself. |
 
 ###### `knowledgeBases[].git.github.privateKey` — `source: "file"`
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `knowledgeBases[].git.github.privateKey.source` | `"file"` | yes |  |  |
-| `knowledgeBases[].git.github.privateKey.path` | string (non-empty) | yes |  |  |
+| `knowledgeBases[].git.github.privateKey.source` | `"file"` | yes |  | `file`: the secret is read from a file, e.g. a mounted Kubernetes secret. |
+| `knowledgeBases[].git.github.privateKey.path` | string (non-empty) | yes |  | Path of the file holding the secret; surrounding whitespace is trimmed. |
 
 #### `knowledgeBases[].git.github` — `type: "token"`
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `knowledgeBases[].git.github.baseUrl` | string (uri) |  | `"https://api.github.com"` |  |
+| `knowledgeBases[].git.github.baseUrl` | string (uri) |  | `"https://api.github.com"` | GitHub REST API base URL, passed to Octokit. |
 | `knowledgeBases[].git.github.timeoutMs` | integer (> 0) |  | `15000` | Per attempt: each retry gets its own. A rate-limit wait between attempts is not counted. |
 | `knowledgeBases[].git.github.retries` | integer (≥ 0, ≤ 10) |  | `3` | Octokit retries server errors with backoff; rate limits are waited out separately. |
-| `knowledgeBases[].git.github.type` | `"token"` | yes |  |  |
+| `knowledgeBases[].git.github.type` | `"token"` | yes |  | `token`: authenticate with a token, e.g. a fine-grained personal access token. A knowledge base using one must set `git.repository`. |
 | `knowledgeBases[].git.github.token` | one of (see below) | yes |  | Needs Contents: read and write, and Metadata: read, on the repository. |
 
 ##### `knowledgeBases[].git.github.token`: one of 2
@@ -640,15 +640,15 @@ Pick the variant with `source`.
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `knowledgeBases[].git.github.token.source` | `"value"` | yes |  |  |
-| `knowledgeBases[].git.github.token.value` | string (non-empty) | yes |  |  |
+| `knowledgeBases[].git.github.token.source` | `"value"` | yes |  | `value`: the secret is inline. |
+| `knowledgeBases[].git.github.token.value` | string (non-empty) | yes |  | The secret itself. |
 
 ###### `knowledgeBases[].git.github.token` — `source: "file"`
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `knowledgeBases[].git.github.token.source` | `"file"` | yes |  |  |
-| `knowledgeBases[].git.github.token.path` | string (non-empty) | yes |  |  |
+| `knowledgeBases[].git.github.token.source` | `"file"` | yes |  | `file`: the secret is read from a file, e.g. a mounted Kubernetes secret. |
+| `knowledgeBases[].git.github.token.path` | string (non-empty) | yes |  | Path of the file holding the secret; surrounding whitespace is trimmed. |
 
 ## indexer
 
@@ -660,9 +660,9 @@ Optional. Default `{}`.
 | --- | --- | --- | --- | --- |
 | `indexer.enabled` | boolean |  | `true` | Runs the background loop. POST /reindex works either way. |
 | `indexer.intervalMs` | integer (≥ 10000) |  | `300000` | Pause between the end of one run and the start of the next. |
-| `indexer.initialDelayMs` | integer (≥ 0) |  | `5000` |  |
+| `indexer.initialDelayMs` | integer (≥ 0) |  | `5000` | Delay from startup to the first run of the background loop. |
 | `indexer.fetchConcurrency` | integer (≥ 1, ≤ 16) |  | `4` | Source documents fetched in parallel. |
-| `indexer.maxScheduledEmbeddings` | integer (≥ 0) |  | `300` |  |
+| `indexer.maxScheduledEmbeddings` | integer (≥ 0) |  | `300` | Largest embedding backlog a scheduled run takes on, per model. A bigger one — a new model, a first build, a large import — waits for `POST /reindex`: a full embed saturates the Ollama node for ~25 minutes and evicts its chat model, so it is started by hand. |
 
 ## search
 
@@ -672,12 +672,12 @@ Optional. Default `{}`.
 
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `search.defaultLimit` | integer (≥ 1, ≤ 50) |  | `10` |  |
+| `search.defaultLimit` | integer (≥ 1, ≤ 50) |  | `10` | Results returned by `GET /search` when the request sets no `limit`. |
 | `search.candidates` | integer (≥ 10, ≤ 500) |  | `50` | Hits taken from each leg (full-text, the vector model) before fusion. |
 | `search.rrfK` | integer (≥ 1) |  | `60` | Reciprocal rank fusion constant: score = Σ weight / (k + rank). |
-| `search.weights` | object |  | `{}` |  |
-| `search.weights.fullText` | number (≥ 0, ≤ 10) |  | `0` |  |
-| `search.weights.vector` | number (≥ 0, ≤ 10) |  | `1` |  |
+| `search.weights` | object |  | `{}` | Per-leg RRF weights. The default is vector only: in the model measurement (16 real questions, embeddinggemma) vector alone scored MRR 0.86 and plain RRF with the full-text leg 0.79. Measure before raising `fullText` — `GET /search` takes per-request weights for exactly that. |
+| `search.weights.fullText` | number (≥ 0, ≤ 10) |  | `0` | RRF weight of the full-text leg. At 0 it still runs, at weight 1, for chunks with no vector yet, and for knowledge bases with no model or when the vector leg is off. |
+| `search.weights.vector` | number (≥ 0, ≤ 10) |  | `1` | RRF weight of the vector leg: each knowledge base's first model, or the model the request names. 0 drops the leg. |
 | `search.fullTextMatch` | `"ANY"` \| `"ALL"` |  | `"ANY"` | How question terms combine in the full-text leg. |
 
 ## health
