@@ -70,10 +70,16 @@ describe('PostgresService', () => {
     });
 
     describe('a connection lost while in use', () => {
-        /** Terminates the backend holding `lock` from another connection, as a Postgres restart would. */
+        /**
+         * Terminates the backend holding `lock` from another connection, as a Postgres restart would.
+         * `pg_locks` covers the whole cluster, and every spec file has its own database in one
+         * container, so the holder is looked up in this file's database only. Without that filter
+         * it can pick, and kill, the connection of another spec file running the indexer in parallel.
+         */
         const terminateHolderOf = async (lock: AdvisoryLock): Promise<void> => {
             const { rows } = await postgres.query<{ pid: number }>(
-                "SELECT pid FROM pg_locks WHERE locktype = 'advisory' AND classid = $1 AND objid = $2 AND granted",
+                "SELECT pid FROM pg_locks WHERE locktype = 'advisory' AND classid = $1 AND objid = $2 AND granted "
+                + 'AND database = (SELECT oid FROM pg_database WHERE datname = current_database())',
                 [lock.namespace, lock.key]
             );
             const [{ pid }] = rows;
