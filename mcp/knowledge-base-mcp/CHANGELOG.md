@@ -1,5 +1,11 @@
 # knowledge-base
 
+## 0.10.1
+
+### Patch Changes
+
+- [`d4e8f21`](https://github.com/radoslavirha/homelab-apps/commit/d4e8f210912ac3b2fcbe40ed8b3cbbf0db0d6b2b) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update `@radoslavirha/tsed-configuration` to 0.11.0, `@radoslavirha/tsed-platform` to 6.0.5 and `@radoslavirha/tsed-swagger` to 9.1.20. `CONFIGURATION.md` now collapses alternative configurations and per-entry blocks (e.g. each `externalApis` entry) into `<details>` sections.
+
 ## 0.10.0
 
 ### Minor Changes
