@@ -3,15 +3,14 @@ import { PlatformTest } from '@tsed/platform-http/testing';
 import { context, SpanKind, SpanStatusCode, trace } from '@opentelemetry/api';
 import {
     InMemorySpanExporter,
-    NodeTracerProvider,
-    SimpleSpanProcessor,
     type ReadableSpan
-} from '@opentelemetry/sdk-trace-node';
+} from '@opentelemetry/sdk-trace';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PropertyChangeEvent } from '../models/PropertyChangeEvent.js';
 import { MqttClientProvider } from '../providers/MqttClientProvider.js';
 import { ConfigService } from './ConfigService.js';
 import { DEFAULT_PUBLISH_INTERVAL_MS, NotificationDispatchService } from './NotificationDispatchService.js';
+import { registerTracerProvider } from '../test/registerTracerProvider.js';
 
 const DEVICE_ID = 442;
 const NOTIFICATIONS_TOPIC = `miot-bridge/device/${DEVICE_ID}/notifications`;
@@ -41,7 +40,7 @@ describe('NotificationDispatchService', () => {
     let service: NotificationDispatchService;
 
     beforeAll(() => {
-        new NodeTracerProvider({ spanProcessors: [new SimpleSpanProcessor(exporter)] }).register();
+        registerTracerProvider(exporter);
     });
 
     afterAll(() => {

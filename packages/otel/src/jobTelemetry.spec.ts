@@ -8,10 +8,8 @@ import {
 } from '@opentelemetry/sdk-metrics';
 import {
     InMemorySpanExporter,
-    NodeTracerProvider,
-    SimpleSpanProcessor,
     type ReadableSpan
-} from '@opentelemetry/sdk-trace-node';
+} from '@opentelemetry/sdk-trace';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
     JOB_RUN_DURATION_BUCKETS,
@@ -23,6 +21,7 @@ import {
     recordJobSkip,
     runJob
 } from './jobTelemetry.js';
+import { registerTracerProvider } from './test/registerTracerProvider.js';
 
 const TRACER = 'test';
 const JOB = 'poll_devices';
@@ -92,7 +91,7 @@ describe('jobTelemetry', () => {
     // assertions cover the real wiring — including the SDK's suppression check, which is what
     // makes a sampled-out run drop its subtree without touching its metrics.
     beforeAll(() => {
-        new NodeTracerProvider({ spanProcessors: [new SimpleSpanProcessor(spanExporter)] }).register();
+        registerTracerProvider(spanExporter);
     });
 
     afterAll(() => {

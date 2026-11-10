@@ -9,10 +9,8 @@ import {
 } from '@opentelemetry/sdk-metrics';
 import {
     InMemorySpanExporter,
-    NodeTracerProvider,
-    SimpleSpanProcessor,
     type ReadableSpan
-} from '@opentelemetry/sdk-trace-node';
+} from '@opentelemetry/sdk-trace';
 import { MiotError, MIOT_ERROR_DEVICE_ERROR, MIOT_ERROR_TIMEOUT, MIOT_METHOD_GET_PROPERTIES } from '@radoslavirha/miot-device';
 import { METRIC_JOB_RUN_DURATION, METRIC_JOB_RUN_ITEMS, METRIC_JOB_RUN_SKIPS } from '@radoslavirha/otel';
 import type { BaseLogger } from '@radoslavirha/tsed-logger';
@@ -30,6 +28,7 @@ import { ConfigService } from './ConfigService.js';
 import { DeviceCommandService, type GetPropertiesResponse } from './DeviceCommandService.js';
 import { DevicePropertyPollerService, PROPERTY_CHANGED } from './DevicePropertyPollerService.js';
 import { NotificationStorageService } from './NotificationStorageService.js';
+import { registerTracerProvider } from '../test/registerTracerProvider.js';
 
 const STORAGE_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
 const MIOT_DEVICE_ID = 442;
@@ -127,7 +126,7 @@ describe('DevicePropertyPollerService', () => {
     let getProperties: ReturnType<typeof vi.spyOn>;
 
     beforeAll(() => {
-        new NodeTracerProvider({ spanProcessors: [new SimpleSpanProcessor(exporter)] }).register();
+        registerTracerProvider(exporter);
     });
 
     afterAll(() => {

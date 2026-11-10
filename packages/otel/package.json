@@ -48,13 +48,14 @@
         "@opentelemetry/sdk-logs": "catalog:otel",
         "@opentelemetry/sdk-metrics": "catalog:otel",
         "@opentelemetry/sdk-node": "catalog:otel",
-        "@opentelemetry/sdk-trace-node": "catalog:otel",
+        "@opentelemetry/sdk-trace": "catalog:otel",
         "@opentelemetry/semantic-conventions": "catalog:otel",
         "@opentelemetry/winston-transport": "catalog:otel",
         "@radoslavirha/utils": "catalog:",
         "zod": "catalog:"
     },
     "devDependencies": {
+        "@opentelemetry/context-async-hooks": "catalog:otel",
         "@radoslavirha/config-eslint": "catalog:",
         "@radoslavirha/config-tsdown": "catalog:",
         "@radoslavirha/config-typescript": "catalog:",

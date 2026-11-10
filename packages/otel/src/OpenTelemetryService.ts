@@ -10,7 +10,7 @@ import { resourceFromAttributes } from '@opentelemetry/resources';
 import { BatchLogRecordProcessor, type LogRecordProcessor } from '@opentelemetry/sdk-logs';
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { BatchSpanProcessor, type SpanProcessor } from '@opentelemetry/sdk-trace-node';
+import { BatchSpanProcessor, type SpanProcessor } from '@opentelemetry/sdk-trace';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
 import { isIgnoredTracePath } from './ignoredPaths.js';
@@ -156,7 +156,11 @@ export class OpenTelemetryService {
             return [];
         }
 
-        return [new BatchSpanProcessor(new OTLPTraceExporter({ url: config.exporter.url, headers: {} }))];
+        return [
+            new BatchSpanProcessor({
+                exporter: new OTLPTraceExporter({ url: config.exporter.url, headers: {} })
+            })
+        ];
     }
 
     private getLoggerProcessors(config?: OTELLogsConfig): LogRecordProcessor[] {

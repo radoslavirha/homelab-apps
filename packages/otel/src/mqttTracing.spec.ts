@@ -1,10 +1,8 @@
 import { context, propagation, ROOT_CONTEXT, SpanKind, SpanStatusCode, trace } from '@opentelemetry/api';
 import {
     InMemorySpanExporter,
-    NodeTracerProvider,
-    SimpleSpanProcessor,
     type ReadableSpan
-} from '@opentelemetry/sdk-trace-node';
+} from '@opentelemetry/sdk-trace';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
     ATTR_MESSAGING_MQTT_QOS,
@@ -13,6 +11,7 @@ import {
     withMqttPublishSpan,
     type MqttSpanOptions
 } from './mqttTracing.js';
+import { registerTracerProvider } from './test/registerTracerProvider.js';
 
 const exporter = new InMemorySpanExporter();
 
@@ -44,7 +43,7 @@ describe('mqttTracing', () => {
     // bypasses it. `register()` installs all three with the same W3C propagator and
     // AsyncLocalStorage context manager `NodeSDK` gives the real bootstrap.
     beforeAll(() => {
-        new NodeTracerProvider({ spanProcessors: [new SimpleSpanProcessor(exporter)] }).register();
+        registerTracerProvider(exporter);
     });
 
     afterAll(() => {

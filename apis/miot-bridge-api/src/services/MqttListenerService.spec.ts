@@ -3,10 +3,8 @@ import { PlatformTest } from '@tsed/platform-http/testing';
 import { SpanKind, SpanStatusCode, trace } from '@opentelemetry/api';
 import {
     InMemorySpanExporter,
-    NodeTracerProvider,
-    SimpleSpanProcessor,
     type ReadableSpan
-} from '@opentelemetry/sdk-trace-node';
+} from '@opentelemetry/sdk-trace';
 import { CommonUtils } from '@radoslavirha/utils';
 import type { IPublishPacket } from 'mqtt';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -15,6 +13,7 @@ import { DeviceCommandOperation } from '../models/DeviceCommandOperation.enum.js
 import { MqttClientProvider } from '../providers/MqttClientProvider.js';
 import { DeviceCommandService } from './DeviceCommandService.js';
 import { MqttListenerService } from './MqttListenerService.js';
+import { registerTracerProvider } from '../test/registerTracerProvider.js';
 
 const DEVICE_ID = 442;
 const COMMAND_TOPIC = `miot-bridge/device/${DEVICE_ID}/command`;
@@ -71,7 +70,7 @@ describe('MqttListenerService', () => {
     // Registers the global tracer, propagator and context manager, the same three `NodeSDK`
     // installs in the real bootstrap — so these tests exercise the actual wiring.
     beforeAll(() => {
-        new NodeTracerProvider({ spanProcessors: [new SimpleSpanProcessor(exporter)] }).register();
+        registerTracerProvider(exporter);
     });
 
     afterAll(() => {
